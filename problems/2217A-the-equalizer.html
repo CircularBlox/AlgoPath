@@ -1,0 +1,74 @@
+<h2 style="text-align: center">A. The Equalizer</h2>
+<p><strong>Time limit per test:</strong> 1 second &nbsp;&nbsp; <strong>Memory limit per test:</strong> 256 megabytes</p>
+
+<h3>Problem</h3>
+<p>
+  To settle a long-time feud, Shaunak and Yash decided to play a game on an array <code>a</code> of <code>n</code>
+  integers, with Shaunak going first. The players take turns, and the last player to make a move wins. On a
+  player's turn, he chooses some <code>a<sub>i</sub> &gt; 0</code> and decrements it by <code>1</code>.
+</p>
+<p>
+  To make things interesting, Shaunak is allowed to use a special move at most once during the game. This move
+  replaces his normal turn. When used, all elements <code>a<sub>i</sub></code> (<code>1 ≤ i ≤ n</code>) are set
+  to a special value <code>k</code> that is given initially.
+</p>
+<p>Assuming that both players play optimally, determine if Shaunak can always win.</p>
+
+<h3>Input</h3>
+<p>
+  Each test contains multiple test cases. The first line contains the number of test cases <code>t</code>
+  (<code>1 ≤ t ≤ 500</code>). The description of the test cases follows.
+</p>
+<p>
+  The first line of each test case contains two integers <code>n</code> and <code>k</code>
+  (<code>1 ≤ n ≤ 100</code>, <code>1 ≤ k ≤ 500</code>), denoting the size of the array and the special value.
+</p>
+<p>
+  The second line of each test case contains <code>n</code> integers
+  <code>a<sub>1</sub>, a<sub>2</sub>, ..., a<sub>n</sub></code>
+  (<code>0 ≤ a<sub>i</sub> ≤ 10<sup>3</sup></code>).
+</p>
+
+<h3>Output</h3>
+<p>
+  For each test case, print <strong>"YES"</strong> if Shaunak can always win, and <strong>"NO"</strong> otherwise.
+</p>
+<p>
+  You can output the answer in any case (upper or lower). For example, the strings <code>"yEs"</code>,
+  <code>"yes"</code>, <code>"Yes"</code>, and <code>"YES"</code> will be recognized as positive responses.
+</p>
+
+<h3>Sample</h3>
+<p><strong>Input</strong></p>
+<pre>4
+1 1
+1
+2 67
+67 67
+3 2
+3 3 3
+11 3
+1 2 3 4 5 6 7 8 9 10 11</pre>
+<p><strong>Output</strong></p>
+<pre>YES
+YES
+YES
+NO</pre>
+
+<h3>Note</h3>
+<p>
+  In the third test case, <code>n = 3</code>, <code>k = 2</code> and the initial array is
+  <code>[3, 3, 3]</code>. One possible way the game could proceed is shown:
+</p>
+<ol>
+  <li>Shaunak decrements <code>a<sub>3</sub></code>. Array becomes <code>[3, 3, 2]</code>.</li>
+  <li>Yash decrements <code>a<sub>3</sub></code>. Array becomes <code>[3, 3, 1]</code>.</li>
+  <li>Shaunak uses the special move. Array becomes <code>[2, 2, 2]</code>.</li>
+  <li>Yash decrements <code>a<sub>1</sub></code>. Array becomes <code>[1, 2, 2]</code>.</li>
+  <li>Shaunak decrements <code>a<sub>2</sub></code>. Array becomes <code>[1, 1, 2]</code>.</li>
+  <li>Yash decrements <code>a<sub>3</sub></code>. Array becomes <code>[1, 1, 1]</code>.</li>
+  <li>Shaunak decrements <code>a<sub>1</sub></code>. Array becomes <code>[0, 1, 1]</code>.</li>
+  <li>Yash decrements <code>a<sub>3</sub></code>. Array becomes <code>[0, 1, 0]</code>.</li>
+  <li>Shaunak decrements <code>a<sub>2</sub></code>. Array becomes <code>[0, 0, 0]</code>.</li>
+</ol>
+<p>Since there are no <code>a<sub>i</sub> &gt; 0</code> remaining, Yash cannot make any further moves.</p>
