@@ -2,7 +2,6 @@
 
 import type { Settings } from "~/components/settings-provider";
 import { useSettings } from "~/components/settings-provider";
-import { Input } from "~/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -40,7 +39,7 @@ export default function SettingsPage() {
       <div className="mb-8">
         <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Manage your notes and application preferences.
+          Manage your application preferences.
         </p>
       </div>
 
@@ -71,16 +70,6 @@ export default function SettingsPage() {
                   <SelectItem value="off">Off</SelectItem>
                 </SelectContent>
               </Select>
-            </SettingRow>
-            <SettingRow
-              label="Default title"
-              description="Title pre-filled when a new note is created."
-            >
-              <Input
-                value={settings.defaultTitle}
-                onChange={(e) => update("defaultTitle", e.target.value)}
-                placeholder="Untitled"
-              />
             </SettingRow>
           </div>
         </section>
