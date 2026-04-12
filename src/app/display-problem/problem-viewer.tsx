@@ -12,6 +12,14 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
+import { highlight, languages } from "~/lib/prism-setup";
+
+const LANG_GRAMMARS: Record<string, Prism.Grammar> = {
+  "C++": languages.cpp,
+  Java: languages.java,
+  JavaScript: languages.javascript,
+  Python: languages.python,
+};
 
 function InlineCode({ text }: { text: string }) {
   const html = text.replace(
@@ -33,13 +41,20 @@ type Problem = {
   content: string | null;
 };
 
+type SolutionCode = {
+  id: string;
+  solution_id: string;
+  problem_number: number;
+  language: string;
+  code: string | null;
+};
+
 type Solution = {
   id: string | null;
   problem_name: string;
   problem_number: number;
-  language: string;
-  solution_code: string | null;
   explanation: string | null;
+  solution_codes: SolutionCode[];
 };
 
 type Hints = {
@@ -55,8 +70,20 @@ type State =
   | { status: "idle" }
   | { status: "loading" }
   | { status: "error"; message: string }
-  | { status: "results"; problems: Problem[] }
+  | {
+      status: "results";
+      problems: Problem[];
+      source: "search" | "ai";
+      reasoning?: string;
+    }
   | { status: "loaded"; problem: Problem; contentOpen: boolean };
+
+type MarkDoneState =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "done"; ratingGain: number }
+  | { status: "already_solved" }
+  | { status: "error"; message: string };
 
 type PanelState<T> =
   | { status: "idle" }
@@ -65,8 +92,18 @@ type PanelState<T> =
   | { status: "open"; data: T }
   | { status: "closed"; data: T };
 
-export function ProblemViewer() {
-  const [state, setState] = useState<State>({ status: "idle" });
+export function ProblemViewer({
+  userId,
+  initialProblem = null,
+}: {
+  userId: string | null;
+  initialProblem?: Problem | null;
+}) {
+  const [state, setState] = useState<State>(
+    initialProblem
+      ? { status: "loaded", problem: initialProblem, contentOpen: false }
+      : { status: "idle" },
+  );
   const [solutionState, setSolutionState] = useState<PanelState<Solution>>({
     status: "idle",
   });
@@ -74,6 +111,9 @@ export function ProblemViewer() {
     status: "idle",
   });
   const [hintsRevealed, setHintsRevealed] = useState(1);
+  const [selectedLanguage, setSelectedLanguage] = useState<string>("C++");
+  const [codeVisible, setCodeVisible] = useState(true);
+  const [codeCopied, setCodeCopied] = useState(false);
   const hintsPanelRef = useRef<HTMLDivElement>(null);
   const solutionPanelRef = useRef<HTMLDivElement>(null);
 
@@ -94,7 +134,12 @@ export function ProblemViewer() {
       });
     }
   }, [solutionState.status]);
+  const [markDoneState, setMarkDoneState] = useState<MarkDoneState>({
+    status: "idle",
+  });
   const [searchQuery, setSearchQuery] = useState("");
+  const [suggestQuery, setSuggestQuery] = useState("");
+  const [isAiLoading, setIsAiLoading] = useState(false);
 
   async function fetchRandom() {
     setState({ status: "loading" });
@@ -133,7 +178,7 @@ export function ProblemViewer() {
       if (exact) {
         setState({ status: "loaded", problem: exact, contentOpen: false });
       } else {
-        setState({ status: "results", problems });
+        setState({ status: "results", problems, source: "search" });
       }
     } catch {
       setState({ status: "error", message: "Failed to reach the server." });
@@ -149,6 +194,48 @@ export function ProblemViewer() {
     setSolutionState({ status: "idle" });
     setHintsState({ status: "idle" });
     setHintsRevealed(1);
+    setSelectedLanguage("C++");
+    setCodeVisible(true);
+    setCodeCopied(false);
+    setMarkDoneState({ status: "idle" });
+  }
+
+  async function handleSuggest() {
+    const q = suggestQuery.trim();
+    if (!q) return;
+    setState({ status: "loading" });
+    setIsAiLoading(true);
+    resetPanels();
+    try {
+      const res = await fetch(
+        `/api/problems/suggest?q=${encodeURIComponent(q)}`,
+      );
+      const data = await res.json();
+      if (!res.ok) {
+        setState({ status: "error", message: data.error ?? "Unknown error." });
+        return;
+      }
+      const problems: Problem[] = Array.isArray(data)
+        ? data
+        : ((data as { problems?: Problem[] }).problems ?? []);
+      const reasoning: string | null = Array.isArray(data)
+        ? null
+        : ((data as { reasoning?: string | null }).reasoning ?? null);
+      if (problems.length === 0) {
+        setState({ status: "error", message: "No matching problems found." });
+        return;
+      }
+      setState({
+        status: "results",
+        problems,
+        source: "ai",
+        reasoning: reasoning ?? undefined,
+      });
+    } catch {
+      setState({ status: "error", message: "Failed to reach the server." });
+    } finally {
+      setIsAiLoading(false);
+    }
   }
 
   async function toggleSolution(problemId: string) {
@@ -172,7 +259,11 @@ export function ProblemViewer() {
           message: data.error ?? "Unknown error.",
         });
       } else {
-        setSolutionState({ status: "open", data });
+        const solution: Solution = data;
+        setSolutionState({ status: "open", data: solution });
+        const codes = solution.solution_codes ?? [];
+        const preferred = codes.find((c) => c.language === "C++") ?? codes[0];
+        if (preferred) setSelectedLanguage(preferred.language);
       }
     } catch {
       setSolutionState({
@@ -214,6 +305,53 @@ export function ProblemViewer() {
     }
   }
 
+  async function handleMarkDone() {
+    if (state.status !== "loaded") return;
+    const { problem } = state;
+    if (!problem.problem_number) return;
+
+    const solutionViewed =
+      solutionState.status === "open" || solutionState.status === "closed";
+    if (solutionViewed) return;
+
+    const hintsUsed =
+      hintsState.status === "open" || hintsState.status === "closed"
+        ? hintsRevealed
+        : 0;
+
+    setMarkDoneState({ status: "loading" });
+    try {
+      const res = await fetch("/api/profiles/solve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          problem_number: problem.problem_number,
+          difficulty: problem.difficulty,
+          hints_viewed: hintsUsed,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setMarkDoneState({
+          status: "error",
+          message: data.error ?? "Failed to save.",
+        });
+        return;
+      }
+      if (data.already_solved) {
+        setMarkDoneState({ status: "already_solved" });
+      } else {
+        setMarkDoneState({ status: "done", ratingGain: data.rating_gain });
+      }
+      setTimeout(() => fetchRandom(), 1500);
+    } catch {
+      setMarkDoneState({
+        status: "error",
+        message: "Failed to reach the server.",
+      });
+    }
+  }
+
   const isLoading = state.status === "loading";
 
   return (
@@ -249,7 +387,44 @@ export function ProblemViewer() {
         >
           {isLoading ? "Loading…" : "Find Random Problem"}
         </Button>
+        <div className="flex items-center gap-3">
+          <div className="h-px flex-1 bg-border" />
+          <span className="text-xs text-muted-foreground">or</span>
+          <div className="h-px flex-1 bg-border" />
+        </div>
+        <div className="flex gap-2">
+          <Input
+            placeholder="Describe what you're looking for…"
+            value={suggestQuery}
+            onChange={(e) => setSuggestQuery(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSuggest()}
+            disabled={isLoading}
+            className="max-w-sm"
+          />
+          <Button
+            onClick={handleSuggest}
+            disabled={isLoading || !suggestQuery.trim()}
+            variant="outline"
+          >
+            AI Suggest
+          </Button>
+        </div>
       </div>
+
+      {isAiLoading && (
+        <div className="flex items-center gap-1.5 px-1">
+          <span className="text-sm text-muted-foreground">Thinking</span>
+          <span className="flex gap-1">
+            {[0, 1, 2].map((i) => (
+              <span
+                key={i}
+                className="h-1.5 w-1.5 rounded-full bg-muted-foreground animate-bounce"
+                style={{ animationDelay: `${i * 150}ms` }}
+              />
+            ))}
+          </span>
+        </div>
+      )}
 
       {state.status === "error" && (
         <p className="text-sm text-destructive">{state.message}</p>
@@ -258,7 +433,18 @@ export function ProblemViewer() {
       {/* Search results list */}
       {state.status === "results" && (
         <div className="flex flex-col gap-2">
+          {state.source === "ai" && (
+            <div className="rounded-lg border border-border bg-muted/40 px-4 py-3">
+              <p className="text-xs font-medium text-muted-foreground mb-1">
+                AI
+              </p>
+              <p className="text-sm leading-relaxed">
+                {state.reasoning ?? "Here are some problems I found for you!"}
+              </p>
+            </div>
+          )}
           <p className="text-xs text-muted-foreground">
+            {state.source === "ai" ? "AI suggested " : ""}
             {state.problems.length} result
             {state.problems.length !== 1 ? "s" : ""} — click to open
           </p>
@@ -328,8 +514,28 @@ export function ProblemViewer() {
             problem.platform === "codeforces" ? "Codeforces" : "LeetCode";
           const solutionOpen = solutionState.status === "open";
           const solutionLoading = solutionState.status === "loading";
+          const solutionViewed =
+            solutionState.status === "open" ||
+            solutionState.status === "closed";
           const hintsOpen = hintsState.status === "open";
           const hintsLoading = hintsState.status === "loading";
+
+          const markDoneDisabled =
+            solutionViewed ||
+            markDoneState.status === "loading" ||
+            markDoneState.status === "done" ||
+            markDoneState.status === "already_solved";
+
+          const markDoneLabel =
+            markDoneState.status === "loading"
+              ? "Saving…"
+              : markDoneState.status === "done"
+                ? `+${markDoneState.ratingGain} rating`
+                : markDoneState.status === "already_solved"
+                  ? "Already Solved"
+                  : markDoneState.status === "error"
+                    ? "Failed"
+                    : "Mark as Done";
 
           return (
             <>
@@ -418,10 +624,24 @@ export function ProblemViewer() {
                       Open Link
                     </Link>
                   </Button>
+                  {userId && (
+                    <Button
+                      className="ml-auto"
+                      onClick={handleMarkDone}
+                      disabled={markDoneDisabled}
+                      title={
+                        solutionViewed
+                          ? "Cannot mark as done after viewing the solution"
+                          : undefined
+                      }
+                    >
+                      {markDoneLabel}
+                    </Button>
+                  )}
                   <Button
                     variant="ghost"
                     onClick={fetchRandom}
-                    className="ml-auto"
+                    className={userId ? "" : "ml-auto"}
                   >
                     Next Problem
                   </Button>
@@ -518,31 +738,116 @@ export function ProblemViewer() {
               {solutionOpen &&
                 solutionState.status === "open" &&
                 (() => {
-                  const { data: solution } = solutionState;
-                  const hasContent =
-                    solution.solution_code || solution.explanation;
+                  const solution = solutionState.data;
+                  const codes = solution.solution_codes ?? [];
+                  const withCode = codes.filter((c) => c.code);
+                  const active =
+                    withCode.find((c) => c.language === selectedLanguage) ??
+                    withCode[0];
+                  const langLabel: Record<string, string> = {
+                    "C++": "C++",
+                    Python: "Python",
+                    Java: "Java",
+                    JavaScript: "JavaScript",
+                  };
+
+                  function handleCopy() {
+                    if (!active?.code) return;
+                    navigator.clipboard.writeText(active.code);
+                    setCodeCopied(true);
+                    setTimeout(() => setCodeCopied(false), 2000);
+                  }
 
                   return (
                     <div
                       ref={solutionPanelRef}
-                      className="flex flex-col gap-4 rounded-xl border border-border bg-card px-6 py-5 text-card-foreground shadow-sm"
+                      className="flex flex-col gap-3 rounded-xl border border-border bg-card text-card-foreground shadow-sm overflow-hidden"
                     >
-                      <div className="flex items-center justify-between">
-                        <h3 className="font-semibold">Solution</h3>
-                        <Badge variant="secondary">{solution.language}</Badge>
+                      {/* Header row */}
+                      <div className="flex items-center gap-3 px-5 pt-4 pb-3 border-b border-border">
+                        <span className="font-semibold text-sm">
+                          Code Solution
+                        </span>
+
+                        {/* Language tabs — only languages with code */}
+                        {withCode.length > 0 && (
+                          <div className="flex flex-wrap gap-1 flex-1">
+                            {withCode.map((c) => (
+                              <button
+                                key={c.language}
+                                type="button"
+                                onClick={() => setSelectedLanguage(c.language)}
+                                className={`rounded px-2.5 py-0.5 text-xs font-medium transition-colors ${
+                                  c.language === (active?.language ?? "")
+                                    ? "bg-primary text-primary-foreground"
+                                    : "bg-muted text-muted-foreground hover:text-foreground"
+                                }`}
+                              >
+                                {langLabel[c.language] ?? c.language}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="flex items-center gap-1.5 ml-auto shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => setCodeVisible((v) => !v)}
+                            className="rounded px-2.5 py-0.5 text-xs font-medium bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            {codeVisible ? "Hide" : "Show"}
+                          </button>
+                          {active?.code && (
+                            <button
+                              type="button"
+                              onClick={handleCopy}
+                              className="rounded px-2.5 py-0.5 text-xs font-medium bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                              {codeCopied ? "Copied!" : "Copy"}
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      {!hasContent && (
-                        <p className="text-sm text-muted-foreground">
-                          No solution available yet.
-                        </p>
+
+                      {/* Code block */}
+                      {codeVisible && (
+                        <div className="px-5">
+                          {active?.code ? (
+                            <div className="overflow-hidden rounded-md border border-input">
+                              <pre
+                                style={{
+                                  background: "#272822",
+                                  color: "#f8f8f2",
+                                  fontFamily:
+                                    '"JetBrains Mono","Fira Code","Fira Mono",ui-monospace,monospace',
+                                  fontSize: 13,
+                                  lineHeight: 1.6,
+                                  padding: 14,
+                                  margin: 0,
+                                  overflowX: "auto",
+                                }}
+                                // biome-ignore lint/security/noDangerouslySetInnerHtml: Prism output is sanitised HTML
+                                dangerouslySetInnerHTML={{
+                                  __html: highlight(
+                                    active.code,
+                                    LANG_GRAMMARS[active.language] ??
+                                      languages.clike,
+                                    active.language,
+                                  ),
+                                }}
+                              />
+                            </div>
+                          ) : (
+                            <p className="text-sm text-muted-foreground">
+                              No solutions available yet.
+                            </p>
+                          )}
+                        </div>
                       )}
-                      {solution.solution_code && (
-                        <pre className="overflow-x-auto rounded-md border border-[var(--color-code-border)] bg-[var(--color-code-background)] px-4 py-3 text-sm whitespace-pre-wrap">
-                          {solution.solution_code}
-                        </pre>
-                      )}
+
+                      {/* Shared explanation */}
                       {solution.explanation && (
-                        <div className="flex flex-col gap-1">
+                        <div className="flex flex-col gap-1 px-5 pb-4">
                           <span className="text-sm font-medium">
                             Explanation
                           </span>
@@ -551,6 +856,8 @@ export function ProblemViewer() {
                           </p>
                         </div>
                       )}
+
+                      {!solution.explanation && <div className="pb-1" />}
                     </div>
                   );
                 })()}

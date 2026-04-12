@@ -6,12 +6,34 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
+import { getUser } from "~/lib/supabase/server";
+
+const steps = [
+  {
+    number: "01",
+    title: "Find your problem",
+    description:
+      "Search by title, browse by difficulty, or let AI suggest a problem based on what you want to practise.",
+  },
+  {
+    number: "02",
+    title: "Share your attempt",
+    description:
+      "Paste your current code or notes — even a half-formed idea. The more context you give, the sharper the hints.",
+  },
+  {
+    number: "03",
+    title: "Unlock hints one by one",
+    description:
+      "Reveal up to 3 progressive hints at your own pace. Each one nudges you forward without giving the game away.",
+  },
+];
 
 const features = [
   {
-    title: "Create & Organize",
+    title: "AI-Powered Hints",
     description:
-      "Instantly create new notes with a single click. Your notes are organized in a clean sidebar for quick access.",
+      "Claude analyses your specific attempt — not just the problem — so every hint is relevant to exactly where you are in your thinking.",
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -25,14 +47,15 @@ const features = [
         strokeLinejoin="round"
         aria-hidden="true"
       >
-        <path d="M12 5v14M5 12h14" />
+        <path d="M12 2a7 7 0 0 1 7 7c0 2.6-1.4 4.9-3.5 6.2V17a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1v-1.8A7 7 0 0 1 12 2z" />
+        <path d="M9 21h6M10 17h4" />
       </svg>
     ),
   },
   {
-    title: "Edit in Real Time",
+    title: "Problem Tracking",
     description:
-      "Click any note to start editing. Changes to both the title and body are saved automatically as you type.",
+      "Every problem you open is saved to your history. Rate hints, leave notes, and pick up exactly where you left off.",
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -46,15 +69,15 @@ const features = [
         strokeLinejoin="round"
         aria-hidden="true"
       >
-        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z" />
+        <path d="M9 11l3 3L22 4" />
+        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
       </svg>
     ),
   },
   {
-    title: "Persisted Locally",
+    title: "Skill Progression",
     description:
-      "Notes are saved to your browser's localStorage — no account needed. Your data stays private and available offline.",
+      "Your rating updates as you solve. The AI uses your level to calibrate hint depth — more nudge, less lecture.",
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -68,16 +91,15 @@ const features = [
         strokeLinejoin="round"
         aria-hidden="true"
       >
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-        <polyline points="17 8 12 3 7 8" />
-        <line x1="12" y1="3" x2="12" y2="15" />
+        <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+        <polyline points="16 7 22 7 22 13" />
       </svg>
     ),
   },
   {
-    title: "Delete Anytime",
+    title: "Solution Library",
     description:
-      "Remove notes you no longer need with one click. The sidebar updates instantly and selects the next available note.",
+      "Once you've solved a problem, browse community solutions in C++, Python, Java, and JavaScript with explanations.",
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -91,91 +113,169 @@ const features = [
         strokeLinejoin="round"
         aria-hidden="true"
       >
-        <polyline points="3 6 5 6 21 6" />
-        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-        <path d="M10 11v6M14 11v6" />
-        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+        <polyline points="16 18 22 12 16 6" />
+        <polyline points="8 6 2 12 8 18" />
       </svg>
     ),
   },
 ];
 
-export default function Home() {
+export default async function Home() {
+  const user = await getUser();
+
   return (
-    <main className="mx-auto flex max-w-3xl flex-col gap-16 px-6 py-16">
+    <main className="mx-auto flex max-w-3xl flex-col gap-20 px-6 py-16">
       {/* Hero */}
       <section className="flex flex-col items-center gap-6 text-center">
+        <div className="inline-flex items-center rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">
+          For competitive programmers
+        </div>
         <h1 className="text-5xl font-bold tracking-tight">
-          Your thoughts,
+          Think sharper.
           <br />
-          always within reach.
+          Solve harder.
         </h1>
         <p className="max-w-lg text-lg text-muted-foreground">
-          A minimal notes app that lives right in your browser. Write freely,
-          stay organized, and pick up exactly where you left off.
+          AlgoPath analyses your exact attempt and delivers AI-powered,
+          progressive hints that guide your thinking — not your clipboard. Built
+          for programmers who want to genuinely improve, not just reach an
+          answer.
         </p>
-        <Button asChild size="lg">
-          <Link href="/notes">Open Notes</Link>
-        </Button>
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <Button asChild size="lg">
+            <Link href={user ? "/display-problem" : "/auth/login"}>
+              {user ? "Go to problems" : "Get started free"}
+            </Link>
+          </Button>
+          {!user && (
+            <Button asChild variant="outline" size="lg">
+              <Link href="/display-problem">Browse problems</Link>
+            </Button>
+          )}
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Supports LeetCode · Codeforces · custom problems
+        </p>
       </section>
 
-      {/* Feature cards */}
-      <section className="grid gap-4 sm:grid-cols-2">
-        {features.map((feature) => (
-          <Card key={feature.title}>
-            <CardHeader>
-              <div className="flex size-9 items-center justify-center rounded-lg bg-muted text-foreground">
-                {feature.icon}
-              </div>
-              <CardTitle className="mt-2">{feature.title}</CardTitle>
-              <CardDescription>{feature.description}</CardDescription>
-            </CardHeader>
-          </Card>
-        ))}
-      </section>
-
-      {/* App preview */}
+      {/* How it works */}
       <section className="flex flex-col gap-6">
-        <h2 className="text-center text-2xl font-semibold tracking-tight">
-          Simple two-panel layout
-        </h2>
-        <div className="overflow-hidden rounded-xl border bg-muted/40">
-          {/* Mock app chrome */}
-          <div className="flex items-center gap-1.5 border-b bg-background px-4 py-3">
+        <div className="text-center">
+          <h2 className="text-2xl font-semibold tracking-tight">
+            How it works
+          </h2>
+          <p className="mt-2 text-muted-foreground">
+            Three steps from question to solution.
+          </p>
+        </div>
+        <div className="grid gap-px border border-border bg-border sm:grid-cols-3">
+          {steps.map((step) => (
+            <div
+              key={step.number}
+              className="flex flex-col gap-2 bg-background p-6"
+            >
+              <span className="font-mono text-xs text-muted-foreground">
+                {step.number}
+              </span>
+              <h3 className="font-semibold">{step.title}</h3>
+              <p className="text-sm text-muted-foreground">
+                {step.description}
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Hint preview */}
+      <section className="flex flex-col gap-6">
+        <div className="text-center">
+          <h2 className="text-2xl font-semibold tracking-tight">
+            Progressive hints, not spoilers
+          </h2>
+          <p className="mt-2 text-muted-foreground">
+            Hint 1 observes. Hint 2 directs. Hint 3 outlines. None of them hand
+            you the answer.
+          </p>
+        </div>
+        <div className="overflow-hidden rounded-xl border">
+          <div className="flex items-center gap-1.5 border-b bg-muted/50 px-4 py-3">
             <span className="size-3 rounded-full bg-destructive/60" />
             <span className="size-3 rounded-full bg-yellow-400/60" />
             <span className="size-3 rounded-full bg-green-500/60" />
+            <span className="ml-3 font-mono text-xs text-muted-foreground">
+              hint-engine — AlgoPath
+            </span>
           </div>
-          <div className="grid grid-cols-[200px_1fr] divide-x text-sm">
-            {/* Sidebar */}
-            <div className="flex flex-col gap-1 bg-background p-3">
-              <div className="mb-1 px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Notes
-              </div>
-              {["Meeting recap", "Project ideas", "Shopping list"].map(
-                (title, i) => (
-                  <div
-                    key={title}
-                    className={`rounded-lg px-2 py-2 ${i === 0 ? "bg-accent font-medium" : "text-muted-foreground"}`}
-                  >
-                    <p className="truncate">{title}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {i === 0 ? "Just now" : `${i + 1} days ago`}
-                    </p>
-                  </div>
-                ),
-              )}
+          <div className="flex flex-col gap-4 p-5 font-mono text-sm">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <span className="text-green-500">▶</span>
+              <span>Generating hint 1 of 3...</span>
             </div>
-            {/* Editor */}
-            <div className="flex flex-col gap-3 bg-background p-4">
-              <p className="text-base font-semibold">Meeting recap</p>
-              <p className="text-muted-foreground">
-                Discussed Q2 roadmap priorities. Action items: finalize scope by
-                Friday, share updated timeline with stakeholders...
+            <div className="rounded-lg border bg-muted/40 px-4 py-3">
+              <p className="mb-1.5 font-mono text-xs text-muted-foreground">
+                HINT_01 / OBSERVATION
               </p>
+              <p className="font-sans text-sm leading-relaxed">
+                Think about what data structure allows O(1) average lookups. As
+                you iterate, can you instantly check whether the complement of
+                the current element has already been seen?
+              </p>
+            </div>
+            <div className="rounded-lg border bg-muted/40 px-4 py-3 opacity-40">
+              <p className="mb-1.5 font-mono text-xs text-muted-foreground">
+                HINT_02 / APPROACH
+              </p>
+              <p className="font-sans text-sm leading-relaxed text-muted-foreground">
+                Locked — reveal when you're ready.
+              </p>
+            </div>
+            <div className="flex gap-2 text-xs text-muted-foreground">
+              <span className="rounded border px-2 py-1">reveal hint 2 →</span>
+              <span className="rounded border px-2 py-1">rate usefulness</span>
             </div>
           </div>
         </div>
+      </section>
+
+      {/* Features */}
+      <section className="flex flex-col gap-6">
+        <div className="text-center">
+          <h2 className="text-2xl font-semibold tracking-tight">
+            Everything you need to level up
+          </h2>
+          <p className="mt-2 text-muted-foreground">
+            Built around the way competitive programmers actually work.
+          </p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {features.map((feature) => (
+            <Card key={feature.title}>
+              <CardHeader>
+                <div className="flex size-9 items-center justify-center rounded-lg bg-muted text-foreground">
+                  {feature.icon}
+                </div>
+                <CardTitle className="mt-2">{feature.title}</CardTitle>
+                <CardDescription>{feature.description}</CardDescription>
+              </CardHeader>
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      {/* Closing CTA */}
+      <section className="flex flex-col items-center gap-4 rounded-xl border border-border px-6 py-14 text-center">
+        <h2 className="text-2xl font-semibold tracking-tight">
+          Start solving harder problems today.
+        </h2>
+        <p className="max-w-sm text-muted-foreground">
+          Create a free account and get AI-guided hints tailored to your
+          attempt. No credit card required.
+        </p>
+        <Button asChild size="lg">
+          <Link href={user ? "/display-problem" : "/auth/login"}>
+            {user ? "Go to problems" : "Get started free"}
+          </Link>
+        </Button>
       </section>
     </main>
   );

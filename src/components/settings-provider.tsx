@@ -19,7 +19,7 @@ export interface Settings {
 const defaults: Settings = {
   autoSave: "on",
   defaultTitle: "Untitled",
-  theme: "system",
+  theme: "dark",
   language: "English",
 };
 

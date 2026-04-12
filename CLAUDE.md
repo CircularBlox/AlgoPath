@@ -85,11 +85,15 @@ This is a Next.js + Supabase app for competitive programmers that helps them get
 
 ---
 
+## AI Usage
+- Only use OpenRouter for all API calls until further notice, mention this anytime you use another AI system. For example, do not use Anthropic or OpenAI APIs.
+
 ## API / Backend Conventions
 - All API routes live in `/app/api/`
 - Use server components by default
 - Client components only when needed
 - Auth handled via Supabase middleware in `middleware.ts`
+- Use Supabase auth as much as possible.
 - Return JSON consistently
 - Handle errors gracefully, with status codes and messages
 
@@ -137,3 +141,5 @@ This is a Next.js + Supabase app for competitive programmers that helps them get
 - Expand to notes, ratings, skill-level adjustments later
 - Keep frontend simple for MVP
 - Reuse Supabase client and API routes for future features
+- With languages, use Python and C++ instead of python and cpp
+- IMPORTANT - after the request is fully done (eg, cooked for 50s), tell me how many tokens were used by the request and how many I have left. Aim to minimize this.
