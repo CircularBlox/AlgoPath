@@ -25,24 +25,36 @@ type Problem = {
 export default async function DisplayProblemPage({
   searchParams,
 }: {
-  searchParams: Promise<{ id?: string }>;
+  searchParams: Promise<{ p?: string }>;
 }) {
-  const [user, { id: problemId }] = await Promise.all([
+  const [user, supabase, { p }] = await Promise.all([
     getUser(),
+    createClient(),
     searchParams,
   ]);
 
   let initialProblem: Problem | null = null;
-  if (problemId) {
-    const supabase = await createClient();
-    const { data } = await supabase
+  const problemNumber = p ? Number.parseInt(p, 10) : null;
+
+  if (problemNumber && !Number.isNaN(problemNumber)) {
+    // Resolve problem_number → uuid
+    const { data: ref } = await supabase
       .from("problems")
-      .select(
-        "id, problem_number, title, url, platform, difficulty, tags, content",
-      )
-      .eq("id", problemId)
-      .single<Problem>();
-    initialProblem = data ?? null;
+      .select("id")
+      .eq("problem_number", problemNumber)
+      .single();
+
+    if (ref?.id) {
+      // Fetch full problem by uuid
+      const { data } = await supabase
+        .from("problems")
+        .select(
+          "id, problem_number, title, url, platform, difficulty, tags, content",
+        )
+        .eq("id", ref.id)
+        .single<Problem>();
+      initialProblem = data ?? null;
+    }
   }
 
   return (

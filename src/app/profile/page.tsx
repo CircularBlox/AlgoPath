@@ -5,6 +5,7 @@ import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Separator } from "~/components/ui/separator";
 import { createClient, getUser } from "~/lib/supabase/server";
+import { SkillLevelEditor } from "./skill-level-editor";
 
 type Profile = {
   username: string;
@@ -141,10 +142,6 @@ export default async function ProfilePage() {
   const stats = [
     { label: "Rating", value: String(rating) },
     { label: "Problems Solved", value: String(solvedProblems.length) },
-    {
-      label: "Skill Level",
-      value: skillLevel.charAt(0).toUpperCase() + skillLevel.slice(1),
-    },
   ];
 
   const recommended = await getRecommendation(supabase, solvedProblems, rating);
@@ -185,6 +182,16 @@ export default async function ProfilePage() {
               </CardContent>
             </Card>
           ))}
+          <Card>
+            <CardHeader className="pb-1 pt-4">
+              <CardTitle>
+                <SkillLevelEditor initialLevel={skillLevel} />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pb-4">
+              <p className="text-xs text-muted-foreground">Skill Level</p>
+            </CardContent>
+          </Card>
         </div>
       </section>
 
@@ -236,7 +243,7 @@ export default async function ProfilePage() {
                 topics for you.
               </p>
               <Button asChild className="self-start" size="sm">
-                <Link href={`/display-problem?id=${recommended.id}`}>
+                <Link href={`/display-problem?p=${recommended.problem_number}`}>
                   Practice this problem
                 </Link>
               </Button>

@@ -1,6 +1,8 @@
 "use server";
 
+import { isAdmin } from "~/lib/is-admin";
 import { createAdminClient } from "~/lib/supabase/admin";
+import { getUser } from "~/lib/supabase/server";
 
 export type AddSolutionState = {
   success: boolean;
@@ -12,6 +14,11 @@ export async function addSolution(
   _prev: AddSolutionState,
   formData: FormData,
 ): Promise<AddSolutionState> {
+  const user = await getUser();
+  if (!isAdmin(user?.email)) {
+    return { success: false, error: "Forbidden." };
+  }
+
   const problemNumber = Number(formData.get("problem_number"));
   const language = (formData.get("language") as string)?.trim();
   const solutionCode = (formData.get("solution_code") as string)?.trim();

@@ -134,6 +134,10 @@ export function ProblemViewer({
       });
     }
   }, [solutionState.status]);
+  const [hintRatings, setHintRatings] = useState<
+    Record<1 | 2 | 3, "up" | "down" | null>
+  >({ 1: null, 2: null, 3: null });
+  const [ratingPending, setRatingPending] = useState<1 | 2 | 3 | null>(null);
   const [markDoneState, setMarkDoneState] = useState<MarkDoneState>({
     status: "idle",
   });
@@ -194,6 +198,8 @@ export function ProblemViewer({
     setSolutionState({ status: "idle" });
     setHintsState({ status: "idle" });
     setHintsRevealed(1);
+    setHintRatings({ 1: null, 2: null, 3: null });
+    setRatingPending(null);
     setSelectedLanguage("C++");
     setCodeVisible(true);
     setCodeCopied(false);
@@ -238,7 +244,7 @@ export function ProblemViewer({
     }
   }
 
-  async function toggleSolution(problemId: string) {
+  async function toggleSolution(problemNumber: number) {
     if (solutionState.status === "open") {
       setSolutionState({ ...solutionState, status: "closed" });
       return;
@@ -249,9 +255,7 @@ export function ProblemViewer({
     }
     setSolutionState({ status: "loading" });
     try {
-      const res = await fetch(
-        `/api/problems/${encodeURIComponent(problemId)}/solution`,
-      );
+      const res = await fetch(`/api/problems/${problemNumber}/solution`);
       const data = await res.json();
       if (!res.ok) {
         setSolutionState({
@@ -273,7 +277,7 @@ export function ProblemViewer({
     }
   }
 
-  async function toggleHints(problemId: string) {
+  async function toggleHints(problemNumber: number) {
     if (hintsState.status === "open") {
       setHintsState({ ...hintsState, status: "closed" });
       return;
@@ -284,24 +288,67 @@ export function ProblemViewer({
     }
     setHintsState({ status: "loading" });
     setHintsRevealed(1);
+    setHintRatings({ 1: null, 2: null, 3: null });
     try {
-      const res = await fetch(
-        `/api/problems/${encodeURIComponent(problemId)}/hints`,
-      );
-      const data = await res.json();
-      if (!res.ok) {
+      const [hintsRes, ratingsRes] = await Promise.all([
+        fetch(`/api/problems/${problemNumber}/hints`),
+        userId
+          ? fetch(`/api/problems/${problemNumber}/hints/rate`)
+          : Promise.resolve(null),
+      ]);
+      const hintsData = await hintsRes.json();
+      if (!hintsRes.ok) {
         setHintsState({
           status: "error",
-          message: data.error ?? "Unknown error.",
+          message: hintsData.error ?? "Unknown error.",
         });
       } else {
-        setHintsState({ status: "open", data });
+        setHintsState({ status: "open", data: hintsData });
+        if (ratingsRes?.ok) {
+          const ratingsData = await ratingsRes.json();
+          setHintRatings({
+            1: ratingsData[1] ?? null,
+            2: ratingsData[2] ?? null,
+            3: ratingsData[3] ?? null,
+          });
+        }
       }
     } catch {
       setHintsState({
         status: "error",
         message: "Failed to reach the server.",
       });
+    }
+  }
+
+  async function handleRate(
+    problemNumber: number,
+    hintNumber: 1 | 2 | 3,
+    rating: "up" | "down",
+  ) {
+    // Toggle off if clicking the same rating
+    const next = hintRatings[hintNumber] === rating ? null : rating;
+    setHintRatings((prev) => ({ ...prev, [hintNumber]: next }));
+    setRatingPending(hintNumber);
+    try {
+      if (next === null) {
+        // No delete endpoint — just leave the optimistic update
+        // (a re-open will restore the DB value)
+      } else {
+        await fetch(`/api/problems/${problemNumber}/hints/rate`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ hint_number: hintNumber, rating: next }),
+        });
+      }
+    } catch {
+      // Silently revert on error
+      setHintRatings((prev) => ({
+        ...prev,
+        [hintNumber]: hintRatings[hintNumber],
+      }));
+    } finally {
+      setRatingPending(null);
     }
   }
 
@@ -592,7 +639,7 @@ export function ProblemViewer({
                   )}
                   <Button
                     variant="outline"
-                    onClick={() => toggleHints(problem.id)}
+                    onClick={() => toggleHints(problem.problem_number ?? 0)}
                     disabled={hintsLoading}
                   >
                     {hintsLoading
@@ -603,7 +650,7 @@ export function ProblemViewer({
                   </Button>
                   <Button
                     variant="outline"
-                    onClick={() => toggleSolution(problem.id)}
+                    onClick={() => toggleSolution(problem.problem_number ?? 0)}
                     disabled={solutionLoading}
                   >
                     {solutionLoading
@@ -688,10 +735,11 @@ export function ProblemViewer({
                               ] as const
                             ).map(({ n, text }) => {
                               if (!text || n > hintsRevealed) return null;
+                              const myRating = hintRatings[n];
                               return (
                                 <div
                                   key={`hint-${n}`}
-                                  className="flex flex-col gap-1 rounded-md border border-border bg-muted/40 px-4 py-3"
+                                  className="flex flex-col gap-2 rounded-md border border-border bg-muted/40 px-4 py-3"
                                 >
                                   <span className="text-xs font-medium text-muted-foreground">
                                     Hint {n}
@@ -699,6 +747,79 @@ export function ProblemViewer({
                                   <p className="text-sm leading-relaxed">
                                     <InlineCode text={text} />
                                   </p>
+                                  {userId && (
+                                    <div className="flex items-center gap-1 pt-1">
+                                      <span className="text-xs text-muted-foreground mr-1">
+                                        Helpful?
+                                      </span>
+                                      <button
+                                        type="button"
+                                        disabled={ratingPending === n}
+                                        onClick={() =>
+                                          handleRate(
+                                            problem.problem_number ?? 0,
+                                            n,
+                                            "up",
+                                          )
+                                        }
+                                        className={`flex items-center gap-1 rounded px-2 py-0.5 text-xs transition-colors ${
+                                          myRating === "up"
+                                            ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400"
+                                            : "bg-muted text-muted-foreground hover:text-foreground"
+                                        }`}
+                                        aria-label="Thumbs up"
+                                      >
+                                        <svg
+                                          width="12"
+                                          height="12"
+                                          viewBox="0 0 24 24"
+                                          fill="none"
+                                          stroke="currentColor"
+                                          strokeWidth="2"
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          aria-hidden="true"
+                                        >
+                                          <path d="M7 10v12" />
+                                          <path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z" />
+                                        </svg>
+                                        Yes
+                                      </button>
+                                      <button
+                                        type="button"
+                                        disabled={ratingPending === n}
+                                        onClick={() =>
+                                          handleRate(
+                                            problem.problem_number ?? 0,
+                                            n,
+                                            "down",
+                                          )
+                                        }
+                                        className={`flex items-center gap-1 rounded px-2 py-0.5 text-xs transition-colors ${
+                                          myRating === "down"
+                                            ? "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400"
+                                            : "bg-muted text-muted-foreground hover:text-foreground"
+                                        }`}
+                                        aria-label="Thumbs down"
+                                      >
+                                        <svg
+                                          width="12"
+                                          height="12"
+                                          viewBox="0 0 24 24"
+                                          fill="none"
+                                          stroke="currentColor"
+                                          strokeWidth="2"
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          aria-hidden="true"
+                                        >
+                                          <path d="M17 14V2" />
+                                          <path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z" />
+                                        </svg>
+                                        No
+                                      </button>
+                                    </div>
+                                  )}
                                 </div>
                               );
                             })}
