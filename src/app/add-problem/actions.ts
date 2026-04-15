@@ -1,7 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { isAdmin } from "~/lib/is-admin";
 import { createAdminClient } from "~/lib/supabase/admin";
+import { getUser } from "~/lib/supabase/server";
 
 export type AddProblemState = {
   success: boolean;
@@ -12,6 +14,11 @@ export async function addProblem(
   _prev: AddProblemState,
   formData: FormData,
 ): Promise<AddProblemState> {
+  const user = await getUser();
+  if (!isAdmin(user?.email)) {
+    return { success: false, error: "Forbidden." };
+  }
+
   const title = formData.get("title") as string;
   const url = formData.get("url") as string;
   const platform = formData.get("platform") as string;

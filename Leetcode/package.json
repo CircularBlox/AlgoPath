@@ -1,0 +1,14 @@
+{
+  "name": "leetcode-uploader",
+  "version": "1.0.0",
+  "description": "Uploads LeetCode problems to Supabase",
+  "main": "upload_problems.js",
+  "scripts": {
+    "upload": "node upload_problems.js",
+    "dry-run": "node upload_problems.js --dry-run"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.4",
+    "dotenv": "^16.4.5"
+  }
+}

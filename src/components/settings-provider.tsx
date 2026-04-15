@@ -11,15 +11,13 @@ import {
 
 export interface Settings {
   autoSave: "on" | "off";
-  defaultTitle: string;
   theme: "system" | "light" | "dark";
   language: "English" | "French" | "Spanish" | "German";
 }
 
 const defaults: Settings = {
   autoSave: "on",
-  defaultTitle: "Untitled",
-  theme: "system",
+  theme: "dark",
   language: "English",
 };
 

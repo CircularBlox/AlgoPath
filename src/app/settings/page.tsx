@@ -1,8 +1,9 @@
 "use client";
 
+import { useState, useTransition } from "react";
 import type { Settings } from "~/components/settings-provider";
 import { useSettings } from "~/components/settings-provider";
-import { Input } from "~/components/ui/input";
+import { Button } from "~/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -11,6 +12,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Separator } from "~/components/ui/separator";
+import { deleteAccount } from "./actions";
 
 function SettingRow({
   label,
@@ -34,13 +36,15 @@ function SettingRow({
 
 export default function SettingsPage() {
   const { settings, update } = useSettings();
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-12">
       <div className="mb-8">
         <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Manage your notes and application preferences.
+          Manage your application preferences.
         </p>
       </div>
 
@@ -72,16 +76,6 @@ export default function SettingsPage() {
                 </SelectContent>
               </Select>
             </SettingRow>
-            <SettingRow
-              label="Default title"
-              description="Title pre-filled when a new note is created."
-            >
-              <Input
-                value={settings.defaultTitle}
-                onChange={(e) => update("defaultTitle", e.target.value)}
-                placeholder="Untitled"
-              />
-            </SettingRow>
           </div>
         </section>
 
@@ -111,27 +105,69 @@ export default function SettingsPage() {
                 </SelectContent>
               </Select>
             </SettingRow>
-            <SettingRow
-              label="Language"
-              description="Select the display language for the app."
-            >
-              <Select
-                value={settings.language}
-                onValueChange={(v) =>
-                  update("language", v as Settings["language"])
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="English">English</SelectItem>
-                  <SelectItem value="French">French</SelectItem>
-                  <SelectItem value="Spanish">Spanish</SelectItem>
-                  <SelectItem value="German">German</SelectItem>
-                </SelectContent>
-              </Select>
-            </SettingRow>
+          </div>
+        </section>
+
+        {/* Danger Zone */}
+        <section>
+          <h2 className="text-base font-semibold text-destructive">
+            Danger Zone
+          </h2>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            Permanent actions that cannot be undone.
+          </p>
+          <Separator className="my-4" />
+          <div className="flex flex-col gap-4">
+            {!confirmDelete ? (
+              <div className="flex items-center justify-between gap-8">
+                <div>
+                  <p className="text-sm font-medium">Delete Account</p>
+                  <p className="text-sm text-muted-foreground">
+                    Permanently delete your account and all data.
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  className="shrink-0 border-destructive text-destructive hover:bg-destructive/10"
+                  onClick={() => setConfirmDelete(true)}
+                >
+                  Delete Account
+                </Button>
+              </div>
+            ) : (
+              <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 flex flex-col gap-3">
+                <p className="text-sm font-medium">
+                  Are you sure? This will permanently delete your account,
+                  profile, and all solved problem history.
+                </p>
+                <div className="flex gap-2">
+                  <form
+                    action={() =>
+                      startTransition(async () => {
+                        await deleteAccount();
+                      })
+                    }
+                  >
+                    <Button
+                      type="submit"
+                      variant="destructive"
+                      size="sm"
+                      disabled={isPending}
+                    >
+                      {isPending ? "Deleting…" : "Yes, delete my account"}
+                    </Button>
+                  </form>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setConfirmDelete(false)}
+                    disabled={isPending}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </section>
       </div>

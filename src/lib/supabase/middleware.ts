@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 import { env } from "~/env";
 
-export async function proxy(request: NextRequest) {
+export function createMiddlewareClient(request: NextRequest) {
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -26,14 +26,5 @@ export async function proxy(request: NextRequest) {
     },
   );
 
-  // Refresh the auth token
-  await supabase.auth.getUser();
-
-  return response;
+  return { supabase, response };
 }
-
-export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
-  ],
-};

@@ -1,0 +1,416 @@
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { createClient, getUser } from "~/lib/supabase/server";
+import { SkillLevelEditor } from "./skill-level-editor";
+
+function todayUtc(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+type Profile = {
+  username: string;
+  rating: number;
+  skill_level: string;
+  solved_problems: number[];
+  streak: number;
+  last_solved_date: string | null;
+  created_at: string;
+  recommended_problem_number: number | null;
+};
+
+type Problem = {
+  id: string;
+  problem_number: number;
+  title: string;
+  difficulty: string | null;
+  tags: string[];
+  platform: string;
+};
+
+function targetDifficulty(rating: number): string {
+  if (rating < 1250) return "Easy";
+  if (rating < 1500) return "Medium";
+  return "Hard";
+}
+
+async function getRecommendation(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  solved: number[],
+  rating: number,
+): Promise<Problem | null> {
+  const target = targetDifficulty(rating);
+  const notSolvedFilter = solved.length > 0 ? `(${solved.join(",")})` : null;
+
+  let candidateQuery = supabase
+    .from("problems")
+    .select("id, problem_number, title, difficulty, tags, platform")
+    .eq("difficulty", target)
+    .limit(30);
+  if (notSolvedFilter) {
+    candidateQuery = candidateQuery.not(
+      "problem_number",
+      "in",
+      notSolvedFilter,
+    );
+  }
+  const { data: candidates } = await candidateQuery;
+
+  let pool: Problem[] = (candidates as Problem[]) ?? [];
+  if (pool.length === 0) {
+    let fallbackQuery = supabase
+      .from("problems")
+      .select("id, problem_number, title, difficulty, tags, platform")
+      .limit(30);
+    if (notSolvedFilter) {
+      fallbackQuery = fallbackQuery.not(
+        "problem_number",
+        "in",
+        notSolvedFilter,
+      );
+    }
+    const { data: fallback } = await fallbackQuery;
+    pool = (fallback as Problem[]) ?? [];
+  }
+
+  if (pool.length === 0) return null;
+
+  const recentSolved = solved.slice(-10);
+  const tagFreq: Record<string, number> = {};
+  if (recentSolved.length > 0) {
+    const { data: recentProblems } = await supabase
+      .from("problems")
+      .select("tags")
+      .in("problem_number", recentSolved);
+    for (const p of recentProblems ?? []) {
+      for (const tag of (p.tags as string[]) ?? []) {
+        tagFreq[tag] = (tagFreq[tag] ?? 0) + 1;
+      }
+    }
+  }
+
+  const scored = pool.map((p) => {
+    const overlap = (p.tags ?? []).reduce(
+      (sum, tag) => sum + (tagFreq[tag] ?? 0),
+      0,
+    );
+    return { problem: p, overlap };
+  });
+  scored.sort((a, b) => a.overlap - b.overlap);
+
+  return scored[0]?.problem ?? null;
+}
+
+function CheckIcon() {
+  return (
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="shrink-0 text-muted-foreground"
+      aria-hidden="true"
+    >
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+}
+
+function ChevronRightIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="shrink-0 text-muted-foreground"
+      aria-hidden="true"
+    >
+      <path d="m9 18 6-6-6-6" />
+    </svg>
+  );
+}
+
+export default async function ProfilePage() {
+  const [user, supabase] = await Promise.all([getUser(), createClient()]);
+
+  if (!user) {
+    redirect("/auth/login?next=/profile");
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select(
+      "username, rating, skill_level, solved_problems, streak, last_solved_date, created_at, recommended_problem_number",
+    )
+    .eq("id", user.id)
+    .single<Profile>();
+
+  const username = profile?.username ?? user.email?.split("@")[0] ?? "User";
+  const rating = profile?.rating ?? 1200;
+  const skillLevel = profile?.skill_level ?? "intermediate";
+  const solvedProblems: number[] = profile?.solved_problems ?? [];
+  const streak = profile?.streak ?? 0;
+  const streakActiveToday = profile?.last_solved_date === todayUtc();
+
+  const joinedDate = profile?.created_at
+    ? new Intl.DateTimeFormat("en-US", {
+        month: "long",
+        year: "numeric",
+      }).format(new Date(profile.created_at))
+    : null;
+
+  const initial = username[0]?.toUpperCase() ?? "U";
+
+  const cachedRecNumber = profile?.recommended_problem_number ?? null;
+
+  const [recommended, solvedProblemDetails] = await Promise.all([
+    cachedRecNumber
+      ? supabase
+          .from("problems")
+          .select("id, problem_number, title, difficulty, tags, platform")
+          .eq("problem_number", cachedRecNumber)
+          .single<Problem>()
+          .then(({ data }) => data)
+      : getRecommendation(supabase, solvedProblems, rating),
+    solvedProblems.length > 0
+      ? supabase
+          .from("problems")
+          .select("id, problem_number, title, difficulty, tags, platform")
+          .in("problem_number", solvedProblems)
+          .then(({ data }) => (data as Problem[] | null) ?? [])
+      : Promise.resolve([] as Problem[]),
+  ]);
+
+  const solvedOrdered = [...solvedProblems]
+    .reverse()
+    .map((n) => solvedProblemDetails.find((p) => p.problem_number === n))
+    .filter((p): p is Problem => p != null);
+
+  const statItems = [
+    { label: "Rating", value: String(rating), fire: false, fireActive: false },
+    {
+      label: "Solved",
+      value: String(solvedProblems.length),
+      fire: false,
+      fireActive: false,
+    },
+    {
+      label: "Streak",
+      value: String(streak),
+      fire: true,
+      fireActive: streakActiveToday,
+    },
+  ];
+
+  return (
+    <main className="mx-auto max-w-3xl px-6 py-12 flex flex-col gap-10">
+      {/* ── Profile hero ───────────────────────────────────────── */}
+      <div className="overflow-hidden rounded-xl border border-border">
+        {/* Avatar + name */}
+        <div className="flex items-start gap-5 p-6">
+          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-muted text-2xl font-bold text-foreground ring-4 ring-border">
+            {initial}
+          </div>
+          <div className="flex flex-col gap-1 pt-1 min-w-0">
+            <h1 className="text-2xl font-bold tracking-tight leading-none">
+              {username}
+            </h1>
+            {joinedDate && (
+              <p className="text-sm text-muted-foreground">
+                Joined {joinedDate}
+              </p>
+            )}
+            <div className="mt-3 flex flex-col gap-0.5">
+              <SkillLevelEditor initialLevel={skillLevel} />
+              <span className="text-xs text-muted-foreground">Skill Level</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Stats bar */}
+        <div className="flex divide-x divide-border border-t border-border bg-muted/30">
+          {statItems.map((s) => (
+            <div
+              key={s.label}
+              className="flex flex-1 flex-col gap-0.5 px-6 py-4"
+            >
+              <span className="text-2xl font-bold leading-none">
+                {s.value}
+                {s.fire && (
+                  <span
+                    style={
+                      s.fireActive
+                        ? {}
+                        : { filter: "grayscale(1) opacity(0.35)" }
+                    }
+                  >
+                    {" "}
+                    🔥
+                  </span>
+                )}
+              </span>
+              <span className="text-xs text-muted-foreground">{s.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Streak nudge ────────────────────────────────────────── */}
+      {!streakActiveToday && (
+        <div className="flex items-start gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3">
+          <span
+            style={{ filter: "grayscale(1) opacity(0.4)", fontSize: "1.1rem" }}
+          >
+            🔥
+          </span>
+          <div className="flex flex-col gap-0.5">
+            <p className="text-sm font-medium">
+              {streak > 0
+                ? `Your ${streak}-day streak is at risk`
+                : "No streak yet"}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {streak > 0
+                ? "Solve a problem today to keep it going."
+                : "Solve a problem today to start your streak."}{" "}
+              <Link
+                href="/display-problem"
+                className="text-foreground underline underline-offset-2"
+              >
+                Practice now
+              </Link>
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* ── Recommended for You ────────────────────────────────── */}
+      <section>
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+          Recommended for You
+        </h2>
+        {recommended ? (
+          <Card className="border-l-[3px] border-l-foreground/20">
+            <CardHeader className="pb-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex flex-col gap-1">
+                  <CardTitle className="text-base leading-snug">
+                    {recommended.title}
+                  </CardTitle>
+                  {recommended.problem_number != null && (
+                    <span className="text-xs text-muted-foreground">
+                      Problem #{recommended.problem_number}
+                    </span>
+                  )}
+                </div>
+                <Badge variant="secondary" className="shrink-0 text-xs">
+                  {recommended.platform === "codeforces"
+                    ? "Codeforces"
+                    : "LeetCode"}
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3 pb-4">
+              <div className="flex flex-wrap items-center gap-2">
+                {recommended.difficulty && (
+                  <Badge variant="outline" className="text-xs">
+                    {recommended.difficulty}
+                  </Badge>
+                )}
+                {(recommended.tags ?? []).slice(0, 4).map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded-sm bg-muted px-1.5 py-0.5 text-xs text-muted-foreground"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Based on your rating ({rating}) and recent practice — a{" "}
+                {targetDifficulty(rating).toLowerCase()} problem with fresh
+                topics for you.
+              </p>
+              <Button asChild className="self-start" size="sm">
+                <Link href={`/display-problem?p=${recommended.problem_number}`}>
+                  Practice this problem
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="flex items-center justify-center rounded-lg border border-dashed border-border py-10">
+            <p className="text-sm text-muted-foreground">
+              No recommendations available yet.
+            </p>
+          </div>
+        )}
+      </section>
+
+      {/* ── Solved Problems ────────────────────────────────────── */}
+      <section>
+        <div className="mb-3 flex items-baseline gap-2">
+          <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            Solved Problems
+          </h2>
+          {solvedProblems.length > 0 && (
+            <span className="text-xs text-muted-foreground">
+              {solvedProblems.length}
+            </span>
+          )}
+        </div>
+
+        {solvedOrdered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-12 text-center">
+            <p className="text-sm text-muted-foreground">
+              No problems solved yet.
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Head to the Problems tab to get started.
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col divide-y divide-border overflow-hidden rounded-lg border border-border">
+            {solvedOrdered.map((problem) => (
+              <Link
+                key={problem.problem_number}
+                href={`/display-problem?p=${problem.problem_number}`}
+                className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/50"
+              >
+                <CheckIcon />
+                <span className="w-8 shrink-0 font-mono text-xs text-muted-foreground">
+                  #{problem.problem_number}
+                </span>
+                <span className="flex-1 truncate text-sm font-medium">
+                  {problem.title}
+                </span>
+                <div className="flex shrink-0 items-center gap-1.5">
+                  {problem.difficulty && (
+                    <Badge variant="outline" className="text-xs">
+                      {problem.difficulty}
+                    </Badge>
+                  )}
+                  <Badge variant="secondary" className="text-xs">
+                    {problem.platform === "codeforces" ? "CF" : "LC"}
+                  </Badge>
+                </div>
+                <ChevronRightIcon />
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
+    </main>
+  );
+}

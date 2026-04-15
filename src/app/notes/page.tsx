@@ -48,7 +48,7 @@ export default function NotesPage() {
   function createNote() {
     const note: Note = {
       id: crypto.randomUUID(),
-      title: settings.defaultTitle || "Untitled",
+      title: "Untitled",
       content: "",
       updatedAt: Date.now(),
     };

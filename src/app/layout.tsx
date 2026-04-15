@@ -5,11 +5,15 @@ import { SettingsProvider } from "~/components/settings-provider";
 import { ThemeProvider } from "./theme-provider";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-inter",
+});
 
 export const metadata: Metadata = {
-  title: "Lumos App",
-  description: "Built with create-lumos-app",
+  title: "AlgoPath",
+  description: "AI-powered hints and tools for competitive programmers.",
 };
 
 export default function RootLayout({
@@ -18,8 +22,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+    <html lang="en" className="dark" suppressHydrationWarning>
+      <body className={`${inter.variable} font-sans`}>
         <ThemeProvider>
           <SettingsProvider>
             <Navbar />

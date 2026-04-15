@@ -1,6 +1,38 @@
 @import "tailwindcss";
+@layer problem-content;
+
+@keyframes banner-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fire-flicker {
+  0%,
+  100% {
+    transform: scale(1) rotate(-3deg);
+    opacity: 0.38;
+  }
+  40% {
+    transform: scale(1.18) rotate(2deg);
+    opacity: 0.52;
+  }
+  70% {
+    transform: scale(1.08) rotate(-1deg);
+    opacity: 0.44;
+  }
+}
 
 @theme inline {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --animate-banner-in: banner-in 0.4s ease-out both;
+  --animate-fire-flicker: fire-flicker 2.8s ease-in-out infinite;
+
   /* OKLCH Design Tokens — Light Mode Default (zinc) */
   --color-background: oklch(1 0 0);
   --color-foreground: oklch(0.145 0 0);
@@ -21,6 +53,7 @@
   --color-destructive: oklch(0.577 0.245 27.325);
   --color-ring: oklch(0.556 0 0);
   --color-code-background: oklch(0.94 0 0);
+  --color-code-border: oklch(0.75 0 0);
   --radius-sm: 0.25rem;
   --radius-md: 0.375rem;
   --radius-lg: 0.5rem;
@@ -47,6 +80,7 @@
   --color-destructive: oklch(0.396 0.141 25.723);
   --color-ring: oklch(0.556 0 0);
   --color-code-background: oklch(0.22 0 0);
+  --color-code-border: oklch(0.45 0 0);
 }
 
 @layer base {
@@ -59,66 +93,68 @@
 }
 
 /* Codeforces problem statement rendering
-   All rules are unlayered so they sit above every @layer (base/utilities)
-   in the cascade, no !important needed. */
-.cf-problem h1 {
-  font-size: 1.75rem;
-  font-weight: 700;
-  margin-bottom: 0.5rem;
-}
-.cf-problem h2 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  text-align: center;
-  margin-bottom: 0.5rem;
-}
-.cf-problem h3 {
-  font-size: 1.125rem;
-  font-weight: 700;
-  margin-top: 1.5rem;
-  margin-bottom: 0.5rem;
-}
-.cf-problem h4 {
-  font-size: 1rem;
-  font-weight: 700;
-  margin-top: 1rem;
-  margin-bottom: 0.25rem;
-}
-.cf-problem h5 {
-  font-size: 0.875rem;
-  font-weight: 700;
-  margin-top: 0.75rem;
-  margin-bottom: 0.25rem;
-}
-.cf-problem h6 {
-  font-size: 0.8125rem;
-  font-weight: 700;
-  margin-top: 0.75rem;
-  margin-bottom: 0.25rem;
-}
-.cf-problem p {
-  margin-bottom: 0.75rem;
-  line-height: 1.7;
-}
-.cf-problem pre,
-.cf-problem .test-example-line {
-  background-color: var(--color-code-background);
-  color: var(--color-foreground);
-  border: 2px solid var(--color-border);
-  padding: 0.75rem 1rem;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  white-space: pre-wrap;
-  overflow-x: auto;
-  margin-bottom: 0.5rem;
-}
-.cf-problem table {
-  border-collapse: collapse;
-  font-size: 0.875rem;
-  margin-bottom: 1rem;
-}
-.cf-problem td {
-  padding: 0.375rem 0.75rem;
-  border: 1px solid var(--color-border);
-  vertical-align: top;
+   Declared in @layer problem-content (hoisted after utilities at the top of this
+   file) so the position is stable across every Tailwind rebuild. */
+@layer problem-content {
+  .cf-problem h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+  .cf-problem h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 0.5rem;
+  }
+  .cf-problem h3 {
+    font-size: 1.125rem;
+    font-weight: 700;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+  .cf-problem h4 {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-top: 1rem;
+    margin-bottom: 0.25rem;
+  }
+  .cf-problem h5 {
+    font-size: 0.875rem;
+    font-weight: 700;
+    margin-top: 0.75rem;
+    margin-bottom: 0.25rem;
+  }
+  .cf-problem h6 {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    margin-top: 0.75rem;
+    margin-bottom: 0.25rem;
+  }
+  .cf-problem p {
+    margin-bottom: 0.75rem;
+    line-height: 1.7;
+  }
+  .cf-problem pre,
+  .cf-problem .test-example-line {
+    background-color: var(--color-code-background);
+    color: var(--color-foreground);
+    border: 2px solid var(--color-code-border);
+    padding: 0.75rem 1rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    white-space: pre-wrap;
+    overflow-x: auto;
+    margin-bottom: 0.5rem;
+  }
+  .cf-problem table {
+    border-collapse: collapse;
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+  }
+  .cf-problem td {
+    padding: 0.375rem 0.75rem;
+    border: 1px solid var(--color-code-border);
+    vertical-align: top;
+  }
 }
