@@ -9,6 +9,11 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient();
     const { data } = await supabase.auth.exchangeCodeForSession(code);
 
+    // Password recovery flow — send user to set a new password
+    if (searchParams.get("type") === "recovery") {
+      return NextResponse.redirect(`${origin}/auth/reset-password`);
+    }
+
     if (data.user) {
       const provider = data.user.app_metadata?.provider as string | undefined;
       // GitHub and email signups always have a profile (created by trigger).

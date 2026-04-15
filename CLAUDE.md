@@ -105,7 +105,7 @@ This is a Next.js + Supabase app for competitive programmers that helps them get
 - Never provide full solution
 - Store hints in database for each attempt
 - Users can rate usefulness
-- Hints generated via OpenAI or Claude API
+- Hints PREGENERATED via OpenRouter
 
 ---
 

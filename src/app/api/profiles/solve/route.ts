@@ -14,6 +14,38 @@ function difficultyPoints(difficulty: string | null | undefined): number {
   }
 }
 
+/** Returns today's date as a YYYY-MM-DD string in UTC. */
+function todayUtc(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+/** Compute the new streak given the previous last_solved_date (YYYY-MM-DD or null). */
+function computeStreak(
+  current: number,
+  lastDate: string | null,
+): { streak: number; last_solved_date: string } {
+  const today = todayUtc();
+
+  if (!lastDate) return { streak: 1, last_solved_date: today };
+
+  if (lastDate === today) {
+    // Already solved something today — preserve streak
+    return { streak: current, last_solved_date: today };
+  }
+
+  const yesterday = new Date(today);
+  yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+  const yesterdayStr = yesterday.toISOString().slice(0, 10);
+
+  if (lastDate === yesterdayStr) {
+    // Solved yesterday — extend streak
+    return { streak: current + 1, last_solved_date: today };
+  }
+
+  // Gap — reset streak
+  return { streak: 1, last_solved_date: today };
+}
+
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
 
@@ -50,7 +82,7 @@ export async function POST(request: NextRequest) {
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("rating, solved_problems")
+    .select("rating, solved_problems, streak, last_solved_date")
     .eq("id", user.id)
     .single();
 
@@ -65,6 +97,7 @@ export async function POST(request: NextRequest) {
       already_solved: true,
       rating_gain: 0,
       new_rating: profile.rating ?? 1200,
+      streak: profile.streak ?? 0,
     });
   }
 
@@ -73,11 +106,18 @@ export async function POST(request: NextRequest) {
   const rating_gain = Math.max(1, base - penalty);
   const new_rating = (profile.rating ?? 1200) + rating_gain;
 
+  const { streak, last_solved_date } = computeStreak(
+    profile.streak ?? 0,
+    profile.last_solved_date ?? null,
+  );
+
   const { error: updateError } = await supabase
     .from("profiles")
     .update({
       solved_problems: [...solved, problem_number],
       rating: new_rating,
+      streak,
+      last_solved_date,
     })
     .eq("id", user.id);
 
@@ -88,5 +128,10 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  return NextResponse.json({ already_solved: false, rating_gain, new_rating });
+  return NextResponse.json({
+    already_solved: false,
+    rating_gain,
+    new_rating,
+    streak,
+  });
 }

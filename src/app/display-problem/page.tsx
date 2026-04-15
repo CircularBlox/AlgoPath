@@ -59,9 +59,7 @@ export default async function DisplayProblemPage({
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-16">
-      <h1 className="mb-8 text-2xl font-bold tracking-tight">
-        Problem of the Day
-      </h1>
+      <h1 className="mb-8 text-2xl font-bold tracking-tight">Practice</h1>
       <ProblemViewer
         userId={user?.id ?? null}
         initialProblem={initialProblem}

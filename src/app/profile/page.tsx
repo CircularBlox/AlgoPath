@@ -3,15 +3,20 @@ import { redirect } from "next/navigation";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Separator } from "~/components/ui/separator";
 import { createClient, getUser } from "~/lib/supabase/server";
 import { SkillLevelEditor } from "./skill-level-editor";
+
+function todayUtc(): string {
+  return new Date().toISOString().slice(0, 10);
+}
 
 type Profile = {
   username: string;
   rating: number;
   skill_level: string;
   solved_problems: number[];
+  streak: number;
+  last_solved_date: string | null;
   created_at: string;
 };
 
@@ -24,32 +29,20 @@ type Problem = {
   platform: string;
 };
 
-/** Maps rating to the difficulty band we should target next. */
 function targetDifficulty(rating: number): string {
   if (rating < 1250) return "Easy";
   if (rating < 1500) return "Medium";
   return "Hard";
 }
 
-/**
- * Picks one unsolved problem for the user.
- *
- * Strategy:
- * 1. Find candidates at the target difficulty that aren't yet solved.
- * 2. Score each by tag novelty — prefer problems whose tags appear
- *    least often in the user's recent solved history.
- * 3. Fall back to any unsolved problem if no candidates at target difficulty.
- */
 async function getRecommendation(
   supabase: Awaited<ReturnType<typeof createClient>>,
   solved: number[],
   rating: number,
 ): Promise<Problem | null> {
   const target = targetDifficulty(rating);
-
   const notSolvedFilter = solved.length > 0 ? `(${solved.join(",")})` : null;
 
-  // Candidates at target difficulty
   let candidateQuery = supabase
     .from("problems")
     .select("id, problem_number, title, difficulty, tags, platform")
@@ -64,7 +57,6 @@ async function getRecommendation(
   }
   const { data: candidates } = await candidateQuery;
 
-  // If nothing at that difficulty, fall back to any unsolved
   let pool: Problem[] = (candidates as Problem[]) ?? [];
   if (pool.length === 0) {
     let fallbackQuery = supabase
@@ -84,7 +76,6 @@ async function getRecommendation(
 
   if (pool.length === 0) return null;
 
-  // Build tag frequency map from recently solved problems (last 10)
   const recentSolved = solved.slice(-10);
   const tagFreq: Record<string, number> = {};
   if (recentSolved.length > 0) {
@@ -99,7 +90,6 @@ async function getRecommendation(
     }
   }
 
-  // Score: lower overlap with recent tags = better (more novel)
   const scored = pool.map((p) => {
     const overlap = (p.tags ?? []).reduce(
       (sum, tag) => sum + (tagFreq[tag] ?? 0),
@@ -112,6 +102,44 @@ async function getRecommendation(
   return scored[0]?.problem ?? null;
 }
 
+function CheckIcon() {
+  return (
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="shrink-0 text-muted-foreground"
+      aria-hidden="true"
+    >
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+}
+
+function ChevronRightIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="shrink-0 text-muted-foreground"
+      aria-hidden="true"
+    >
+      <path d="m9 18 6-6-6-6" />
+    </svg>
+  );
+}
+
 export default async function ProfilePage() {
   const [user, supabase] = await Promise.all([getUser(), createClient()]);
 
@@ -121,7 +149,9 @@ export default async function ProfilePage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("username, rating, skill_level, solved_problems, created_at")
+    .select(
+      "username, rating, skill_level, solved_problems, streak, last_solved_date, created_at",
+    )
     .eq("id", user.id)
     .single<Profile>();
 
@@ -129,6 +159,8 @@ export default async function ProfilePage() {
   const rating = profile?.rating ?? 1200;
   const skillLevel = profile?.skill_level ?? "intermediate";
   const solvedProblems: number[] = profile?.solved_problems ?? [];
+  const streak = profile?.streak ?? 0;
+  const streakActiveToday = profile?.last_solved_date === todayUtc();
 
   const joinedDate = profile?.created_at
     ? new Intl.DateTimeFormat("en-US", {
@@ -139,73 +171,131 @@ export default async function ProfilePage() {
 
   const initial = username[0]?.toUpperCase() ?? "U";
 
-  const stats = [
-    { label: "Rating", value: String(rating) },
-    { label: "Problems Solved", value: String(solvedProblems.length) },
+  const [recommended, solvedProblemDetails] = await Promise.all([
+    getRecommendation(supabase, solvedProblems, rating),
+    solvedProblems.length > 0
+      ? supabase
+          .from("problems")
+          .select("id, problem_number, title, difficulty, tags, platform")
+          .in("problem_number", solvedProblems)
+          .then(({ data }) => (data as Problem[] | null) ?? [])
+      : Promise.resolve([] as Problem[]),
+  ]);
+
+  const solvedOrdered = [...solvedProblems]
+    .reverse()
+    .map((n) => solvedProblemDetails.find((p) => p.problem_number === n))
+    .filter((p): p is Problem => p != null);
+
+  const statItems = [
+    { label: "Rating", value: String(rating), fire: false, fireActive: false },
+    {
+      label: "Solved",
+      value: String(solvedProblems.length),
+      fire: false,
+      fireActive: false,
+    },
+    {
+      label: "Streak",
+      value: String(streak),
+      fire: true,
+      fireActive: streakActiveToday,
+    },
   ];
 
-  const recommended = await getRecommendation(supabase, solvedProblems, rating);
-
   return (
-    <main className="mx-auto max-w-3xl px-6 py-12">
-      {/* Header */}
-      <div className="flex items-center gap-6">
-        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-muted text-lg font-semibold text-muted-foreground">
-          {initial}
+    <main className="mx-auto max-w-3xl px-6 py-12 flex flex-col gap-10">
+      {/* ── Profile hero ───────────────────────────────────────── */}
+      <div className="overflow-hidden rounded-xl border border-border">
+        {/* Avatar + name */}
+        <div className="flex items-start gap-5 p-6">
+          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-muted text-2xl font-bold text-foreground ring-4 ring-border">
+            {initial}
+          </div>
+          <div className="flex flex-col gap-1 pt-1 min-w-0">
+            <h1 className="text-2xl font-bold tracking-tight leading-none">
+              {username}
+            </h1>
+            {joinedDate && (
+              <p className="text-sm text-muted-foreground">
+                Joined {joinedDate}
+              </p>
+            )}
+            <div className="mt-3 flex flex-col gap-0.5">
+              <SkillLevelEditor initialLevel={skillLevel} />
+              <span className="text-xs text-muted-foreground">Skill Level</span>
+            </div>
+          </div>
         </div>
-        <div className="flex flex-col gap-1">
-          <h1 className="text-xl font-semibold tracking-tight">{username}</h1>
-          {joinedDate && (
-            <p className="text-sm text-muted-foreground">Joined {joinedDate}</p>
-          )}
+
+        {/* Stats bar */}
+        <div className="flex divide-x divide-border border-t border-border bg-muted/30">
+          {statItems.map((s) => (
+            <div
+              key={s.label}
+              className="flex flex-1 flex-col gap-0.5 px-6 py-4"
+            >
+              <span className="text-2xl font-bold leading-none">
+                {s.value}
+                {s.fire && (
+                  <span
+                    style={
+                      s.fireActive
+                        ? {}
+                        : { filter: "grayscale(1) opacity(0.35)" }
+                    }
+                  >
+                    {" "}
+                    🔥
+                  </span>
+                )}
+              </span>
+              <span className="text-xs text-muted-foreground">{s.label}</span>
+            </div>
+          ))}
         </div>
-        <Badge variant="outline" className="ml-auto self-start">
-          Rating {rating}
-        </Badge>
       </div>
 
-      <Separator className="my-8" />
-
-      {/* Stats grid */}
-      <section>
-        <h2 className="mb-4 text-base font-semibold">Stats</h2>
-        <div className="grid grid-cols-3 gap-3">
-          {stats.map((stat) => (
-            <Card key={stat.label}>
-              <CardHeader className="pb-1 pt-4">
-                <CardTitle className="text-2xl font-bold">
-                  {stat.value}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pb-4">
-                <p className="text-xs text-muted-foreground">{stat.label}</p>
-              </CardContent>
-            </Card>
-          ))}
-          <Card>
-            <CardHeader className="pb-1 pt-4">
-              <CardTitle>
-                <SkillLevelEditor initialLevel={skillLevel} />
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pb-4">
-              <p className="text-xs text-muted-foreground">Skill Level</p>
-            </CardContent>
-          </Card>
+      {/* ── Streak nudge ────────────────────────────────────────── */}
+      {!streakActiveToday && (
+        <div className="flex items-start gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3">
+          <span
+            style={{ filter: "grayscale(1) opacity(0.4)", fontSize: "1.1rem" }}
+          >
+            🔥
+          </span>
+          <div className="flex flex-col gap-0.5">
+            <p className="text-sm font-medium">
+              {streak > 0
+                ? `Your ${streak}-day streak is at risk`
+                : "No streak yet"}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {streak > 0
+                ? "Solve a problem today to keep it going."
+                : "Solve a problem today to start your streak."}{" "}
+              <Link
+                href="/display-problem"
+                className="text-foreground underline underline-offset-2"
+              >
+                Practice now
+              </Link>
+            </p>
+          </div>
         </div>
-      </section>
+      )}
 
-      <Separator className="my-8" />
-
-      {/* Recommended problem */}
+      {/* ── Recommended for You ────────────────────────────────── */}
       <section>
-        <h2 className="mb-4 text-base font-semibold">Recommended for You</h2>
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+          Recommended for You
+        </h2>
         {recommended ? (
-          <Card>
+          <Card className="border-l-[3px] border-l-foreground/20">
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex flex-col gap-1">
-                  <CardTitle className="text-base">
+                  <CardTitle className="text-base leading-snug">
                     {recommended.title}
                   </CardTitle>
                   {recommended.problem_number != null && (
@@ -238,7 +328,7 @@ export default async function ProfilePage() {
                 ))}
               </div>
               <p className="text-xs text-muted-foreground">
-                Based on your current rating ({rating}) and recent practice — a{" "}
+                Based on your rating ({rating}) and recent practice — a{" "}
                 {targetDifficulty(rating).toLowerCase()} problem with fresh
                 topics for you.
               </p>
@@ -250,7 +340,7 @@ export default async function ProfilePage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-10 text-center">
+          <div className="flex items-center justify-center rounded-lg border border-dashed border-border py-10">
             <p className="text-sm text-muted-foreground">
               No recommendations available yet.
             </p>
@@ -258,12 +348,20 @@ export default async function ProfilePage() {
         )}
       </section>
 
-      <Separator className="my-8" />
-
-      {/* Solved problems */}
+      {/* ── Solved Problems ────────────────────────────────────── */}
       <section>
-        <h2 className="mb-4 text-base font-semibold">Solved Problems</h2>
-        {solvedProblems.length === 0 ? (
+        <div className="mb-3 flex items-baseline gap-2">
+          <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            Solved Problems
+          </h2>
+          {solvedProblems.length > 0 && (
+            <span className="text-xs text-muted-foreground">
+              {solvedProblems.length}
+            </span>
+          )}
+        </div>
+
+        {solvedOrdered.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-12 text-center">
             <p className="text-sm text-muted-foreground">
               No problems solved yet.
@@ -273,11 +371,32 @@ export default async function ProfilePage() {
             </p>
           </div>
         ) : (
-          <div className="flex flex-wrap gap-2">
-            {[...solvedProblems].reverse().map((num) => (
-              <Badge key={num} variant="secondary">
-                #{num}
-              </Badge>
+          <div className="flex flex-col divide-y divide-border overflow-hidden rounded-lg border border-border">
+            {solvedOrdered.map((problem) => (
+              <Link
+                key={problem.problem_number}
+                href={`/display-problem?p=${problem.problem_number}`}
+                className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/50"
+              >
+                <CheckIcon />
+                <span className="w-8 shrink-0 font-mono text-xs text-muted-foreground">
+                  #{problem.problem_number}
+                </span>
+                <span className="flex-1 truncate text-sm font-medium">
+                  {problem.title}
+                </span>
+                <div className="flex shrink-0 items-center gap-1.5">
+                  {problem.difficulty && (
+                    <Badge variant="outline" className="text-xs">
+                      {problem.difficulty}
+                    </Badge>
+                  )}
+                  <Badge variant="secondary" className="text-xs">
+                    {problem.platform === "codeforces" ? "CF" : "LC"}
+                  </Badge>
+                </div>
+                <ChevronRightIcon />
+              </Link>
             ))}
           </div>
         )}

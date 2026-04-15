@@ -20,10 +20,36 @@ export async function GET(request: NextRequest) {
 
   const supabase = await createClient();
 
-  const { data: allProblems, error: fetchError } = await supabase
+  // Get solved problems for logged-in users so we can exclude them
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let solvedNumbers: number[] = [];
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("solved_problems")
+      .eq("id", user.id)
+      .single();
+    solvedNumbers = (profile?.solved_problems as number[] | null) ?? [];
+  }
+
+  let problemQuery = supabase
     .from("problems")
     .select("id, problem_number, title, difficulty, tags, platform")
     .limit(100);
+
+  // Exclude already-solved problems from the candidate pool
+  if (solvedNumbers.length > 0) {
+    problemQuery = problemQuery.not(
+      "problem_number",
+      "in",
+      `(${solvedNumbers.join(",")})`,
+    );
+  }
+
+  const { data: allProblems, error: fetchError } = await problemQuery;
 
   if (fetchError || !allProblems || allProblems.length === 0) {
     return NextResponse.json(
@@ -124,7 +150,7 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // Fallback: pick a random problem
+  // Fallback: pick a random unsolved problem
   const { count } = await supabase
     .from("problems")
     .select("*", { count: "exact", head: true });
