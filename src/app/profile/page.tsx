@@ -18,6 +18,7 @@ type Profile = {
   streak: number;
   last_solved_date: string | null;
   created_at: string;
+  recommended_problem_number: number | null;
 };
 
 type Problem = {
@@ -144,13 +145,13 @@ export default async function ProfilePage() {
   const [user, supabase] = await Promise.all([getUser(), createClient()]);
 
   if (!user) {
-    redirect("/auth/login");
+    redirect("/auth/login?next=/profile");
   }
 
   const { data: profile } = await supabase
     .from("profiles")
     .select(
-      "username, rating, skill_level, solved_problems, streak, last_solved_date, created_at",
+      "username, rating, skill_level, solved_problems, streak, last_solved_date, created_at, recommended_problem_number",
     )
     .eq("id", user.id)
     .single<Profile>();
@@ -171,8 +172,17 @@ export default async function ProfilePage() {
 
   const initial = username[0]?.toUpperCase() ?? "U";
 
+  const cachedRecNumber = profile?.recommended_problem_number ?? null;
+
   const [recommended, solvedProblemDetails] = await Promise.all([
-    getRecommendation(supabase, solvedProblems, rating),
+    cachedRecNumber
+      ? supabase
+          .from("problems")
+          .select("id, problem_number, title, difficulty, tags, platform")
+          .eq("problem_number", cachedRecNumber)
+          .single<Problem>()
+          .then(({ data }) => data)
+      : getRecommendation(supabase, solvedProblems, rating),
     solvedProblems.length > 0
       ? supabase
           .from("problems")

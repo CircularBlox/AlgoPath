@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { AdminDropdown } from "~/components/admin-dropdown";
+import { isAdmin } from "~/lib/is-admin";
 import { createClient, getUser } from "~/lib/supabase/server";
 
 const navLinks = [
@@ -57,6 +59,7 @@ export async function Navbar() {
                   {link.label}
                 </Link>
               ))}
+              {isAdmin(user.email) && <AdminDropdown />}
             </div>
           )}
 

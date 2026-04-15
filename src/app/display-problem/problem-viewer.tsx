@@ -85,6 +85,13 @@ type MarkDoneState =
   | { status: "already_solved" }
   | { status: "error"; message: string };
 
+type ReportState =
+  | { status: "idle" }
+  | { status: "open" }
+  | { status: "loading" }
+  | { status: "success" }
+  | { status: "error"; message: string };
+
 type PanelState<T> =
   | { status: "idle" }
   | { status: "loading" }
@@ -141,6 +148,14 @@ export function ProblemViewer({
   const [markDoneState, setMarkDoneState] = useState<MarkDoneState>({
     status: "idle",
   });
+  const [reportState, setReportState] = useState<ReportState>({
+    status: "idle",
+  });
+  const [reportDescription, setReportDescription] = useState("");
+  const [suggestDiffState, setSuggestDiffState] = useState<ReportState>({
+    status: "idle",
+  });
+  const [suggestedDifficulty, setSuggestedDifficulty] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [suggestQuery, setSuggestQuery] = useState("");
   const [isAiLoading, setIsAiLoading] = useState(false);
@@ -204,6 +219,69 @@ export function ProblemViewer({
     setCodeVisible(true);
     setCodeCopied(false);
     setMarkDoneState({ status: "idle" });
+    setReportState({ status: "idle" });
+    setReportDescription("");
+    setSuggestDiffState({ status: "idle" });
+    setSuggestedDifficulty("");
+  }
+
+  async function handleReport(problemNumber: number) {
+    const desc = reportDescription.trim();
+    if (!desc) return;
+    setReportState({ status: "loading" });
+    try {
+      const res = await fetch(`/api/problems/${problemNumber}/report`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ description: desc, type: "general" }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setReportState({
+          status: "error",
+          message: data.error ?? "Failed to submit report.",
+        });
+      } else {
+        setReportState({ status: "success" });
+        setReportDescription("");
+      }
+    } catch {
+      setReportState({
+        status: "error",
+        message: "Failed to reach the server.",
+      });
+    }
+  }
+
+  async function handleSuggestDifficulty(problemNumber: number) {
+    const diff = suggestedDifficulty.trim();
+    if (!diff) return;
+    setSuggestDiffState({ status: "loading" });
+    try {
+      const res = await fetch(`/api/problems/${problemNumber}/report`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "difficulty",
+          suggested_difficulty: diff,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setSuggestDiffState({
+          status: "error",
+          message: data.error ?? "Failed to submit suggestion.",
+        });
+      } else {
+        setSuggestDiffState({ status: "success" });
+        setSuggestedDifficulty("");
+      }
+    } catch {
+      setSuggestDiffState({
+        status: "error",
+        message: "Failed to reach the server.",
+      });
+    }
   }
 
   async function handleSuggest() {
@@ -692,8 +770,171 @@ export function ProblemViewer({
                   >
                     Next Problem
                   </Button>
+                  {userId && (
+                    <div className="ml-auto flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-muted-foreground text-xs"
+                        onClick={() =>
+                          setSuggestDiffState((s) =>
+                            s.status === "open"
+                              ? { status: "idle" }
+                              : { status: "open" },
+                          )
+                        }
+                      >
+                        Suggest Difficulty
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-muted-foreground text-xs"
+                        onClick={() =>
+                          setReportState((s) =>
+                            s.status === "open"
+                              ? { status: "idle" }
+                              : { status: "open" },
+                          )
+                        }
+                      >
+                        Report
+                      </Button>
+                    </div>
+                  )}
                 </CardFooter>
               </Card>
+
+              {/* Report form */}
+              {userId &&
+                (reportState.status === "open" ||
+                  reportState.status === "loading" ||
+                  reportState.status === "error" ||
+                  reportState.status === "success") && (
+                  <div className="rounded-lg border border-border bg-card px-5 py-4 flex flex-col gap-3">
+                    <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                      Report Problem
+                    </p>
+                    {reportState.status === "success" ? (
+                      <p className="text-sm text-muted-foreground">
+                        Report submitted. Thank you!
+                      </p>
+                    ) : (
+                      <>
+                        <textarea
+                          value={reportDescription}
+                          onChange={(e) => setReportDescription(e.target.value)}
+                          placeholder="Describe the issue (wrong difficulty, bad content, broken link…)"
+                          maxLength={1000}
+                          rows={3}
+                          className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                        />
+                        {reportState.status === "error" && (
+                          <p className="text-xs text-destructive">
+                            {reportState.message}
+                          </p>
+                        )}
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            disabled={
+                              reportState.status === "loading" ||
+                              !reportDescription.trim()
+                            }
+                            onClick={() =>
+                              handleReport(problem.problem_number ?? 0)
+                            }
+                          >
+                            {reportState.status === "loading"
+                              ? "Submitting…"
+                              : "Submit Report"}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setReportState({ status: "idle" })}
+                          >
+                            Cancel
+                          </Button>
+                          <span className="ml-auto text-xs text-muted-foreground">
+                            {reportDescription.length}/1000
+                          </span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+
+              {/* Suggest Difficulty form */}
+              {userId &&
+                (suggestDiffState.status === "open" ||
+                  suggestDiffState.status === "loading" ||
+                  suggestDiffState.status === "error" ||
+                  suggestDiffState.status === "success") && (
+                  <div className="rounded-lg border border-border bg-card px-5 py-4 flex flex-col gap-3">
+                    <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                      Suggest Difficulty
+                    </p>
+                    {suggestDiffState.status === "success" ? (
+                      <p className="text-sm text-muted-foreground">
+                        Suggestion submitted. Thank you!
+                      </p>
+                    ) : (
+                      <>
+                        <p className="text-xs text-muted-foreground">
+                          Current difficulty:{" "}
+                          <span className="font-medium text-foreground">
+                            {problem.difficulty ?? "unknown"}
+                          </span>
+                        </p>
+                        <input
+                          type="number"
+                          min={100}
+                          max={4000}
+                          step={100}
+                          value={suggestedDifficulty}
+                          onChange={(e) =>
+                            setSuggestedDifficulty(e.target.value)
+                          }
+                          placeholder="e.g. 1200"
+                          className="w-36 rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                        />
+                        {suggestDiffState.status === "error" && (
+                          <p className="text-xs text-destructive">
+                            {suggestDiffState.message}
+                          </p>
+                        )}
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            disabled={
+                              suggestDiffState.status === "loading" ||
+                              !suggestedDifficulty.trim()
+                            }
+                            onClick={() =>
+                              handleSuggestDifficulty(
+                                problem.problem_number ?? 0,
+                              )
+                            }
+                          >
+                            {suggestDiffState.status === "loading"
+                              ? "Submitting…"
+                              : "Submit Suggestion"}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() =>
+                              setSuggestDiffState({ status: "idle" })
+                            }
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
 
               {contentOpen && problem.content && (
                 <div className="cf-problem rounded-xl border border-border bg-card px-6 py-5 text-card-foreground shadow-sm">

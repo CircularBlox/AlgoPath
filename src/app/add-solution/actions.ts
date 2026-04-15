@@ -82,15 +82,8 @@ export async function addSolution(
     return { success: false, error: error.message };
   }
 
-  const langLabel: Record<string, string> = {
-    cpp: "C++",
-    python: "Python",
-    java: "Java",
-    javascript: "JavaScript",
-  };
-
   return {
     success: true,
-    message: `${langLabel[language] ?? language} solution saved for Problem #${problemNumber} — ${problem.title}.`,
+    message: `${language} solution saved for Problem #${problemNumber} — ${problem.title}.`,
   };
 }

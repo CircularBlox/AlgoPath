@@ -25,14 +25,41 @@ export async function GET(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  const SUGGEST_COOLDOWN_MS = 30_000;
   let solvedNumbers: number[] = [];
   if (user) {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("solved_problems")
+      .select("solved_problems, last_ai_suggest_at")
       .eq("id", user.id)
-      .single();
+      .single<{
+        solved_problems: number[] | null;
+        last_ai_suggest_at: string | null;
+      }>();
+
     solvedNumbers = (profile?.solved_problems as number[] | null) ?? [];
+
+    // Enforce cooldown
+    if (profile?.last_ai_suggest_at) {
+      const remaining = Math.ceil(
+        (new Date(profile.last_ai_suggest_at).getTime() +
+          SUGGEST_COOLDOWN_MS -
+          Date.now()) /
+          1000,
+      );
+      if (remaining > 0) {
+        return NextResponse.json(
+          { error: `Please wait ${remaining}s before using AI Suggest again.` },
+          { status: 429 },
+        );
+      }
+    }
+
+    // Stamp before calling OpenRouter so concurrent requests are also blocked
+    await supabase
+      .from("profiles")
+      .update({ last_ai_suggest_at: new Date().toISOString() })
+      .eq("id", user.id);
   }
 
   let problemQuery = supabase

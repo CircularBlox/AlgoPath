@@ -63,6 +63,18 @@ export default function SetupUsernamePage() {
       return;
     }
 
+    // Guard: if profile already exists, skip straight to the app
+    const { data: existing } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (existing) {
+      router.replace("/display-problem");
+      return;
+    }
+
     const { error: updateError } = await supabase.from("profiles").upsert({
       id: user.id,
       username,

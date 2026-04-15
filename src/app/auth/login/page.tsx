@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -17,6 +17,15 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [resetSuccess, setResetSuccess] = useState(false);
+  const [nextPath, setNextPath] = useState("/display-problem");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const next = params.get("next");
+    if (next) setNextPath(next);
+    if (params.get("reset") === "1") setResetSuccess(true);
+  }, []);
 
   async function handleEmailLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -30,7 +39,7 @@ export default function LoginPage() {
     if (authError) {
       setError(authError.message);
     } else {
-      router.replace("/display-problem");
+      router.replace(nextPath);
     }
   }
 
@@ -108,6 +117,12 @@ export default function LoginPage() {
         <span className="text-xs text-muted-foreground">or</span>
         <div className="h-px flex-1 bg-border" />
       </div>
+
+      {resetSuccess && (
+        <div className="rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm text-foreground">
+          Password updated successfully. Sign in with your new password.
+        </div>
+      )}
 
       <form onSubmit={handleEmailLogin} className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">

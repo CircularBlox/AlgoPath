@@ -111,13 +111,51 @@ export async function POST(request: NextRequest) {
     profile.last_solved_date ?? null,
   );
 
+  const newSolved = [...solved, problem_number];
+
+  // Pick a new recommendation (stored so the profile page doesn't re-query on every load)
+  const target =
+    new_rating < 1250 ? "Easy" : new_rating < 1500 ? "Medium" : "Hard";
+  const solvedFilter = newSolved.length > 0 ? `(${newSolved.join(",")})` : null;
+
+  let recommended_problem_number: number | null = null;
+  {
+    let q = supabase
+      .from("problems")
+      .select("problem_number")
+      .eq("difficulty", target)
+      .limit(30);
+    if (solvedFilter) q = q.not("problem_number", "in", solvedFilter);
+    const { data: candidates } = await q;
+
+    const pool = candidates ?? [];
+    if (pool.length > 0) {
+      recommended_problem_number =
+        pool[Math.floor(Math.random() * pool.length)]?.problem_number ?? null;
+    } else {
+      // Fallback: any unsolved problem regardless of difficulty
+      let fb = supabase.from("problems").select("problem_number").limit(30);
+      if (solvedFilter) fb = fb.not("problem_number", "in", solvedFilter);
+      const { data: fallback } = await fb;
+      const fbPool = fallback ?? [];
+      if (fbPool.length > 0) {
+        recommended_problem_number =
+          fbPool[Math.floor(Math.random() * fbPool.length)]?.problem_number ??
+          null;
+      }
+    }
+  }
+
   const { error: updateError } = await supabase
     .from("profiles")
     .update({
-      solved_problems: [...solved, problem_number],
+      solved_problems: newSolved,
       rating: new_rating,
       streak,
       last_solved_date,
+      ...(recommended_problem_number !== null && {
+        recommended_problem_number,
+      }),
     })
     .eq("id", user.id);
 
