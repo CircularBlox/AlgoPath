@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { isAdmin } from "~/lib/is-admin";
 import { createAdminClient } from "~/lib/supabase/admin";
 import { getUser } from "~/lib/supabase/server";
 
@@ -70,42 +71,45 @@ export async function POST(
   }
 
   const supabase = createAdminClient();
+  const admin = isAdmin(user.email);
 
-  // Anti-spam: max 3 reports per user per day (across all types)
-  const todayUtc = new Date();
-  todayUtc.setUTCHours(0, 0, 0, 0);
-  const { count: dailyCount } = await supabase
-    .from("problem_reports")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", user.id)
-    .gte("created_at", todayUtc.toISOString());
+  if (!admin) {
+    // Anti-spam: max 3 reports per user per day (across all types)
+    const todayUtc = new Date();
+    todayUtc.setUTCHours(0, 0, 0, 0);
+    const { count: dailyCount } = await supabase
+      .from("problem_reports")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .gte("created_at", todayUtc.toISOString());
 
-  if ((dailyCount ?? 0) >= 3) {
-    return NextResponse.json(
-      { error: "You've reached the daily report limit (3 per day)." },
-      { status: 429 },
-    );
-  }
+    if ((dailyCount ?? 0) >= 3) {
+      return NextResponse.json(
+        { error: "You've reached the daily report limit (3 per day)." },
+        { status: 429 },
+      );
+    }
 
-  // Anti-spam: one report of each type per problem per user
-  const { data: existing } = await supabase
-    .from("problem_reports")
-    .select("id")
-    .eq("user_id", user.id)
-    .eq("problem_number", problemNumber)
-    .eq("type", type)
-    .maybeSingle();
+    // Anti-spam: one report of each type per problem per user
+    const { data: existing } = await supabase
+      .from("problem_reports")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("problem_number", problemNumber)
+      .eq("type", type)
+      .maybeSingle();
 
-  if (existing) {
-    return NextResponse.json(
-      {
-        error:
-          type === "difficulty"
-            ? "You've already suggested a difficulty for this problem."
-            : "You've already reported this problem.",
-      },
-      { status: 409 },
-    );
+    if (existing) {
+      return NextResponse.json(
+        {
+          error:
+            type === "difficulty"
+              ? "You've already suggested a difficulty for this problem."
+              : "You've already reported this problem.",
+        },
+        { status: 409 },
+      );
+    }
   }
 
   const { error } = await supabase.from("problem_reports").insert({

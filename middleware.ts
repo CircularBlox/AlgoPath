@@ -29,6 +29,15 @@ function isAdminApi(pathname: string) {
 }
 
 export async function middleware(request: NextRequest) {
+  // RSC payload requests are same-origin fetches made by the Next.js router
+  // after the initial navigation has already enforced auth. Running
+  // supabase.auth.getUser() here mutates session cookies, which signals
+  // Next.js to invalidate the RSC cache and issue another fetch — causing
+  // a cascade. Early-return to avoid it.
+  if (request.headers.get("RSC") === "1") {
+    return NextResponse.next();
+  }
+
   const { supabase, response } = createMiddlewareClient(request);
 
   // Refresh session — required for SSR auth to stay valid

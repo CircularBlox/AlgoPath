@@ -1,15 +1,6 @@
-import dynamic from "next/dynamic";
 import "prismjs/themes/prism-okaidia.css";
 import { createClient, getUser } from "~/lib/supabase/server";
-
-const ProblemViewer = dynamic(
-  () => import("./problem-viewer").then((m) => ({ default: m.ProblemViewer })),
-  {
-    loading: () => (
-      <p className="text-sm text-muted-foreground py-4">Loading…</p>
-    ),
-  },
-);
+import { ProblemViewer } from "./problem-viewer";
 
 type Problem = {
   id: string;
@@ -37,24 +28,14 @@ export default async function DisplayProblemPage({
   const problemNumber = p ? Number.parseInt(p, 10) : null;
 
   if (problemNumber && !Number.isNaN(problemNumber)) {
-    // Resolve problem_number → uuid
-    const { data: ref } = await supabase
+    const { data } = await supabase
       .from("problems")
-      .select("id")
+      .select(
+        "id, problem_number, title, url, platform, difficulty, tags, content",
+      )
       .eq("problem_number", problemNumber)
-      .single();
-
-    if (ref?.id) {
-      // Fetch full problem by uuid
-      const { data } = await supabase
-        .from("problems")
-        .select(
-          "id, problem_number, title, url, platform, difficulty, tags, content",
-        )
-        .eq("id", ref.id)
-        .single<Problem>();
-      initialProblem = data ?? null;
-    }
+      .single<Problem>();
+    initialProblem = data ?? null;
   }
 
   return (

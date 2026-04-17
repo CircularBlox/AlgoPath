@@ -92,6 +92,8 @@ type ReportState =
   | { status: "success" }
   | { status: "error"; message: string };
 
+type ChatMessage = { id: string; role: "user" | "assistant"; content: string };
+
 type PanelState<T> =
   | { status: "idle" }
   | { status: "loading" }
@@ -141,6 +143,7 @@ export function ProblemViewer({
       });
     }
   }, [solutionState.status]);
+
   const [hintRatings, setHintRatings] = useState<
     Record<1 | 2 | 3, "up" | "down" | null>
   >({ 1: null, 2: null, 3: null });
@@ -156,6 +159,18 @@ export function ProblemViewer({
     status: "idle",
   });
   const [suggestedDifficulty, setSuggestedDifficulty] = useState("");
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
+  const [chatReviewsLeft, setChatReviewsLeft] = useState<number | null>(null);
+  const [chatMessagesLeft, setChatMessagesLeft] = useState<number | null>(null);
+  const [chatInput, setChatInput] = useState("");
+  const [reviewCode, setReviewCode] = useState("");
+  const [reviewLanguage, setReviewLanguage] = useState("C++");
+  const [problemViewed, setProblemViewed] = useState(false);
+  const [reviewPanelOpen, setReviewPanelOpen] = useState(false);
+  const chatBottomRef = useRef<HTMLDivElement>(null);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [suggestQuery, setSuggestQuery] = useState("");
   const [isAiLoading, setIsAiLoading] = useState(false);
@@ -223,6 +238,16 @@ export function ProblemViewer({
     setReportDescription("");
     setSuggestDiffState({ status: "idle" });
     setSuggestedDifficulty("");
+    setChatMessages([]);
+    setChatLoading(false);
+    setChatError(null);
+    setChatReviewsLeft(null);
+    setChatMessagesLeft(null);
+    setChatInput("");
+    setReviewCode("");
+    setReviewLanguage("C++");
+    setProblemViewed(false);
+    setReviewPanelOpen(false);
   }
 
   async function handleReport(problemNumber: number) {
@@ -427,6 +452,61 @@ export function ProblemViewer({
       }));
     } finally {
       setRatingPending(null);
+    }
+  }
+
+  async function handleChat(problemNumber: number) {
+    const prompt = chatInput.trim();
+    if (!prompt || chatLoading) return;
+    setChatInput("");
+    setChatLoading(true);
+    setChatError(null);
+    const nextMessages: ChatMessage[] = [
+      ...chatMessages,
+      { id: crypto.randomUUID(), role: "user", content: prompt },
+    ];
+    setChatMessages(nextMessages);
+    setTimeout(
+      () => chatBottomRef.current?.scrollIntoView({ behavior: "smooth" }),
+      50,
+    );
+    try {
+      const res = await fetch(`/api/problems/${problemNumber}/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt,
+          code: reviewCode,
+          language: reviewLanguage,
+          messages: chatMessages.map(({ role, content }) => ({
+            role,
+            content,
+          })),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setChatError(data.error ?? "Failed to get a response.");
+      } else {
+        setChatMessages((prev) => [
+          ...prev,
+          { id: crypto.randomUUID(), role: "assistant", content: data.reply },
+        ]);
+        if (data.reviews_left !== null && data.reviews_left !== undefined) {
+          setChatReviewsLeft(data.reviews_left);
+        }
+        if (data.messages_left !== undefined) {
+          setChatMessagesLeft(data.messages_left);
+        }
+        setTimeout(
+          () => chatBottomRef.current?.scrollIntoView({ behavior: "smooth" }),
+          50,
+        );
+      }
+    } catch {
+      setChatError("Failed to reach the server.");
+    } finally {
+      setChatLoading(false);
     }
   }
 
@@ -708,35 +788,27 @@ export function ProblemViewer({
                 <CardFooter className="flex-wrap gap-2">
                   {problem.content && (
                     <Button
-                      onClick={() =>
-                        setState({ ...state, contentOpen: !contentOpen })
-                      }
+                      onClick={() => {
+                        setState({ ...state, contentOpen: !contentOpen });
+                        setProblemViewed(true);
+                      }}
                     >
                       {contentOpen ? "Hide Problem" : "Open Problem"}
                     </Button>
                   )}
-                  <Button
-                    variant="outline"
-                    onClick={() => toggleHints(problem.problem_number ?? 0)}
-                    disabled={hintsLoading}
-                  >
-                    {hintsLoading
-                      ? "Loading…"
-                      : hintsOpen
-                        ? "Hide Hints"
-                        : "Show Hints"}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => toggleSolution(problem.problem_number ?? 0)}
-                    disabled={solutionLoading}
-                  >
-                    {solutionLoading
-                      ? "Loading…"
-                      : solutionOpen
-                        ? "Hide Solution"
-                        : "Show Solution"}
-                  </Button>
+                  {problemViewed && (
+                    <Button
+                      variant="outline"
+                      onClick={() => toggleHints(problem.problem_number ?? 0)}
+                      disabled={hintsLoading}
+                    >
+                      {hintsLoading
+                        ? "Loading…"
+                        : hintsOpen
+                          ? "Hide Hints"
+                          : "Show Hints"}
+                    </Button>
+                  )}
                   <Button
                     variant={problem.content ? "outline" : "default"}
                     asChild
@@ -745,6 +817,7 @@ export function ProblemViewer({
                       href={problem.url}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={() => setProblemViewed(true)}
                     >
                       Open Link
                     </Link>
@@ -1077,9 +1150,25 @@ export function ProblemViewer({
                             </Button>
                           )}
                           {!canRevealMore && maxRevealable > 0 && (
-                            <p className="text-xs text-muted-foreground">
-                              All hints revealed.
-                            </p>
+                            <div className="flex flex-col gap-2">
+                              <p className="text-xs text-muted-foreground">
+                                All hints revealed.
+                              </p>
+                              <Button
+                                variant="outline"
+                                className="self-start"
+                                onClick={() =>
+                                  toggleSolution(problem.problem_number ?? 0)
+                                }
+                                disabled={solutionLoading}
+                              >
+                                {solutionLoading
+                                  ? "Loading…"
+                                  : solutionOpen
+                                    ? "Hide Solution"
+                                    : "View Solution"}
+                              </Button>
+                            </div>
                           )}
                         </>
                       )}
@@ -1223,6 +1312,237 @@ export function ProblemViewer({
                     </div>
                   );
                 })()}
+            </>
+          );
+        })()}
+
+      {/* ── AI Review side tab + panel ───────────────────────── */}
+      {state.status === "loaded" &&
+        userId &&
+        (() => {
+          const problemTitle = state.problem.title;
+          const problemNumber = state.problem.problem_number ?? 0;
+
+          return (
+            <>
+              {/* Tab button — sticks to right edge */}
+              {!reviewPanelOpen && (
+                <button
+                  type="button"
+                  onClick={() => setReviewPanelOpen(true)}
+                  className="fixed right-0 top-1/2 z-40 flex flex-col items-center gap-2 rounded-l-lg bg-primary px-2.5 py-5 text-primary-foreground shadow-lg shadow-primary/30 transition-all hover:bg-primary/90 hover:shadow-primary/50"
+                  style={{
+                    transform: "translateY(-50%)",
+                  }}
+                  aria-label="Open AI code review panel"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <polyline points="16 18 22 12 16 6" />
+                    <polyline points="8 6 2 12 8 18" />
+                  </svg>
+                  <span
+                    className="text-[11px] font-semibold tracking-wide"
+                    style={{
+                      writingMode: "vertical-rl",
+                      transform: "rotate(180deg)",
+                    }}
+                  >
+                    AI Review
+                  </span>
+                </button>
+              )}
+
+              {/* Click-away backdrop */}
+              {reviewPanelOpen && (
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setReviewPanelOpen(false)}
+                  aria-hidden="true"
+                />
+              )}
+
+              {/* Slide-out panel */}
+              <div
+                className={`fixed right-0 top-14 z-50 flex h-[calc(100vh-3.5rem)] w-[min(400px,100vw)] flex-col border-l border-border bg-card shadow-2xl transition-transform duration-200 ease-in-out ${
+                  reviewPanelOpen ? "translate-x-0" : "translate-x-full"
+                }`}
+              >
+                {/* Panel header */}
+                <div className="flex items-center justify-between border-b border-border px-5 py-4">
+                  <div className="flex flex-col gap-0.5">
+                    <span className="font-semibold text-sm">
+                      AI Code Review
+                    </span>
+                    <span className="text-xs text-muted-foreground truncate max-w-[260px]">
+                      {problemTitle}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setReviewPanelOpen(false)}
+                    className="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    aria-label="Close panel"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Code input section */}
+                <div className="flex flex-col gap-3 border-b border-border p-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-muted-foreground">
+                      {chatReviewsLeft !== null
+                        ? `${chatReviewsLeft} request${chatReviewsLeft !== 1 ? "s" : ""} left today${chatMessagesLeft !== null ? ` · ${chatMessagesLeft} left in chat` : ""}.`
+                        : chatMessagesLeft !== null
+                          ? `${chatMessagesLeft} left in chat.`
+                          : "10 requests/day · 15s between messages."}
+                    </p>
+                    {chatMessages.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setChatMessages([]);
+                          setChatError(null);
+                          setChatReviewsLeft(null);
+                        }}
+                        className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Language selector */}
+                  <div className="flex flex-wrap gap-1">
+                    {(["C++", "Python", "Java", "JavaScript"] as const).map(
+                      (lang) => (
+                        <button
+                          key={lang}
+                          type="button"
+                          onClick={() => setReviewLanguage(lang)}
+                          className={`rounded px-2.5 py-0.5 text-xs font-medium transition-colors ${
+                            reviewLanguage === lang
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          {lang}
+                        </button>
+                      ),
+                    )}
+                  </div>
+
+                  {/* Code textarea */}
+                  <textarea
+                    value={reviewCode}
+                    onChange={(e) => setReviewCode(e.target.value)}
+                    placeholder={`Paste your ${reviewLanguage} code here…`}
+                    rows={8}
+                    maxLength={10000}
+                    spellCheck={false}
+                    className="w-full resize-y rounded-md border border-input bg-background px-3 py-2 font-mono text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                  <span className="text-right text-xs text-muted-foreground">
+                    {reviewCode.length}/10000
+                  </span>
+                </div>
+
+                {/* Chat thread */}
+                <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-4">
+                  {chatMessages.length === 0 && !chatLoading && !chatError && (
+                    <p className="text-center text-xs text-muted-foreground py-6">
+                      Paste your code and ask a question to get started.
+                    </p>
+                  )}
+
+                  {chatMessages.map((msg) => (
+                    <div
+                      key={msg.id}
+                      className={`flex flex-col gap-1 ${msg.role === "user" ? "items-end" : "items-start"}`}
+                    >
+                      <span className="text-[10px] font-medium text-muted-foreground">
+                        {msg.role === "user" ? "You" : "AI Mentor"}
+                      </span>
+                      <div
+                        className={`max-w-[92%] rounded-lg px-3 py-2.5 text-sm leading-relaxed whitespace-pre-wrap ${
+                          msg.role === "user"
+                            ? "bg-primary/10 text-foreground"
+                            : "bg-muted text-foreground"
+                        }`}
+                      >
+                        {msg.content}
+                      </div>
+                    </div>
+                  ))}
+
+                  {chatLoading && (
+                    <div className="flex flex-col gap-1 items-start">
+                      <span className="text-[10px] font-medium text-muted-foreground">
+                        AI Mentor
+                      </span>
+                      <div className="rounded-lg bg-muted px-3 py-2.5 text-sm text-muted-foreground">
+                        Thinking…
+                      </div>
+                    </div>
+                  )}
+
+                  {chatError && (
+                    <p className="text-xs text-destructive">{chatError}</p>
+                  )}
+
+                  <div ref={chatBottomRef} />
+                </div>
+
+                {/* Chat input */}
+                <div className="flex gap-2 border-t border-border p-3">
+                  <input
+                    type="text"
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        void handleChat(problemNumber);
+                      }
+                    }}
+                    placeholder="Ask about your code…"
+                    maxLength={2000}
+                    disabled={chatLoading}
+                    className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                  />
+                  <Button
+                    size="sm"
+                    disabled={chatLoading || !chatInput.trim()}
+                    onClick={() => void handleChat(problemNumber)}
+                  >
+                    Send
+                  </Button>
+                </div>
+              </div>
             </>
           );
         })()}
