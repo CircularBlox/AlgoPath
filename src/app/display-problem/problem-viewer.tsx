@@ -81,7 +81,7 @@ type State =
 type MarkDoneState =
   | { status: "idle" }
   | { status: "loading" }
-  | { status: "done"; ratingGain: number }
+  | { status: "done"; xpGain: number; newLevel: number }
   | { status: "already_solved" }
   | { status: "error"; message: string };
 
@@ -546,7 +546,11 @@ export function ProblemViewer({
       if (data.already_solved) {
         setMarkDoneState({ status: "already_solved" });
       } else {
-        setMarkDoneState({ status: "done", ratingGain: data.rating_gain });
+        setMarkDoneState({
+          status: "done",
+          xpGain: data.xp_gain ?? data.rating_gain ?? 0,
+          newLevel: data.new_level ?? 1,
+        });
       }
       setTimeout(() => fetchRandom(), 1500);
     } catch {
@@ -735,7 +739,7 @@ export function ProblemViewer({
             markDoneState.status === "loading"
               ? "Saving…"
               : markDoneState.status === "done"
-                ? `+${markDoneState.ratingGain} rating`
+                ? `+${markDoneState.xpGain} XP`
                 : markDoneState.status === "already_solved"
                   ? "Already Solved"
                   : markDoneState.status === "error"
