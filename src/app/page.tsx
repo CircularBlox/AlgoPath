@@ -20,15 +20,15 @@ const useCases = [
 const steps = [
   {
     number: "01",
-    title: "Pick a problem",
+    title: "Paste a problem URL",
     description:
-      "Search by title, let AI suggest one, or grab a random challenge. Works with LeetCode, Codeforces, or any problem in our library.",
+      "Grab any LeetCode or Codeforces problem URL and paste it in. AlgoPath fetches the statement automatically — no copy-pasting problem text.",
   },
   {
     number: "02",
-    title: "Work through it yourself",
+    title: "Add your current attempt",
     description:
-      "Read the problem and push as far as you can before reaching for a hint. Struggle is part of learning.",
+      "Paste your code or notes — whatever you've tried so far. The more context you give, the more targeted your hints will be.",
   },
   {
     number: "03",
@@ -149,20 +149,21 @@ export default async function Home() {
         <div className="relative mx-auto flex max-w-3xl flex-col items-center gap-7 px-6 py-28 text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-3 py-1 text-xs text-primary">
             <span className="size-1.5 rounded-full bg-primary" />
-            Free · LeetCode · Codeforces · No credit card
+            For competitive programmers · Free · LeetCode &amp; Codeforces
           </div>
 
           <h1 className="text-5xl font-bold tracking-tight sm:text-6xl">
-            Get unstuck on
+            Progress faster through
             <br />
-            <span className="text-primary text-glow">any coding problem.</span>
+            <span className="text-primary text-glow">
+              guided problem solving.
+            </span>
           </h1>
 
           <p className="max-w-md text-base text-muted-foreground leading-relaxed">
-            AlgoPath gives you AI-powered hints that guide your thinking step by
-            step — without spoiling the solution. Whether you're grinding
-            LeetCode, preparing for interviews, or learning algorithms from
-            scratch.
+            Stuck on a problem? Get AI-powered hints tailored to your attempt.
+            Paste a LeetCode or Codeforces URL, share your code, and unlock
+            three progressive hints that guide your thinking—never the answer.
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-3">
@@ -173,7 +174,7 @@ export default async function Home() {
             </Button>
             {!user && (
               <Button asChild variant="outline" size="lg">
-                <Link href="/display-problem">Browse problems</Link>
+                <Link href="/auth/signup">See how it works</Link>
               </Button>
             )}
           </div>
@@ -400,13 +401,14 @@ export default async function Home() {
             aria-hidden="true"
           />
           <h2 className="relative text-3xl font-bold tracking-tight">
-            Stop googling answers.
+            Every problem you solve
             <br />
-            <span className="text-primary">Start actually solving.</span>
+            <span className="text-primary">makes you sharper.</span>
           </h2>
           <p className="relative max-w-sm text-muted-foreground">
-            Free account. No credit card. Works right away with problems you
-            already know from LeetCode and Codeforces.
+            Skip the endless searching for hints. Get instant, targeted guidance
+            that helps you learn and improve. Free account. No credit card
+            required.
           </p>
           <Button asChild size="lg" className="relative">
             <Link href={user ? "/display-problem" : "/auth/login"}>
