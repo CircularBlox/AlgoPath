@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createClient } from "~/lib/supabase/server";
+import { calcXpGain, levelFromXp } from "~/lib/xp";
 
 function difficultyPoints(difficulty: string | null | undefined): number {
   switch (difficulty?.toLowerCase()) {
@@ -82,7 +83,7 @@ export async function POST(request: NextRequest) {
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("rating, solved_problems, streak, last_solved_date")
+    .select("rating, xp, level, solved_problems, streak, last_solved_date")
     .eq("id", user.id)
     .single();
 
@@ -96,7 +97,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       already_solved: true,
       rating_gain: 0,
+      xp_gain: 0,
       new_rating: profile.rating ?? 1200,
+      new_level: profile.level ?? 1,
       streak: profile.streak ?? 0,
     });
   }
@@ -105,6 +108,10 @@ export async function POST(request: NextRequest) {
   const penalty = Math.max(0, hints_viewed) * 3;
   const rating_gain = Math.max(1, base - penalty);
   const new_rating = (profile.rating ?? 1200) + rating_gain;
+
+  const xp_gain = calcXpGain(difficulty, hints_viewed);
+  const new_xp = (profile.xp ?? 0) + xp_gain;
+  const new_level = levelFromXp(new_xp);
 
   const { streak, last_solved_date } = computeStreak(
     profile.streak ?? 0,
@@ -151,6 +158,8 @@ export async function POST(request: NextRequest) {
     .update({
       solved_problems: newSolved,
       rating: new_rating,
+      xp: new_xp,
+      level: new_level,
       streak,
       last_solved_date,
       ...(recommended_problem_number !== null && {
@@ -169,7 +178,9 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({
     already_solved: false,
     rating_gain,
+    xp_gain,
     new_rating,
+    new_level,
     streak,
   });
 }

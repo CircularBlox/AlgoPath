@@ -135,6 +135,13 @@ This is a Next.js + Supabase app for competitive programmers that helps them get
 
 ---
 
+## Design
+- Should be a Techy, black and blue style
+- Attracts users right from the landing page
+- Should get them to sign up and start even with no experience with the topic
+- Do not use many external libraries - use mostly pure CSS
+- Make the website look modern and not vibecoded
+
 ## Notes
 - Focus on incremental feature building
 - Start with attempt + hint flow

@@ -42,9 +42,12 @@ export async function Navbar() {
 
   return (
     <header>
-      <nav className="border-b border-border bg-background">
+      <nav className="border-b border-border bg-background/95 backdrop-blur-sm">
         <div className="mx-auto flex h-14 max-w-3xl items-center gap-6 px-4">
-          <Link href="/" className="font-semibold tracking-tight">
+          <Link
+            href="/"
+            className="font-bold tracking-tight text-foreground transition-colors hover:text-primary"
+          >
             AlgoPath
           </Link>
 
@@ -87,11 +90,11 @@ export async function Navbar() {
 
       {/* Streak nudge — only when logged in and streak not fulfilled today */}
       {user && !streakActiveToday && (
-        <div className="animate-banner-in border-b border-border bg-muted/60">
+        <div className="animate-banner-in border-b border-primary/20 bg-primary/5">
           <div className="mx-auto flex max-w-3xl items-center justify-center gap-3 px-4 py-2.5">
             <span
-              className="animate-fire-flicker text-xl"
-              style={{ filter: "grayscale(1)", display: "inline-block" }}
+              className="animate-fire-flicker text-base"
+              style={{ display: "inline-block" }}
             >
               🔥
             </span>
@@ -101,7 +104,7 @@ export async function Navbar() {
                 : "No streak yet —"}{" "}
               <Link
                 href="/display-problem"
-                className="font-semibold text-foreground underline underline-offset-2 transition-colors hover:text-foreground/70"
+                className="font-semibold text-primary underline underline-offset-2 transition-colors hover:text-primary/80"
               >
                 solve a problem today →
               </Link>

@@ -16,16 +16,29 @@ export async function GET(request: NextRequest) {
 
     if (data.user) {
       const provider = data.user.app_metadata?.provider as string | undefined;
-      // GitHub and email signups always have a profile (created by trigger).
-      // Only Google OAuth may lack one — skip the DB round-trip otherwise.
+
       if (provider !== "github" && provider !== "email") {
+        // Google OAuth may not have a profile yet
         const { data: profile } = await supabase
           .from("profiles")
-          .select("id")
+          .select("id, onboarding_completed")
           .eq("id", data.user.id)
           .maybeSingle();
         if (!profile) {
           return NextResponse.redirect(`${origin}/auth/setup-username`);
+        }
+        if (!profile.onboarding_completed) {
+          return NextResponse.redirect(`${origin}/onboarding`);
+        }
+      } else {
+        // Email/GitHub: profile is always created by the trigger
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("onboarding_completed")
+          .eq("id", data.user.id)
+          .maybeSingle();
+        if (!profile?.onboarding_completed) {
+          return NextResponse.redirect(`${origin}/onboarding`);
         }
       }
     }

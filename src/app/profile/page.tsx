@@ -4,6 +4,7 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { createClient, getUser } from "~/lib/supabase/server";
+import { levelFromXp, levelTitle, xpProgress } from "~/lib/xp";
 import { SkillLevelEditor } from "./skill-level-editor";
 
 function todayUtc(): string {
@@ -13,6 +14,8 @@ function todayUtc(): string {
 type Profile = {
   username: string;
   rating: number;
+  xp: number;
+  level: number;
   skill_level: string;
   solved_problems: number[];
   streak: number;
@@ -151,13 +154,17 @@ export default async function ProfilePage() {
   const { data: profile } = await supabase
     .from("profiles")
     .select(
-      "username, rating, skill_level, solved_problems, streak, last_solved_date, created_at, recommended_problem_number",
+      "username, rating, xp, level, skill_level, solved_problems, streak, last_solved_date, created_at, recommended_problem_number",
     )
     .eq("id", user.id)
     .single<Profile>();
 
   const username = profile?.username ?? user.email?.split("@")[0] ?? "User";
   const rating = profile?.rating ?? 1200;
+  const xp = profile?.xp ?? 0;
+  const level = profile?.level ?? levelFromXp(xp);
+  const title = levelTitle(level);
+  const progress = xpProgress(xp, level);
   const skillLevel = profile?.skill_level ?? "intermediate";
   const solvedProblems: number[] = profile?.solved_problems ?? [];
   const streak = profile?.streak ?? 0;
@@ -198,7 +205,18 @@ export default async function ProfilePage() {
     .filter((p): p is Problem => p != null);
 
   const statItems = [
-    { label: "Rating", value: String(rating), fire: false, fireActive: false },
+    {
+      label: "Level",
+      value: String(level),
+      fire: false,
+      fireActive: false,
+    },
+    {
+      label: "XP",
+      value: xp.toLocaleString(),
+      fire: false,
+      fireActive: false,
+    },
     {
       label: "Solved",
       value: String(solvedProblems.length),
@@ -222,16 +240,41 @@ export default async function ProfilePage() {
           <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-muted text-2xl font-bold text-foreground ring-4 ring-border">
             {initial}
           </div>
-          <div className="flex flex-col gap-1 pt-1 min-w-0">
-            <h1 className="text-2xl font-bold tracking-tight leading-none">
-              {username}
-            </h1>
+          <div className="flex flex-col gap-1 pt-1 min-w-0 flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-2xl font-bold tracking-tight leading-none">
+                {username}
+              </h1>
+              <span className="inline-flex items-center gap-1 rounded-full border border-border bg-muted px-2.5 py-0.5 text-xs font-semibold text-foreground">
+                Lv.{level} · {title}
+              </span>
+            </div>
             {joinedDate && (
               <p className="text-sm text-muted-foreground">
                 Joined {joinedDate}
               </p>
             )}
-            <div className="mt-3 flex flex-col gap-0.5">
+
+            {/* XP progress bar */}
+            <div className="mt-2.5 flex flex-col gap-1">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">
+                  {progress.current.toLocaleString()} /{" "}
+                  {progress.needed.toLocaleString()} XP to Lv.{level + 1}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {progress.percent}%
+                </span>
+              </div>
+              <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-foreground transition-all duration-500"
+                  style={{ width: `${progress.percent}%` }}
+                />
+              </div>
+            </div>
+
+            <div className="mt-2 flex flex-col gap-0.5">
               <SkillLevelEditor initialLevel={skillLevel} />
               <span className="text-xs text-muted-foreground">Skill Level</span>
             </div>
