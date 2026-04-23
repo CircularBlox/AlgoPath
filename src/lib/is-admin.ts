@@ -1,6 +1,7 @@
+import { env } from "~/env";
 import { getUser } from "~/lib/supabase/server";
 
-export const ADMIN_EMAIL = "aarushgoradia18@gmail.com";
+export const ADMIN_EMAIL = env.ADMIN_EMAIL;
 
 export function isAdmin(email: string | undefined | null): boolean {
   return !!email && email === ADMIN_EMAIL;

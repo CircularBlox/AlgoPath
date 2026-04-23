@@ -8,6 +8,7 @@ export const env = createEnv({
       .default("development"),
     SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
     OPENROUTER_API_KEY: z.string().min(1),
+    ADMIN_EMAIL: z.string().email(),
   },
   client: {
     NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
@@ -19,6 +20,7 @@ export const env = createEnv({
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
     OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
+    ADMIN_EMAIL: process.env.ADMIN_EMAIL,
   },
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,
   emptyStringAsUndefined: true,
