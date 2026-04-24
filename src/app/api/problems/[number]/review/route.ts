@@ -5,6 +5,7 @@ import {
   REVIEW_COOLDOWN_MS,
   REVIEW_DAILY_LIMIT,
 } from "~/lib/constants";
+import { CSRF_HEADER, validateCsrfToken } from "~/lib/csrf";
 import { getAuthContext } from "~/lib/is-admin";
 import { isSameOrigin } from "~/lib/security";
 import { createClient } from "~/lib/supabase/server";
@@ -15,6 +16,12 @@ export async function POST(
 ) {
   if (!isSameOrigin(request)) {
     return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+  }
+  if (!(await validateCsrfToken(request.headers.get(CSRF_HEADER)))) {
+    return NextResponse.json(
+      { error: "Invalid or expired request token." },
+      { status: 403 },
+    );
   }
 
   const { user, admin } = await getAuthContext();

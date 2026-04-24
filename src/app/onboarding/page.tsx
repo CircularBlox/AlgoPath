@@ -1,9 +1,14 @@
 import { redirect } from "next/navigation";
+import { generateCsrfToken } from "~/lib/csrf";
 import { createClient, getUser } from "~/lib/supabase/server";
 import { OnboardingForm } from "./onboarding-form";
 
 export default async function OnboardingPage() {
-  const [user, supabase] = await Promise.all([getUser(), createClient()]);
+  const [user, supabase, csrfToken] = await Promise.all([
+    getUser(),
+    createClient(),
+    generateCsrfToken(),
+  ]);
 
   if (!user) redirect("/auth/login");
 
@@ -15,5 +20,5 @@ export default async function OnboardingPage() {
 
   if (profile?.onboarding_completed) redirect("/display-problem");
 
-  return <OnboardingForm />;
+  return <OnboardingForm csrfToken={csrfToken} />;
 }

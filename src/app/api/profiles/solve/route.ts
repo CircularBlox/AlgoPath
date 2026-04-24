@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { CSRF_HEADER, validateCsrfToken } from "~/lib/csrf";
 import { createClient } from "~/lib/supabase/server";
 import { calcXpGain, levelFromXp } from "~/lib/xp";
 
@@ -48,6 +49,13 @@ function computeStreak(
 }
 
 export async function POST(request: NextRequest) {
+  if (!(await validateCsrfToken(request.headers.get(CSRF_HEADER)))) {
+    return NextResponse.json(
+      { error: "Invalid or expired request token." },
+      { status: 403 },
+    );
+  }
+
   const supabase = await createClient();
 
   const {

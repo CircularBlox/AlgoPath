@@ -56,7 +56,7 @@ const DAILY_OPTIONS = [
 const TOTAL_STEPS = 4;
 const STEP_KEYS = ["dot-1", "dot-2", "dot-3", "dot-4"] as const;
 
-export function OnboardingForm() {
+export function OnboardingForm({ csrfToken }: { csrfToken: string }) {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
@@ -78,7 +78,10 @@ export function OnboardingForm() {
     try {
       await fetch("/api/onboarding", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-csrf-token": csrfToken,
+        },
         body: JSON.stringify({
           skill_level: skillLevel,
           cp_goal: cpGoal,

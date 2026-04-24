@@ -1,4 +1,5 @@
 import "prismjs/themes/prism-okaidia.css";
+import { generateCsrfToken } from "~/lib/csrf";
 import { createClient, getUser } from "~/lib/supabase/server";
 import { ProblemViewer } from "./problem-viewer";
 
@@ -18,10 +19,11 @@ export default async function DisplayProblemPage({
 }: {
   searchParams: Promise<{ p?: string }>;
 }) {
-  const [user, supabase, { p }] = await Promise.all([
+  const [user, supabase, { p }, csrfToken] = await Promise.all([
     getUser(),
     createClient(),
     searchParams,
+    generateCsrfToken(),
   ]);
 
   let initialProblem: Problem | null = null;
@@ -44,6 +46,7 @@ export default async function DisplayProblemPage({
       <ProblemViewer
         userId={user?.id ?? null}
         initialProblem={initialProblem}
+        csrfToken={csrfToken}
       />
     </main>
   );

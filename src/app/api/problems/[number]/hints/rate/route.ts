@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { CSRF_HEADER, validateCsrfToken } from "~/lib/csrf";
 import { createClient, getUser } from "~/lib/supabase/server";
 
 export async function GET(
@@ -48,6 +49,13 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ number: string }> },
 ) {
+  if (!(await validateCsrfToken(request.headers.get(CSRF_HEADER)))) {
+    return NextResponse.json(
+      { error: "Invalid or expired request token." },
+      { status: 403 },
+    );
+  }
+
   const { number } = await params;
   const problemNumber = Number.parseInt(number, 10);
   if (Number.isNaN(problemNumber)) {
