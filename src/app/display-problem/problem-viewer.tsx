@@ -104,9 +104,11 @@ type PanelState<T> =
 export function ProblemViewer({
   userId,
   initialProblem = null,
+  csrfToken,
 }: {
   userId: string | null;
   initialProblem?: Problem | null;
+  csrfToken: string;
 }) {
   const [state, setState] = useState<State>(
     initialProblem
@@ -257,7 +259,10 @@ export function ProblemViewer({
     try {
       const res = await fetch(`/api/problems/${problemNumber}/report`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-csrf-token": csrfToken,
+        },
         body: JSON.stringify({ description: desc, type: "general" }),
       });
       const data = await res.json();
@@ -285,7 +290,10 @@ export function ProblemViewer({
     try {
       const res = await fetch(`/api/problems/${problemNumber}/report`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-csrf-token": csrfToken,
+        },
         body: JSON.stringify({
           type: "difficulty",
           suggested_difficulty: diff,
@@ -440,7 +448,10 @@ export function ProblemViewer({
       } else {
         await fetch(`/api/problems/${problemNumber}/hints/rate`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "x-csrf-token": csrfToken,
+          },
           body: JSON.stringify({ hint_number: hintNumber, rating: next }),
         });
       }
@@ -473,7 +484,10 @@ export function ProblemViewer({
     try {
       const res = await fetch(`/api/problems/${problemNumber}/chat`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-csrf-token": csrfToken,
+        },
         body: JSON.stringify({
           prompt,
           code: reviewCode,
@@ -528,7 +542,10 @@ export function ProblemViewer({
     try {
       const res = await fetch("/api/profiles/solve", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-csrf-token": csrfToken,
+        },
         body: JSON.stringify({
           problem_number: problem.problem_number,
           difficulty: problem.difficulty,

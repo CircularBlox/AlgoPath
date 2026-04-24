@@ -46,6 +46,9 @@ export default function SignupPage() {
       provider,
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
+        ...(provider === "github"
+          ? { scopes: "read:user user:email" }
+          : {}),
       },
     });
   }

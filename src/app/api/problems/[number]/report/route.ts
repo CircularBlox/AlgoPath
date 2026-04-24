@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { CSRF_HEADER, validateCsrfToken } from "~/lib/csrf";
 import { isAdmin } from "~/lib/is-admin";
 import { createAdminClient } from "~/lib/supabase/admin";
 import { getUser } from "~/lib/supabase/server";
@@ -7,6 +8,13 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ number: string }> },
 ) {
+  if (!(await validateCsrfToken(req.headers.get(CSRF_HEADER)))) {
+    return NextResponse.json(
+      { error: "Invalid or expired request token." },
+      { status: 403 },
+    );
+  }
+
   const user = await getUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });

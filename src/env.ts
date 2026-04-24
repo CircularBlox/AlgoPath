@@ -9,6 +9,7 @@ export const env = createEnv({
     SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
     OPENROUTER_API_KEY: z.string().min(1),
     ADMIN_EMAIL: z.string().email(),
+    CSRF_SECRET: z.string().min(32),
   },
   client: {
     NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
@@ -21,6 +22,7 @@ export const env = createEnv({
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
     OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
     ADMIN_EMAIL: process.env.ADMIN_EMAIL,
+    CSRF_SECRET: process.env.CSRF_SECRET,
   },
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,
   emptyStringAsUndefined: true,
