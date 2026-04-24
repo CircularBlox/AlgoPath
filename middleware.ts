@@ -40,10 +40,22 @@ export async function middleware(request: NextRequest) {
 
   const { supabase, response } = createMiddlewareClient(request);
 
-  // Refresh session — required for SSR auth to stay valid
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Refresh session — required for SSR auth to stay valid.
+  // auth-js throws (not returns) when the refresh token is stale/revoked.
+  // Catch it, clear the dead cookies, and fall through as unauthenticated.
+  let user: Awaited<ReturnType<typeof supabase.auth.getUser>>["data"]["user"] =
+    null;
+  try {
+    ({
+      data: { user },
+    } = await supabase.auth.getUser());
+  } catch {
+    for (const cookie of request.cookies.getAll()) {
+      if (cookie.name.startsWith("sb-")) {
+        response.cookies.delete(cookie.name);
+      }
+    }
+  }
 
   const { pathname } = request.nextUrl;
 
