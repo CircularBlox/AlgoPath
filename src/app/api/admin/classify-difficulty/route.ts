@@ -11,19 +11,14 @@ type ReferenceExample = {
   difficulty: DifficultyLabel;
   cf_rating: number | null;
   tags: string;
-  approximate?: boolean; // true = heuristic label, not human-confirmed
+  approximate?: boolean;
 };
 
-/** Returns true if the difficulty string is a raw numeric CF rating, not Easy/Medium/Hard. */
 function isNumericRating(d: string | null | undefined): boolean {
   if (!d) return false;
   return /^\d+$/.test(d.trim());
 }
 
-/**
- * Rough fallback: CF numeric → Easy/Medium/Hard.
- * Scale: 400–1200 ≈ Easy, 1300–2000 ≈ Medium, 2100–3500 ≈ Hard.
- */
 function cfRatingToLabel(rating: number): DifficultyLabel {
   if (rating <= 1200) return "Easy";
   if (rating <= 2000) return "Medium";
@@ -38,6 +33,7 @@ async function classifyOne(
     tags: string[] | null;
     content: string | null;
     url: string;
+    solution_code: string | null;
   },
   apiKey: string,
   examples: ReferenceExample[],
@@ -51,35 +47,51 @@ async function classifyOne(
     cfRating !== null ? cfRatingToLabel(cfRating) : "Medium";
 
   const tags = (problem.tags ?? []).join(", ") || "none";
+
+  // Strip HTML and take a generous content excerpt
   const contentSnippet = problem.content
-    ? problem.content.replace(/<[^>]+>/g, " ").slice(0, 600)
+    ? problem.content
+        .replace(/<[^>]+>/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, 1200)
     : "";
 
-  // Build few-shot reference block from already-classified problems
+  // Truncate solution code — a complex solution signals a harder problem
+  const solutionSnippet = problem.solution_code
+    ? problem.solution_code.trim().slice(0, 600)
+    : null;
+
   const referenceBlock =
     examples.length > 0
-      ? `\nReference problems from this dataset for calibration:\n${examples
+      ? `\nReference problems for calibration (use these as an anchor — do NOT let the numeric rating alone decide):\n${examples
           .map(
             (e) =>
-              `  • ${e.title} — ${e.approximate ? `~${e.difficulty}` : e.difficulty}${e.cf_rating ? ` (CF ${e.cf_rating})` : ""}, tags: ${e.tags}${e.approximate ? " [heuristic]" : ""}`,
+              `  • ${e.title} → ${e.approximate ? `~${e.difficulty}` : e.difficulty}${e.cf_rating ? ` (CF ${e.cf_rating})` : ""}, tags: ${e.tags}${e.approximate ? " [heuristic anchor]" : " [confirmed]"}`,
           )
           .join("\n")}\n`
       : "";
 
-  const prompt = `You are classifying competitive programming problems into three difficulty tiers for a learning app. The numeric ratings are on a 400–3500 scale (similar to Codeforces).
+  const prompt = `You are classifying competitive programming problems into three difficulty tiers for a learning app.
 
-Tiers:
-- Easy: accessible to beginners, standard patterns (two-sum, sliding window, simple greedy). Roughly CF ≤ 1200.
-- Medium: requires solid algorithmic knowledge, moderate complexity. Roughly CF 1300–2000.
-- Hard: advanced techniques, clever observations, intricate implementation. Roughly CF ≥ 2100.
+Tiers (Codeforces scale, 400–3500):
+- Easy: beginner-accessible, standard patterns (two-sum, sliding window, simple greedy, basic math). Roughly CF ≤ 1200.
+- Medium: requires solid algorithmic knowledge — DP, graph traversal, binary search on answer, segment trees. Roughly CF 1300–2000.
+- Hard: advanced or combined techniques, clever non-obvious observations, heavy implementation (advanced DP, flows, FFT, centroid decomp, etc.). Roughly CF ≥ 2100.
+
+Key signals beyond the raw CF number:
+- Problem statement length and complexity of constraints
+- Number of observations or steps required to reach the solution
+- Sophistication of the solution code (trivial loop vs. layered algorithm)
+- Tags (e.g. "implementation" tends Easy-Medium; "flows", "fft", "tree decomposition" tends Hard)
 ${referenceBlock}
 Problem to classify:
   Title: ${problem.title}
-  CF numeric rating: ${cfRating ?? "unknown"} (use as one signal — verify with content and tags)
+  CF numeric rating: ${cfRating ?? "unknown"}
   Tags: ${tags}
-  URL: ${problem.url}${contentSnippet ? `\n  Statement excerpt: ${contentSnippet}` : ""}
+  URL: ${problem.url}${contentSnippet ? `\n  Statement: ${contentSnippet}` : ""}${solutionSnippet ? `\n  Solution code excerpt:\n${solutionSnippet}` : ""}
 
-Reply with exactly one word — Easy, Medium, or Hard — and nothing else.`;
+Based on ALL available signals, reply with exactly one word — Easy, Medium, or Hard — and nothing else.`;
 
   const response = await fetch(
     "https://openrouter.ai/api/v1/chat/completions",
@@ -138,7 +150,6 @@ export async function POST(request: NextRequest) {
 
   const supabase = await createClient();
 
-  // Fetch all problems in one query
   const { data: problems, error: fetchError } = await supabase
     .from("problems")
     .select("problem_number, title, difficulty, tags, content, url")
@@ -151,7 +162,6 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Problems to classify: numeric difficulty (raw CF rating)
   const targets = problems.filter((p) => {
     if (!isNumericRating(p.difficulty as string | null)) return false;
     if (filterRating !== null) {
@@ -168,10 +178,33 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  // Build reference examples: confirmed Easy/Medium/Hard + numeric anchors at other ratings
-  const targetNumbers = new Set(targets.map((t) => t.problem_number as number));
+  // Fetch solution codes for all target problems
+  const targetNums = targets.map((t) => t.problem_number as number);
+  const { data: solutionRows } = await supabase
+    .from("solution_codes")
+    .select("problem_number, language, code")
+    .in("problem_number", targetNums);
 
-  // 1. Confirmed classifications (up to 2 per tier)
+  // Build a lookup: problem_number → best solution code (prefer C++, then Python, then any)
+  const solutionMap = new Map<number, string>();
+  if (solutionRows) {
+    const PREF = ["c++", "cpp", "python", "java", "javascript"];
+    for (const num of targetNums) {
+      const rows = solutionRows.filter(
+        (r) => r.problem_number === num && r.code,
+      );
+      if (rows.length === 0) continue;
+      const preferred = PREF.map((lang) =>
+        rows.find((r) => r.language?.toLowerCase() === lang),
+      ).find(Boolean);
+      const pick = preferred ?? rows[0];
+      if (pick?.code) solutionMap.set(num, pick.code as string);
+    }
+  }
+
+  // Build reference examples: confirmed + numeric anchors at non-target ratings
+  const targetNumbers = new Set(targetNums);
+
   const confirmed = problems.filter((p) =>
     VALID_LABELS.includes(p.difficulty as DifficultyLabel),
   );
@@ -180,7 +213,7 @@ export async function POST(request: NextRequest) {
   ).flatMap((tier) =>
     confirmed
       .filter((p) => p.difficulty === tier)
-      .slice(0, 2)
+      .slice(0, 3)
       .map((p) => ({
         title: p.title as string,
         difficulty: tier,
@@ -189,15 +222,15 @@ export async function POST(request: NextRequest) {
       })),
   );
 
-  // 2. Numeric-rated problems at ratings other than 800 — spread across the scale
-  //    so the AI has anchors to compare against when classifying 800-rated problems
   const ANCHOR_RANGES: { min: number; max: number; label: DifficultyLabel }[] =
     [
       { min: 400, max: 700, label: "Easy" },
-      { min: 900, max: 1200, label: "Easy" },
-      { min: 1300, max: 1700, label: "Medium" },
-      { min: 1800, max: 2200, label: "Medium" },
-      { min: 2300, max: 2800, label: "Hard" },
+      { min: 800, max: 900, label: "Easy" },
+      { min: 1000, max: 1200, label: "Easy" },
+      { min: 1300, max: 1500, label: "Medium" },
+      { min: 1600, max: 2000, label: "Medium" },
+      { min: 2100, max: 2400, label: "Hard" },
+      { min: 2500, max: 2800, label: "Hard" },
       { min: 2900, max: 3500, label: "Hard" },
     ];
 
@@ -227,9 +260,11 @@ export async function POST(request: NextRequest) {
   const BATCH = 8;
   const results: {
     problem_number: number;
+    title: string;
     old: string | null;
     new: DifficultyLabel;
     cf_rating: number | null;
+    had_solution: boolean;
   }[] = [];
 
   for (let i = 0; i < targets.length; i += BATCH) {
@@ -245,6 +280,7 @@ export async function POST(request: NextRequest) {
             tags: p.tags as string[] | null,
             content: p.content as string | null,
             url: p.url as string,
+            solution_code: solutionMap.get(p.problem_number as number) ?? null,
           },
           apiKey,
           examples,
@@ -269,12 +305,16 @@ export async function POST(request: NextRequest) {
     );
 
     for (const result of batchResults) {
+      const target = targets.find(
+        (t) => t.problem_number === result.problem_number,
+      );
       results.push({
         problem_number: result.problem_number,
-        old: targets.find((t) => t.problem_number === result.problem_number)
-          ?.difficulty as string | null,
+        title: target?.title as string,
+        old: target?.difficulty as string | null,
         new: result.label,
         cf_rating: result.cf_rating,
+        had_solution: solutionMap.has(result.problem_number),
       });
     }
 
