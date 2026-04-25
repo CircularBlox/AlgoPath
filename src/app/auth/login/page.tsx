@@ -25,6 +25,9 @@ export default function LoginPage() {
     const next = params.get("next");
     if (next) setNextPath(next);
     if (params.get("reset") === "1") setResetSuccess(true);
+    const oauthError = params.get("error");
+    if (oauthError === "oauth_denied") setError("OAuth sign-in was cancelled.");
+    else if (oauthError) setError("Sign-in failed. Please try again.");
   }, []);
 
   async function handleEmailLogin(e: React.FormEvent) {
@@ -48,6 +51,7 @@ export default function LoginPage() {
       provider,
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
+        scopes: provider === "github" ? "read:user user:email" : undefined,
       },
     });
   }

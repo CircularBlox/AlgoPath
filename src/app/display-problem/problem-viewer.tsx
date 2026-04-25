@@ -862,7 +862,7 @@ export function ProblemViewer({
                     onClick={fetchRandom}
                     className={userId ? "" : "ml-auto"}
                   >
-                    Next Problem
+                    Skip
                   </Button>
                   {userId && (
                     <div className="ml-auto flex items-center gap-1">

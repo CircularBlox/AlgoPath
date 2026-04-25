@@ -31,9 +31,16 @@ export async function createClient() {
 
 /** Deduplicated per request — safe to call from both Navbar and page in the same render. */
 export const getUser = cache(async () => {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return user;
+  try {
+    // createClient() is inside try: GoTrueClient.initialize() runs during the
+    // first auth call and can throw before getUser() is even reached when the
+    // refresh token in the cookie is stale/revoked (auth-js@2.101+ behaviour).
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    return user;
+  } catch {
+    return null;
+  }
 });
