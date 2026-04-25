@@ -61,10 +61,26 @@ export default function AddProblemPage() {
           <Label htmlFor="difficulty">
             Difficulty{" "}
             <span className="font-normal text-muted-foreground">
-              (optional)
+              (optional — numeric CF rating, classified by AI later)
             </span>
           </Label>
-          <Input id="difficulty" name="difficulty" placeholder="800" />
+          <select
+            id="difficulty"
+            name="difficulty"
+            defaultValue=""
+            className={cn(
+              "h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none",
+              "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
+              "dark:bg-input/30",
+            )}
+          >
+            <option value="">— none —</option>
+            {Array.from({ length: 32 }, (_, i) => (i + 4) * 100).map((v) => (
+              <option key={v} value={String(v)}>
+                {v}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="flex flex-col gap-1.5">

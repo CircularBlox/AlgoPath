@@ -34,13 +34,17 @@ export async function addProblem(
   }
 
   const tags = tagsRaw
-    ? tagsRaw.split(",").map((t) => t.trim()).filter(Boolean)
+    ? tagsRaw
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean)
     : [];
 
   const supabase = createAdminClient();
 
-  const { data: problemNumber, error: rpcError } =
-  await supabase.rpc("next_problem_number");
+  const { data: problemNumber, error: rpcError } = await supabase.rpc(
+    "next_problem_number",
+  );
 
   if (rpcError) {
     return { success: false, error: rpcError.message };
