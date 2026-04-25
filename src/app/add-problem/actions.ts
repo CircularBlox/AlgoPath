@@ -34,13 +34,18 @@ export async function addProblem(
   }
 
   const tags = tagsRaw
-    ? tagsRaw
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean)
+    ? tagsRaw.split(",").map((t) => t.trim()).filter(Boolean)
     : [];
 
   const supabase = createAdminClient();
+
+  const { data: problemNumber, error: rpcError } =
+  await supabase.rpc("next_problem_number");
+
+  if (rpcError) {
+    return { success: false, error: rpcError.message };
+  }
+
   const { error } = await supabase.from("problems").insert({
     title,
     url,
@@ -48,6 +53,7 @@ export async function addProblem(
     difficulty: difficulty || null,
     tags,
     content: content || null,
+    problem_number: problemNumber,
   });
 
   if (error) {

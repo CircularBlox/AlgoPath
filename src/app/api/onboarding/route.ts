@@ -25,6 +25,7 @@ export async function POST(request: NextRequest) {
     cp_goal?: string | null;
     preferred_languages?: string[];
     daily_goal?: number | null;
+    starting_rating?: number | null;
   };
   try {
     body = await request.json();
@@ -35,7 +36,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { skill_level, cp_goal, preferred_languages, daily_goal } = body;
+  const {
+    skill_level,
+    cp_goal,
+    preferred_languages,
+    daily_goal,
+    starting_rating,
+  } = body;
 
   const update: Record<string, unknown> = { onboarding_completed: true };
 
@@ -55,6 +62,14 @@ export async function POST(request: NextRequest) {
 
   if (typeof daily_goal === "number" && daily_goal >= 1) {
     update.daily_goal = daily_goal;
+  }
+
+  if (
+    typeof starting_rating === "number" &&
+    starting_rating >= 400 &&
+    starting_rating <= 3000
+  ) {
+    update.rating = starting_rating;
   }
 
   const { error } = await supabase

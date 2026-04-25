@@ -21,6 +21,34 @@ const SKILL_OPTIONS = [
   },
 ];
 
+const RATING_OPTIONS = [
+  {
+    value: 800,
+    label: "Just starting out",
+    desc: "New to competitive programming, fewer than 30 problems solved",
+  },
+  {
+    value: 1000,
+    label: "Getting comfortable",
+    desc: "Can solve easy problems, working through LeetCode",
+  },
+  {
+    value: 1200,
+    label: "Regular solver",
+    desc: "Comfortable with mediums, 100+ problems solved",
+  },
+  {
+    value: 1400,
+    label: "Contest participant",
+    desc: "Compete regularly, CF ~1200–1600 or LeetCode knight+",
+  },
+  {
+    value: 1600,
+    label: "Experienced competitor",
+    desc: "CF 1700+, consistently solving hard problems",
+  },
+];
+
 const GOAL_OPTIONS = [
   {
     value: "contests",
@@ -53,8 +81,8 @@ const DAILY_OPTIONS = [
   { value: 10, label: "10+ problems / day", desc: "Serious preparation" },
 ];
 
-const TOTAL_STEPS = 4;
-const STEP_KEYS = ["dot-1", "dot-2", "dot-3", "dot-4"] as const;
+const TOTAL_STEPS = 5;
+const STEP_KEYS = ["dot-1", "dot-2", "dot-3", "dot-4", "dot-5"] as const;
 
 export function OnboardingForm({ csrfToken }: { csrfToken: string }) {
   const router = useRouter();
@@ -63,6 +91,7 @@ export function OnboardingForm({ csrfToken }: { csrfToken: string }) {
 
   // Answers — all optional (skip allowed)
   const [skillLevel, setSkillLevel] = useState<string | null>(null);
+  const [startingRating, setStartingRating] = useState<number | null>(null);
   const [cpGoal, setCpGoal] = useState<string | null>(null);
   const [langs, setLangs] = useState<string[]>([]);
   const [dailyGoal, setDailyGoal] = useState<number | null>(null);
@@ -84,6 +113,7 @@ export function OnboardingForm({ csrfToken }: { csrfToken: string }) {
         },
         body: JSON.stringify({
           skill_level: skillLevel,
+          starting_rating: startingRating,
           cp_goal: cpGoal,
           preferred_languages: langs,
           daily_goal: dailyGoal,
@@ -188,9 +218,10 @@ export function OnboardingForm({ csrfToken }: { csrfToken: string }) {
               }}
             >
               {step === 1 && "What's your experience level?"}
-              {step === 2 && "What brings you here?"}
-              {step === 3 && "Preferred languages?"}
-              {step === 4 && "Daily practice goal?"}
+              {step === 2 && "Estimate your starting rating"}
+              {step === 3 && "What brings you here?"}
+              {step === 4 && "Preferred languages?"}
+              {step === 5 && "Daily practice goal?"}
             </h1>
             <p
               style={{
@@ -201,10 +232,12 @@ export function OnboardingForm({ csrfToken }: { csrfToken: string }) {
             >
               {step === 1 &&
                 "We'll tailor problem difficulty to your background."}
-              {step === 2 && "Helps us recommend the right problem types."}
-              {step === 3 &&
+              {step === 2 &&
+                "Sets your starting rating so you see appropriately-difficult problems from day one."}
+              {step === 3 && "Helps us recommend the right problem types."}
+              {step === 4 &&
                 "Solutions will default to your preferred language."}
-              {step === 4 && "We'll remind you to keep your streak going."}
+              {step === 5 && "We'll remind you to keep your streak going."}
             </p>
           </div>
 
@@ -235,6 +268,31 @@ export function OnboardingForm({ csrfToken }: { csrfToken: string }) {
             {step === 2 && (
               <div
                 style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "0.6rem",
+                }}
+              >
+                {RATING_OPTIONS.map((opt) => (
+                  <OptionCard
+                    key={opt.value}
+                    label={opt.label}
+                    desc={opt.desc}
+                    selected={startingRating === opt.value}
+                    onClick={() =>
+                      setStartingRating(
+                        startingRating === opt.value ? null : opt.value,
+                      )
+                    }
+                    badge={String(opt.value)}
+                  />
+                ))}
+              </div>
+            )}
+
+            {step === 3 && (
+              <div
+                style={{
                   display: "grid",
                   gridTemplateColumns: "1fr 1fr",
                   gap: "0.6rem",
@@ -254,7 +312,7 @@ export function OnboardingForm({ csrfToken }: { csrfToken: string }) {
               </div>
             )}
 
-            {step === 3 && (
+            {step === 4 && (
               <div
                 style={{
                   display: "grid",
@@ -274,7 +332,7 @@ export function OnboardingForm({ csrfToken }: { csrfToken: string }) {
               </div>
             )}
 
-            {step === 4 && (
+            {step === 5 && (
               <div
                 style={{
                   display: "grid",
@@ -365,12 +423,14 @@ function OptionCard({
   selected,
   onClick,
   multiSelect = false,
+  badge,
 }: {
   label: string;
   desc?: string;
   selected: boolean;
   onClick: () => void;
   multiSelect?: boolean;
+  badge?: string;
 }) {
   return (
     <button
@@ -395,46 +455,68 @@ function OptionCard({
         style={{
           display: "flex",
           alignItems: "center",
+          justifyContent: "space-between",
           gap: "0.45rem",
           fontSize: "0.875rem",
           fontWeight: 600,
           color: "var(--color-foreground)",
+          width: "100%",
         }}
       >
-        {multiSelect && (
+        <span style={{ display: "flex", alignItems: "center", gap: "0.45rem" }}>
+          {multiSelect && (
+            <span
+              style={{
+                width: "1rem",
+                height: "1rem",
+                borderRadius: "3px",
+                border: selected
+                  ? "1.5px solid var(--color-foreground)"
+                  : "1.5px solid var(--color-muted-foreground)",
+                background: selected
+                  ? "var(--color-foreground)"
+                  : "transparent",
+                flexShrink: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              {selected && (
+                <svg
+                  aria-hidden="true"
+                  width="10"
+                  height="10"
+                  viewBox="0 0 12 12"
+                  fill="none"
+                  stroke="var(--color-background)"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="10 3 5 9 2 6" />
+                </svg>
+              )}
+            </span>
+          )}
+          {label}
+        </span>
+        {badge && (
           <span
             style={{
-              width: "1rem",
-              height: "1rem",
-              borderRadius: "3px",
-              border: selected
-                ? "1.5px solid var(--color-foreground)"
-                : "1.5px solid var(--color-muted-foreground)",
-              background: selected ? "var(--color-foreground)" : "transparent",
-              flexShrink: 0,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
+              fontSize: "0.7rem",
+              fontWeight: 700,
+              color: "var(--color-muted-foreground)",
+              background: "var(--color-muted)",
+              border: "1px solid var(--color-border)",
+              borderRadius: "var(--radius-sm)",
+              padding: "0.1rem 0.4rem",
+              letterSpacing: "0.02em",
             }}
           >
-            {selected && (
-              <svg
-                aria-hidden="true"
-                width="10"
-                height="10"
-                viewBox="0 0 12 12"
-                fill="none"
-                stroke="var(--color-background)"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <polyline points="10 3 5 9 2 6" />
-              </svg>
-            )}
+            {badge}
           </span>
         )}
-        {label}
       </span>
       {desc && (
         <span

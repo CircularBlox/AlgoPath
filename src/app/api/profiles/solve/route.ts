@@ -3,17 +3,26 @@ import { CSRF_HEADER, validateCsrfToken } from "~/lib/csrf";
 import { createClient } from "~/lib/supabase/server";
 import { calcXpGain, levelFromXp } from "~/lib/xp";
 
-function difficultyPoints(difficulty: string | null | undefined): number {
-  switch (difficulty?.toLowerCase()) {
-    case "easy":
-      return 5;
-    case "medium":
-      return 10;
-    case "hard":
-      return 20;
-    default:
-      return 10;
-  }
+/** K-factor: high at the start, decays toward 10 as the user accumulates solves. */
+function kFactor(solvedCount: number): number {
+  return Math.max(10, Math.round(50 / (1 + solvedCount / 20)));
+}
+
+function calcRatingGain(
+  difficulty: string | null | undefined,
+  hintsViewed: number,
+  solvedCount: number,
+): number {
+  const diffMult =
+    difficulty?.toLowerCase() === "easy"
+      ? 0.4
+      : difficulty?.toLowerCase() === "hard"
+        ? 1.6
+        : 0.8;
+  const K = kFactor(solvedCount);
+  // Each hint costs 15% of the gain, floored at 20%
+  const mult = Math.max(0.2, 1 - Math.max(0, hintsViewed) * 0.15);
+  return Math.max(1, Math.round(K * diffMult * mult));
 }
 
 /** Returns today's date as a YYYY-MM-DD string in UTC. */
@@ -112,9 +121,7 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  const base = difficultyPoints(difficulty);
-  const penalty = Math.max(0, hints_viewed) * 3;
-  const rating_gain = Math.max(1, base - penalty);
+  const rating_gain = calcRatingGain(difficulty, hints_viewed, solved.length);
   const new_rating = (profile.rating ?? 1200) + rating_gain;
 
   const xp_gain = calcXpGain(difficulty, hints_viewed);
