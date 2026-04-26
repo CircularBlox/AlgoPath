@@ -9,9 +9,10 @@ interface ClassificationResult {
   problem_number: number;
   title: string;
   old: string | null;
-  new_rating: number | null;
+  new_rating: number;
   analysis: string | null;
   had_solution: boolean;
+  fallback: boolean;
 }
 
 function ratingLabel(r: number): { label: string; cls: string } {
@@ -124,11 +125,17 @@ function ResultsTable({ results }: { results: ClassificationResult[] }) {
                       {r.old ?? <span className="text-xs italic">none</span>}
                     </td>
                     <td className="px-4 py-3">
-                      {r.new_rating !== null ? (
+                      <span className="flex items-center gap-1.5">
                         <RatingBadge rating={r.new_rating} />
-                      ) : (
-                        <span className="text-xs text-destructive">failed</span>
-                      )}
+                        {r.fallback && (
+                          <span
+                            className="text-xs text-muted-foreground"
+                            title="AI failed — kept existing rating"
+                          >
+                            ↩
+                          </span>
+                        )}
+                      </span>
                     </td>
                     <td className="px-4 py-3">
                       {r.had_solution ? (
@@ -206,7 +213,7 @@ export default function ClassifyDifficultyPage() {
   const [error, setError] = useState<string | null>(null);
   const [dryRun, setDryRun] = useState(true);
   const [force, setForce] = useState(true);
-  const [failed, setFailed] = useState(0);
+  const [fallbacks, setFallbacks] = useState(0);
   const [wasApplied, setWasApplied] = useState(false);
 
   async function handleClassify() {
@@ -216,7 +223,7 @@ export default function ClassifyDifficultyPage() {
     setResults([]);
     setDistribution({});
     setClassified(null);
-    setFailed(0);
+    setFallbacks(0);
     setWasApplied(false);
 
     try {
@@ -237,7 +244,7 @@ export default function ClassifyDifficultyPage() {
         results: ClassificationResult[];
         distribution: Record<string, number>;
         classified: number;
-        failed: number;
+        fallbacks: number;
         dry_run: boolean;
         message?: string;
       };
@@ -245,7 +252,7 @@ export default function ClassifyDifficultyPage() {
       setResults(typed.results ?? []);
       setDistribution(typed.distribution ?? {});
       setClassified(typed.classified);
-      setFailed(typed.failed ?? 0);
+      setFallbacks(typed.fallbacks ?? 0);
       setMessage(typed.message ?? null);
       setWasApplied(!typed.dry_run);
     } catch (err) {
@@ -394,9 +401,9 @@ export default function ClassifyDifficultyPage() {
           <div className="flex items-center gap-3">
             <span className="text-sm text-muted-foreground">
               {classified} problem{classified !== 1 ? "s" : ""} classified
-              {failed > 0 && (
-                <span className="ml-1.5 text-destructive">
-                  · {failed} failed
+              {fallbacks > 0 && (
+                <span className="ml-1.5 text-amber-600 dark:text-amber-400">
+                  · {fallbacks} used fallback rating
                 </span>
               )}
             </span>

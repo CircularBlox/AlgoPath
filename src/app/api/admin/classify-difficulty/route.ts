@@ -27,6 +27,7 @@ async function classifyOne(
   problem: {
     problem_number: number;
     title: string;
+    difficulty: string | null;
     tags: string[] | null;
     content: string | null;
     url: string;
@@ -39,7 +40,13 @@ async function classifyOne(
   rating: number | null;
   analysis: string | null;
   apiError: string | null;
+  usedFallback: boolean;
 }> {
+  // Heuristic: keep existing numeric rating, or default to 1200
+  const existingRating =
+    problem.difficulty && isNumericRating(problem.difficulty)
+      ? snapRating(parseInt(problem.difficulty, 10))
+      : 1200;
   const tags = (problem.tags ?? []).join(", ") || "none";
 
   const contentSnippet = problem.content
@@ -99,7 +106,7 @@ RATING: <integer multiple of 100, 400–3500>`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3.1-flash-lite-preview",
+        model: "openai/gpt-4o-mini",
         messages: [{ role: "user", content: prompt }],
         max_tokens: 300,
         temperature: 0,
@@ -115,9 +122,10 @@ RATING: <integer multiple of 100, 400–3500>`;
     );
     return {
       problem_number: problem.problem_number,
-      rating: null,
+      rating: existingRating,
       analysis: null,
       apiError,
+      usedFallback: true,
     };
   }
 
@@ -144,11 +152,12 @@ RATING: <integer multiple of 100, 400–3500>`;
         rating: snapRating(parsed),
         analysis,
         apiError: null,
+        usedFallback: false,
       };
     }
   }
 
-  // Fallback: find any valid number anywhere in the response
+  // Secondary: find any valid number anywhere in the response
   const anyMatch = raw.match(/\b([1-9]\d{2,3})\b/);
   if (anyMatch) {
     const parsed = parseInt(anyMatch[1], 10);
@@ -158,16 +167,20 @@ RATING: <integer multiple of 100, 400–3500>`;
         rating: snapRating(parsed),
         analysis,
         apiError: null,
+        usedFallback: false,
       };
     }
   }
 
-  console.warn(`classify #${problem.problem_number}: unparseable — skipping`);
+  console.warn(
+    `classify #${problem.problem_number}: unparseable response "${raw}" — using fallback`,
+  );
   return {
     problem_number: problem.problem_number,
-    rating: null,
+    rating: existingRating,
     analysis,
     apiError: null,
+    usedFallback: true,
   };
 }
 
@@ -265,9 +278,10 @@ export async function POST(request: NextRequest) {
     problem_number: number;
     title: string;
     old: string | null;
-    new_rating: number | null;
+    new_rating: number;
     analysis: string | null;
     had_solution: boolean;
+    fallback: boolean;
   }[] = [];
   let firstApiError: string | null = null;
 
@@ -280,6 +294,7 @@ export async function POST(request: NextRequest) {
           {
             problem_number: p.problem_number as number,
             title: p.title as string,
+            difficulty: p.difficulty as string | null,
             tags: p.tags as string[] | null,
             content: p.content as string | null,
             url: p.url as string,
@@ -289,11 +304,15 @@ export async function POST(request: NextRequest) {
           anchors,
         ).catch((err) => {
           console.error(`classify #${p.problem_number} threw:`, err);
+          const fallback = isNumericRating(p.difficulty as string | null)
+            ? snapRating(parseInt(p.difficulty as string, 10))
+            : 1200;
           return {
             problem_number: p.problem_number as number,
-            rating: null as number | null,
+            rating: fallback as number,
             analysis: null as string | null,
             apiError: String(err) as string | null,
+            usedFallback: true,
           };
         }),
       ),
@@ -308,9 +327,10 @@ export async function POST(request: NextRequest) {
         problem_number: result.problem_number,
         title: target?.title as string,
         old: target?.difficulty as string | null,
-        new_rating: result.rating,
+        new_rating: result.rating ?? 1200,
         analysis: result.analysis,
         had_solution: solutionMap.has(result.problem_number),
+        fallback: result.usedFallback,
       });
     }
 
@@ -330,7 +350,6 @@ export async function POST(request: NextRequest) {
 
   const distribution: Record<string, number> = {};
   for (const r of results) {
-    if (r.new_rating === null) continue;
     const bucket =
       r.new_rating <= 1200
         ? "Easy (≤1200)"
@@ -343,7 +362,7 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({
     dry_run: dryRun,
     classified: results.length,
-    failed: results.filter((r) => r.new_rating === null).length,
+    fallbacks: results.filter((r) => r.fallback).length,
     ...(firstApiError ? { api_error: firstApiError } : {}),
     distribution,
     results,
