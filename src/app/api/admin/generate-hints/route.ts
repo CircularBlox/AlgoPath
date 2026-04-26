@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import { type NextRequest, NextResponse } from "next/server";
 import { env } from "~/env";
 import { isAdmin } from "~/lib/is-admin";
@@ -86,7 +87,10 @@ Rules:
       }),
       signal: AbortSignal.timeout(30000),
     });
-  } catch {
+  } catch (err) {
+    Sentry.captureException(err, {
+      tags: { route: "generate-hints", step: "openrouter_fetch" },
+    });
     return NextResponse.json(
       { error: "Failed to reach OpenRouter." },
       { status: 502 },
@@ -96,6 +100,10 @@ Rules:
   const rawText = await aiRes.text();
 
   if (!aiRes.ok) {
+    Sentry.captureMessage(
+      `OpenRouter error in generate-hints: ${aiRes.status}`,
+      { level: "error", extra: { body: rawText.slice(0, 500) } },
+    );
     return NextResponse.json(
       { error: `OpenRouter responded with ${aiRes.status}: ${rawText}` },
       { status: 502 },
@@ -105,7 +113,10 @@ Rules:
   let aiBody: { choices: { message: { content: string } }[] };
   try {
     aiBody = JSON.parse(rawText) as typeof aiBody;
-  } catch {
+  } catch (err) {
+    Sentry.captureException(err, {
+      tags: { route: "generate-hints", step: "parse_response" },
+    });
     return NextResponse.json(
       { error: `OpenRouter returned non-JSON: ${rawText.slice(0, 200)}` },
       { status: 502 },
@@ -121,7 +132,10 @@ Rules:
   let hints: { hint_1?: string; hint_2?: string; hint_3?: string };
   try {
     hints = JSON.parse(trimmed) as typeof hints;
-  } catch {
+  } catch (err) {
+    Sentry.captureException(err, {
+      tags: { route: "generate-hints", step: "parse_hints" },
+    });
     return NextResponse.json(
       { error: "Failed to parse AI response." },
       { status: 500 },

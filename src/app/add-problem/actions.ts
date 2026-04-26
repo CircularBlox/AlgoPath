@@ -1,5 +1,6 @@
 "use server";
 
+import * as Sentry from "@sentry/nextjs";
 import { revalidatePath } from "next/cache";
 import { isAdmin } from "~/lib/is-admin";
 import { createAdminClient } from "~/lib/supabase/admin";
@@ -47,6 +48,9 @@ export async function addProblem(
   );
 
   if (rpcError) {
+    Sentry.captureException(rpcError, {
+      tags: { action: "addProblem", step: "next_problem_number" },
+    });
     return { success: false, error: rpcError.message };
   }
 
@@ -61,6 +65,10 @@ export async function addProblem(
   });
 
   if (error) {
+    Sentry.captureException(error, {
+      tags: { action: "addProblem", step: "insert" },
+      extra: { title, url },
+    });
     return { success: false, error: error.message };
   }
 

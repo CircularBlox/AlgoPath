@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import { NextResponse } from "next/server";
 import { createClient } from "~/lib/supabase/server";
 
@@ -25,8 +26,8 @@ export async function GET() {
         excluded = (profile.solved_problems as number[] | null) ?? [];
       }
     }
-  } catch {
-    // Stale auth token — proceed as anonymous
+  } catch (err) {
+    Sentry.captureException(err, { tags: { route: "random", step: "auth" } });
   }
 
   const solvedFilter = excluded.length > 0 ? `(${excluded.join(",")})` : null;
@@ -59,6 +60,10 @@ export async function GET() {
     .select("*", { count: "exact", head: true });
 
   if (cErr || !count) {
+    if (cErr)
+      Sentry.captureException(cErr, {
+        tags: { route: "random", step: "count" },
+      });
     return NextResponse.json({ error: "No problems found." }, { status: 404 });
   }
 
@@ -70,6 +75,10 @@ export async function GET() {
     .single();
 
   if (pErr || !picked) {
+    if (pErr)
+      Sentry.captureException(pErr, {
+        tags: { route: "random", step: "fetch" },
+      });
     return NextResponse.json(
       { error: "Failed to fetch problem." },
       { status: 500 },

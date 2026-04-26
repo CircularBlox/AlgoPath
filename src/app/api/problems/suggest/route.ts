@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import { type NextRequest, NextResponse } from "next/server";
 import { env } from "~/env";
 import { createClient } from "~/lib/supabase/server";
@@ -110,7 +111,10 @@ export async function GET(request: NextRequest) {
       }),
       signal: AbortSignal.timeout(15000),
     });
-  } catch {
+  } catch (err) {
+    Sentry.captureException(err, {
+      tags: { route: "suggest", step: "openrouter_fetch" },
+    });
     return NextResponse.json(
       { error: "Failed to reach OpenRouter." },
       { status: 502 },
@@ -120,6 +124,10 @@ export async function GET(request: NextRequest) {
   const rawText = await aiRes.text();
 
   if (!aiRes.ok) {
+    Sentry.captureMessage(`OpenRouter error in suggest: ${aiRes.status}`, {
+      level: "error",
+      extra: { body: rawText.slice(0, 500) },
+    });
     return NextResponse.json(
       { error: `OpenRouter responded with ${aiRes.status}: ${rawText}` },
       { status: 502 },
@@ -129,7 +137,10 @@ export async function GET(request: NextRequest) {
   let aiBody: { choices: { message: { content: string } }[] };
   try {
     aiBody = JSON.parse(rawText) as typeof aiBody;
-  } catch {
+  } catch (err) {
+    Sentry.captureException(err, {
+      tags: { route: "suggest", step: "parse_response" },
+    });
     return NextResponse.json(
       { error: `OpenRouter returned non-JSON: ${rawText.slice(0, 200)}` },
       { status: 502 },
@@ -146,7 +157,10 @@ export async function GET(request: NextRequest) {
   let aiJson: { problem_numbers: number[]; reasoning?: string };
   try {
     aiJson = JSON.parse(trimmed) as typeof aiJson;
-  } catch {
+  } catch (err) {
+    Sentry.captureException(err, {
+      tags: { route: "suggest", step: "parse_ai_json" },
+    });
     return NextResponse.json(
       { error: "Failed to parse AI response." },
       { status: 500 },

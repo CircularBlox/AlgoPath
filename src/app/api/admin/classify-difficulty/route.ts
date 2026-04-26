@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import { type NextRequest, NextResponse } from "next/server";
 import { env } from "~/env";
 import { isAdmin } from "~/lib/is-admin";
@@ -117,8 +118,15 @@ RATING: <integer multiple of 100, 400–3500>`;
   if (!response.ok) {
     const errText = await response.text().catch(() => "");
     const apiError = `HTTP ${response.status}: ${errText.slice(0, 200)}`;
-    console.error(
-      `classify #${problem.problem_number}: API error — ${apiError}`,
+    Sentry.captureMessage(
+      `OpenRouter error in classify-difficulty: ${response.status}`,
+      {
+        level: "error",
+        extra: {
+          problemNumber: problem.problem_number,
+          body: errText.slice(0, 500),
+        },
+      },
     );
     return {
       problem_number: problem.problem_number,
@@ -210,6 +218,10 @@ export async function POST(request: NextRequest) {
     .order("problem_number");
 
   if (fetchError || !problems) {
+    if (fetchError)
+      Sentry.captureException(fetchError, {
+        tags: { route: "classify-difficulty", step: "fetch_problems" },
+      });
     return NextResponse.json(
       { error: "Failed to fetch problems." },
       { status: 500 },
@@ -303,7 +315,10 @@ export async function POST(request: NextRequest) {
           apiKey,
           anchors,
         ).catch((err) => {
-          console.error(`classify #${p.problem_number} threw:`, err);
+          Sentry.captureException(err, {
+            tags: { route: "classify-difficulty" },
+            extra: { problemNumber: p.problem_number },
+          });
           const fallback = isNumericRating(p.difficulty as string | null)
             ? snapRating(parseInt(p.difficulty as string, 10))
             : 1200;

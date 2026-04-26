@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import { type NextRequest, NextResponse } from "next/server";
 import { env } from "~/env";
 import {
@@ -218,7 +219,10 @@ Rules — follow these strictly:
       }),
       signal: AbortSignal.timeout(30000),
     });
-  } catch {
+  } catch (err) {
+    Sentry.captureException(err, {
+      tags: { route: "chat", step: "openrouter_fetch" },
+    });
     return NextResponse.json(
       { error: "Failed to reach OpenRouter." },
       { status: 502 },
@@ -228,6 +232,10 @@ Rules — follow these strictly:
   const rawText = await aiRes.text();
 
   if (!aiRes.ok) {
+    Sentry.captureMessage(`OpenRouter error in chat: ${aiRes.status}`, {
+      level: "error",
+      extra: { body: rawText.slice(0, 500) },
+    });
     return NextResponse.json(
       { error: `OpenRouter responded with ${aiRes.status}.` },
       { status: 502 },
@@ -237,7 +245,10 @@ Rules — follow these strictly:
   let aiBody: { choices: { message: { content: string } }[] };
   try {
     aiBody = JSON.parse(rawText) as typeof aiBody;
-  } catch {
+  } catch (err) {
+    Sentry.captureException(err, {
+      tags: { route: "chat", step: "parse_response" },
+    });
     return NextResponse.json(
       { error: "Failed to parse AI response." },
       { status: 502 },
@@ -246,6 +257,9 @@ Rules — follow these strictly:
 
   const reply = aiBody.choices?.[0]?.message?.content?.trim() ?? "";
   if (!reply) {
+    Sentry.captureMessage("AI returned empty response in chat", {
+      level: "warning",
+    });
     return NextResponse.json(
       { error: "AI returned empty response." },
       { status: 500 },

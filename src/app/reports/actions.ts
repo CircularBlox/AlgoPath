@@ -1,5 +1,6 @@
 "use server";
 
+import * as Sentry from "@sentry/nextjs";
 import { revalidatePath } from "next/cache";
 import { isAdmin } from "~/lib/is-admin";
 import { createAdminClient } from "~/lib/supabase/admin";
@@ -17,17 +18,28 @@ export async function resolveReport(formData: FormData) {
 
   const supabase = createAdminClient();
 
-  await supabase
+  const { error: reportError } = await supabase
     .from("problem_reports")
     .update({ status, recommended_difficulty: recommendedDifficulty })
     .eq("id", reportId);
 
-  // If marking done with a difficulty, update the problem's difficulty too
+  if (reportError)
+    Sentry.captureException(reportError, {
+      tags: { action: "resolveReport", step: "update_report" },
+      extra: { reportId },
+    });
+
   if (status === "done" && recommendedDifficulty && problemNumber) {
-    await supabase
+    const { error: diffError } = await supabase
       .from("problems")
       .update({ difficulty: recommendedDifficulty })
       .eq("problem_number", problemNumber);
+
+    if (diffError)
+      Sentry.captureException(diffError, {
+        tags: { action: "resolveReport", step: "update_difficulty" },
+        extra: { problemNumber },
+      });
   }
 
   revalidatePath("/reports");

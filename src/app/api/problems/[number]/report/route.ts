@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import { type NextRequest, NextResponse } from "next/server";
 import { CSRF_HEADER, validateCsrfToken } from "~/lib/csrf";
 import { isAdmin } from "~/lib/is-admin";
@@ -129,6 +130,10 @@ export async function POST(
   });
 
   if (error) {
+    Sentry.captureException(error, {
+      tags: { route: "report" },
+      extra: { problemNumber, userId: user.id, type },
+    });
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 

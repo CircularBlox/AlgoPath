@@ -1,5 +1,6 @@
 "use server";
 
+import * as Sentry from "@sentry/nextjs";
 import { isAdmin } from "~/lib/is-admin";
 import { createAdminClient } from "~/lib/supabase/admin";
 import { getUser } from "~/lib/supabase/server";
@@ -62,6 +63,11 @@ export async function addSolution(
       .single();
 
     if (createError || !created) {
+      if (createError)
+        Sentry.captureException(createError, {
+          tags: { action: "addSolution", step: "create_solution" },
+          extra: { problemNumber },
+        });
       return { success: false, error: "Failed to create solution entry." };
     }
     solutionId = created.id;
@@ -79,6 +85,10 @@ export async function addSolution(
   );
 
   if (error) {
+    Sentry.captureException(error, {
+      tags: { action: "addSolution", step: "upsert_code" },
+      extra: { problemNumber, language },
+    });
     return { success: false, error: error.message };
   }
 

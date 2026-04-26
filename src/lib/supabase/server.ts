@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { cache } from "react";
@@ -40,7 +41,8 @@ export const getUser = cache(async () => {
       data: { user },
     } = await supabase.auth.getUser();
     return user;
-  } catch {
+  } catch (err) {
+    Sentry.captureException(err, { tags: { source: "getUser" } });
     return null;
   }
 });

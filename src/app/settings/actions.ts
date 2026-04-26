@@ -1,5 +1,6 @@
 "use server";
 
+import * as Sentry from "@sentry/nextjs";
 import { redirect } from "next/navigation";
 import { createAdminClient } from "~/lib/supabase/admin";
 import { createClient, getUser } from "~/lib/supabase/server";
@@ -10,13 +11,22 @@ export async function deleteAccount(): Promise<void> {
     redirect("/auth/login");
   }
 
-  // Sign out first so the session cookie is cleared
   const supabase = await createClient();
-  await supabase.auth.signOut();
+  const { error: signOutError } = await supabase.auth.signOut();
+  if (signOutError)
+    Sentry.captureException(signOutError, {
+      tags: { action: "deleteAccount", step: "sign_out" },
+    });
 
-  // Delete the auth user — cascades to profiles table
-  const admin = createAdminClient();
-  await admin.auth.admin.deleteUser(user.id);
+  const adminClient = createAdminClient();
+  const { error: deleteError } = await adminClient.auth.admin.deleteUser(
+    user.id,
+  );
+  if (deleteError)
+    Sentry.captureException(deleteError, {
+      tags: { action: "deleteAccount", step: "delete_user" },
+      extra: { userId: user.id },
+    });
 
   redirect("/");
 }

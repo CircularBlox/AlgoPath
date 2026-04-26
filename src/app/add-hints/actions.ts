@@ -1,5 +1,6 @@
 "use server";
 
+import * as Sentry from "@sentry/nextjs";
 import { isAdmin } from "~/lib/is-admin";
 import { createAdminClient } from "~/lib/supabase/admin";
 import { getUser } from "~/lib/supabase/server";
@@ -55,6 +56,10 @@ export async function saveHints(
       .eq("id", existing.id);
 
     if (error) {
+      Sentry.captureException(error, {
+        tags: { action: "saveHints", step: "update" },
+        extra: { problemNumber },
+      });
       return { success: false, error: error.message };
     }
   } else {
@@ -67,6 +72,10 @@ export async function saveHints(
     });
 
     if (error) {
+      Sentry.captureException(error, {
+        tags: { action: "saveHints", step: "insert" },
+        extra: { problemNumber },
+      });
       return { success: false, error: error.message };
     }
   }
