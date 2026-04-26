@@ -38,6 +38,7 @@ async function classifyOne(
   problem_number: number;
   rating: number | null;
   analysis: string | null;
+  apiError: string | null;
 }> {
   const tags = (problem.tags ?? []).join(", ") || "none";
 
@@ -98,7 +99,7 @@ RATING: <integer multiple of 100, 400–3500>`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.0-flash-001",
+        model: "google/gemini-flash-1.5",
         messages: [{ role: "user", content: prompt }],
         max_tokens: 300,
         temperature: 0,
@@ -108,14 +109,15 @@ RATING: <integer multiple of 100, 400–3500>`;
 
   if (!response.ok) {
     const errText = await response.text().catch(() => "");
+    const apiError = `HTTP ${response.status}: ${errText.slice(0, 200)}`;
     console.error(
-      `classify-difficulty: API ${response.status} for #${problem.problem_number}:`,
-      errText,
+      `classify #${problem.problem_number}: API error — ${apiError}`,
     );
     return {
       problem_number: problem.problem_number,
       rating: null,
       analysis: null,
+      apiError,
     };
   }
 
@@ -141,6 +143,7 @@ RATING: <integer multiple of 100, 400–3500>`;
         problem_number: problem.problem_number,
         rating: snapRating(parsed),
         analysis,
+        apiError: null,
       };
     }
   }
@@ -154,12 +157,18 @@ RATING: <integer multiple of 100, 400–3500>`;
         problem_number: problem.problem_number,
         rating: snapRating(parsed),
         analysis,
+        apiError: null,
       };
     }
   }
 
   console.warn(`classify #${problem.problem_number}: unparseable — skipping`);
-  return { problem_number: problem.problem_number, rating: null, analysis };
+  return {
+    problem_number: problem.problem_number,
+    rating: null,
+    analysis,
+    apiError: null,
+  };
 }
 
 export async function POST(request: NextRequest) {
@@ -251,7 +260,7 @@ export async function POST(request: NextRequest) {
     .sort((a, b) => a.cf_rating - b.cf_rating);
 
   const apiKey = env.OPENROUTER_API_KEY;
-  const BATCH = 6; // slightly smaller batch so the model has more context budget per call
+  const BATCH = 6;
   const results: {
     problem_number: number;
     title: string;
@@ -260,6 +269,7 @@ export async function POST(request: NextRequest) {
     analysis: string | null;
     had_solution: boolean;
   }[] = [];
+  let firstApiError: string | null = null;
 
   for (let i = 0; i < targets.length; i += BATCH) {
     const batch = targets.slice(i, i + BATCH);
@@ -283,12 +293,14 @@ export async function POST(request: NextRequest) {
             problem_number: p.problem_number as number,
             rating: null as number | null,
             analysis: null as string | null,
+            apiError: String(err) as string | null,
           };
         }),
       ),
     );
 
     for (const result of batchResults) {
+      if (result.apiError && !firstApiError) firstApiError = result.apiError;
       const target = targets.find(
         (t) => t.problem_number === result.problem_number,
       );
@@ -332,6 +344,7 @@ export async function POST(request: NextRequest) {
     dry_run: dryRun,
     classified: results.length,
     failed: results.filter((r) => r.new_rating === null).length,
+    ...(firstApiError ? { api_error: firstApiError } : {}),
     distribution,
     results,
   });
