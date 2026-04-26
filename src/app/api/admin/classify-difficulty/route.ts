@@ -99,7 +99,7 @@ RATING: <integer multiple of 100, 400–3500>`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-flash-1.5",
+        model: "google/gemini-3.1-flash-lite-preview",
         messages: [{ role: "user", content: prompt }],
         max_tokens: 300,
         temperature: 0,
