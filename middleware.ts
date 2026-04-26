@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import { type NextRequest, NextResponse } from "next/server";
 import { ADMIN_EMAIL } from "~/lib/is-admin";
 import { createMiddlewareClient } from "~/lib/supabase/middleware";
@@ -38,6 +39,12 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Sentry tunnel route — must be publicly accessible so error reports
+  // aren't blocked for unauthenticated users or before auth resolves.
+  if (request.nextUrl.pathname === "/monitoring") {
+    return NextResponse.next();
+  }
+
   const { supabase, response } = createMiddlewareClient(request);
 
   // Refresh session — required for SSR auth to stay valid.
@@ -49,12 +56,19 @@ export async function middleware(request: NextRequest) {
     ({
       data: { user },
     } = await supabase.auth.getUser());
-  } catch {
+  } catch (err) {
+    Sentry.captureException(err, { tags: { source: "middleware_auth" } });
     for (const cookie of request.cookies.getAll()) {
       if (cookie.name.startsWith("sb-")) {
         response.cookies.delete(cookie.name);
       }
     }
+  }
+
+  if (user) {
+    Sentry.setUser({ id: user.id, email: user.email ?? undefined });
+  } else {
+    Sentry.setUser(null);
   }
 
   const { pathname } = request.nextUrl;

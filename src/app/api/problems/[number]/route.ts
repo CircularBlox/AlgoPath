@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import { type NextRequest, NextResponse } from "next/server";
 import { createClient } from "~/lib/supabase/server";
 
@@ -24,6 +25,11 @@ export async function GET(
     .single();
 
   if (refError || !ref) {
+    if (refError)
+      Sentry.captureException(refError, {
+        tags: { route: "problem", step: "resolve_number" },
+        extra: { problemNumber },
+      });
     return NextResponse.json({ error: "Problem not found." }, { status: 404 });
   }
 
@@ -35,6 +41,11 @@ export async function GET(
     .single();
 
   if (error || !data) {
+    if (error)
+      Sentry.captureException(error, {
+        tags: { route: "problem", step: "fetch" },
+        extra: { problemNumber },
+      });
     return NextResponse.json({ error: "Problem not found." }, { status: 404 });
   }
 

@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import { type NextRequest, NextResponse } from "next/server";
 import { CSRF_HEADER, validateCsrfToken } from "~/lib/csrf";
 import { createClient } from "~/lib/supabase/server";
@@ -78,6 +79,10 @@ export async function POST(request: NextRequest) {
     .eq("id", user.id);
 
   if (error) {
+    Sentry.captureException(error, {
+      tags: { route: "onboarding" },
+      extra: { userId: user.id },
+    });
     return NextResponse.json(
       { error: "Failed to save onboarding data." },
       { status: 500 },

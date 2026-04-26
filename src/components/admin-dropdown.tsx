@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 const adminLinks = [
+  { href: "/admin/classify-difficulty", label: "Classify Difficulty" },
   { href: "/add-problem", label: "Add Problem" },
   { href: "/add-hints", label: "Add Hints" },
   { href: "/add-solution", label: "Add Solution" },

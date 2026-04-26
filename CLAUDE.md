@@ -66,10 +66,6 @@ This is a Next.js + Supabase app for competitive programmers that helps them get
 
 ### Environment Variables
 - `.env.local` stores all secrets
-  - `NEXT_PUBLIC_SUPABASE_URL`
-  - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-  - `SUPABASE_SERVICE_ROLE_KEY`
-  - `OPENAI_API_KEY` (or Claude API key)
 - Never commit `.env.local`  
 
 ### Styling
@@ -86,7 +82,7 @@ This is a Next.js + Supabase app for competitive programmers that helps them get
 ---
 
 ## AI Usage
-- Only use OpenRouter for all API calls until further notice, mention this anytime you use another AI system. For example, do not use Anthropic or OpenAI APIs.
+- Only use OpenRouter for all API calls until further notice, mention this anytime you use another AI system, with OpenAI models that are free.
 
 ## API / Backend Conventions
 - All API routes live in `/app/api/`
@@ -132,6 +128,7 @@ This is a Next.js + Supabase app for competitive programmers that helps them get
 - End-to-end test user flow: login → paste problem → generate hints → rate
 - Ensure RLS is enforced
 - Test error handling for missing data, invalid URLs, or auth failures
+- Everything should have Sentry Error Tracking
 
 ---
 
@@ -143,9 +140,6 @@ This is a Next.js + Supabase app for competitive programmers that helps them get
 - Make the website look modern and not vibecoded
 
 ## Notes
-- Focus on incremental feature building
-- Start with attempt + hint flow
-- Expand to notes, ratings, skill-level adjustments later
 - Keep frontend simple for MVP
 - Reuse Supabase client and API routes for future features
 - With languages, use Python and C++ instead of python and cpp

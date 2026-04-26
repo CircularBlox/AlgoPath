@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import { type NextRequest, NextResponse } from "next/server";
 import { CSRF_HEADER, validateCsrfToken } from "~/lib/csrf";
 import { createClient } from "~/lib/supabase/server";
@@ -105,6 +106,11 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (profileError || !profile) {
+    if (profileError)
+      Sentry.captureException(profileError, {
+        tags: { route: "solve", step: "fetch_profile" },
+        extra: { userId: user.id },
+      });
     return NextResponse.json({ error: "Profile not found." }, { status: 404 });
   }
 
@@ -184,6 +190,10 @@ export async function POST(request: NextRequest) {
     .eq("id", user.id);
 
   if (updateError) {
+    Sentry.captureException(updateError, {
+      tags: { route: "solve", step: "update_profile" },
+      extra: { userId: user.id, problem_number },
+    });
     return NextResponse.json(
       { error: "Failed to update profile." },
       { status: 500 },

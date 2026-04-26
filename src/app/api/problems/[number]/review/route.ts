@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import { type NextRequest, NextResponse } from "next/server";
 import { env } from "~/env";
 import {
@@ -79,6 +80,9 @@ export async function POST(
       .limit(REVIEW_DAILY_LIMIT + 1);
 
     if (reviewsError) {
+      Sentry.captureException(reviewsError, {
+        tags: { route: "review", step: "rate_limit_check" },
+      });
       return NextResponse.json(
         { error: "Failed to check rate limits." },
         { status: 500 },
@@ -194,7 +198,10 @@ Feedback rules — follow these strictly:
       }),
       signal: AbortSignal.timeout(30000),
     });
-  } catch {
+  } catch (err) {
+    Sentry.captureException(err, {
+      tags: { route: "review", step: "openrouter_fetch" },
+    });
     return NextResponse.json(
       { error: "Failed to reach OpenRouter." },
       { status: 502 },
@@ -204,6 +211,10 @@ Feedback rules — follow these strictly:
   const rawText = await aiRes.text();
 
   if (!aiRes.ok) {
+    Sentry.captureMessage(`OpenRouter error in review: ${aiRes.status}`, {
+      level: "error",
+      extra: { body: rawText.slice(0, 500) },
+    });
     return NextResponse.json(
       { error: `OpenRouter responded with ${aiRes.status}.` },
       { status: 502 },
@@ -213,7 +224,10 @@ Feedback rules — follow these strictly:
   let aiBody: { choices: { message: { content: string } }[] };
   try {
     aiBody = JSON.parse(rawText) as typeof aiBody;
-  } catch {
+  } catch (err) {
+    Sentry.captureException(err, {
+      tags: { route: "review", step: "parse_response" },
+    });
     return NextResponse.json(
       { error: "Failed to parse AI response." },
       { status: 502 },
@@ -222,6 +236,9 @@ Feedback rules — follow these strictly:
 
   const feedback = aiBody.choices?.[0]?.message?.content?.trim() ?? "";
   if (!feedback) {
+    Sentry.captureMessage("AI returned empty feedback in review", {
+      level: "warning",
+    });
     return NextResponse.json(
       { error: "AI returned empty feedback." },
       { status: 500 },

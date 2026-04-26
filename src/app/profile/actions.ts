@@ -1,5 +1,6 @@
 "use server";
 
+import * as Sentry from "@sentry/nextjs";
 import { createClient, getUser } from "~/lib/supabase/server";
 
 const VALID_LEVELS = ["beginner", "intermediate", "advanced"] as const;
@@ -23,6 +24,10 @@ export async function updateSkillLevel(
     .eq("id", user.id);
 
   if (error) {
+    Sentry.captureException(error, {
+      tags: { action: "updateSkillLevel" },
+      extra: { level },
+    });
     return { success: false, error: error.message };
   }
 
