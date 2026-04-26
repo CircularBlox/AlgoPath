@@ -9,7 +9,8 @@ interface ClassificationResult {
   problem_number: number;
   title: string;
   old: string | null;
-  new_rating: number;
+  new_rating: number | null;
+  analysis: string | null;
   had_solution: boolean;
 }
 
@@ -37,6 +38,127 @@ function RatingBadge({ rating }: { rating: number }) {
       <span className={cn("font-bold", cls)}>{rating}</span>
       <span className="text-xs text-muted-foreground">({label})</span>
     </span>
+  );
+}
+
+function ResultsTable({ results }: { results: ClassificationResult[] }) {
+  const [expanded, setExpanded] = useState<Set<number>>(new Set());
+
+  function toggle(n: number) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(n)) next.delete(n);
+      else next.add(n);
+      return next;
+    });
+  }
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-border shadow-sm">
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border bg-muted/40">
+              <th className="w-8 px-3 py-3" />
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                #
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Title
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Was
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                New Rating
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Sol.
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {results.map((r) => {
+              const isOpen = expanded.has(r.problem_number);
+              return (
+                <>
+                  <tr
+                    key={r.problem_number}
+                    className={cn(
+                      "transition-colors",
+                      r.analysis
+                        ? "cursor-pointer hover:bg-muted/30"
+                        : "hover:bg-muted/20",
+                      isOpen && "bg-muted/20",
+                    )}
+                    onClick={() => r.analysis && toggle(r.problem_number)}
+                  >
+                    <td className="px-3 py-3 text-center text-muted-foreground">
+                      {r.analysis ? (
+                        <svg
+                          viewBox="0 0 12 12"
+                          fill="none"
+                          aria-hidden="true"
+                          className={cn(
+                            "mx-auto h-3 w-3 transition-transform",
+                            isOpen && "rotate-90",
+                          )}
+                        >
+                          <path
+                            d="M4 2l4 4-4 4"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      ) : null}
+                    </td>
+                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
+                      {r.problem_number}
+                    </td>
+                    <td className="max-w-64 truncate px-4 py-3 font-medium">
+                      {r.title ?? "—"}
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {r.old ?? <span className="text-xs italic">none</span>}
+                    </td>
+                    <td className="px-4 py-3">
+                      {r.new_rating !== null ? (
+                        <RatingBadge rating={r.new_rating} />
+                      ) : (
+                        <span className="text-xs text-destructive">failed</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      {r.had_solution ? (
+                        <span className="text-xs text-emerald-600 dark:text-emerald-400">
+                          ✓
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </td>
+                  </tr>
+                  {isOpen && r.analysis && (
+                    <tr key={`${r.problem_number}-analysis`}>
+                      <td
+                        colSpan={6}
+                        className="border-t border-border/50 bg-muted/10 px-12 py-3"
+                      >
+                        <p className="text-xs leading-relaxed text-muted-foreground">
+                          {r.analysis}
+                        </p>
+                      </td>
+                    </tr>
+                  )}
+                </>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 }
 
@@ -83,7 +205,8 @@ export default function ClassifyDifficultyPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [dryRun, setDryRun] = useState(true);
-  const [force, setForce] = useState(false);
+  const [force, setForce] = useState(true);
+  const [failed, setFailed] = useState(0);
   const [wasApplied, setWasApplied] = useState(false);
 
   async function handleClassify() {
@@ -93,6 +216,7 @@ export default function ClassifyDifficultyPage() {
     setResults([]);
     setDistribution({});
     setClassified(null);
+    setFailed(0);
     setWasApplied(false);
 
     try {
@@ -113,6 +237,7 @@ export default function ClassifyDifficultyPage() {
         results: ClassificationResult[];
         distribution: Record<string, number>;
         classified: number;
+        failed: number;
         dry_run: boolean;
         message?: string;
       };
@@ -120,6 +245,7 @@ export default function ClassifyDifficultyPage() {
       setResults(typed.results ?? []);
       setDistribution(typed.distribution ?? {});
       setClassified(typed.classified);
+      setFailed(typed.failed ?? 0);
       setMessage(typed.message ?? null);
       setWasApplied(!typed.dry_run);
     } catch (err) {
@@ -176,10 +302,10 @@ export default function ClassifyDifficultyPage() {
             <Toggle id="force" checked={force} onChange={setForce} />
             <div>
               <Label htmlFor="force" className="cursor-pointer">
-                Force re-classify
+                Re-classify all
               </Label>
               <p className="text-xs text-muted-foreground">
-                Also re-classify problems that already have a numeric rating
+                Include problems that already have a numeric rating
               </p>
             </div>
           </div>
@@ -268,6 +394,11 @@ export default function ClassifyDifficultyPage() {
           <div className="flex items-center gap-3">
             <span className="text-sm text-muted-foreground">
               {classified} problem{classified !== 1 ? "s" : ""} classified
+              {failed > 0 && (
+                <span className="ml-1.5 text-destructive">
+                  · {failed} failed
+                </span>
+              )}
             </span>
             {wasApplied ? (
               <span className="inline-flex items-center rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
@@ -281,63 +412,7 @@ export default function ClassifyDifficultyPage() {
           </div>
 
           {/* Results table */}
-          <div className="overflow-hidden rounded-xl border border-border shadow-sm">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border bg-muted/40">
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      #
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Title
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Was
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      New Rating
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Solution
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {results.map((r) => (
-                    <tr
-                      key={r.problem_number}
-                      className="transition-colors hover:bg-muted/20"
-                    >
-                      <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
-                        {r.problem_number}
-                      </td>
-                      <td className="max-w-64 truncate px-4 py-3 font-medium">
-                        {r.title ?? "—"}
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">
-                        {r.old ?? <span className="text-xs italic">none</span>}
-                      </td>
-                      <td className="px-4 py-3">
-                        <RatingBadge rating={r.new_rating} />
-                      </td>
-                      <td className="px-4 py-3">
-                        {r.had_solution ? (
-                          <span className="text-xs text-emerald-600 dark:text-emerald-400">
-                            used
-                          </span>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">
-                            —
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <ResultsTable results={results} />
         </div>
       )}
     </main>
