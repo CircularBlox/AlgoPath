@@ -3,7 +3,11 @@
 ## Project Overview
 This is a Next.js + Supabase app for competitive programmers that helps them get AI-generated, adaptive, step-by-step hints on problems they are working on. Users can paste a problem URL and their current attempt (code or notes), and receive 3 progressive hints to guide them without giving the full solution.  
 
-**Target users:** Competitive programmers who are stuck on coding problems, from intermediate LeetCode users to top contest participants.  
+**Target users:** Competitive programmers who are stuck on coding problems, from intermediate LeetCode users to top contest participants. Especially for programming like USACO.
+
+IMPORTANT - Update MEMORY.md for every prompt.
+
+
 
 ---
 
