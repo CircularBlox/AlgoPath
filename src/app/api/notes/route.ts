@@ -2,16 +2,29 @@ import * as Sentry from "@sentry/nextjs";
 import { type NextRequest, NextResponse } from "next/server";
 import { createClient, getUser } from "~/lib/supabase/server";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const user = await getUser();
   if (!user)
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
 
+  const problemNumberParam = new URL(request.url).searchParams.get(
+    "problem_number",
+  );
+  const filterByProblem = problemNumberParam
+    ? Number(problemNumberParam)
+    : null;
+
   const supabase = await createClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from("notes")
     .select("id, title, content, problem_number, updated_at, created_at")
     .order("updated_at", { ascending: false });
+
+  if (filterByProblem && !Number.isNaN(filterByProblem)) {
+    query = query.eq("problem_number", filterByProblem);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     Sentry.captureException(error, { tags: { route: "notes", method: "GET" } });
