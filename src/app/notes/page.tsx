@@ -62,31 +62,12 @@ export default function NotesPage() {
       setUserId(user?.id ?? null);
 
       if (user) {
-        // One-time migration from localStorage — runs once, never again
-        if (!localStorage.getItem(MIGRATION_KEY)) {
-          const local = loadLocalNotes();
-          if (local.length > 0) {
-            await Promise.allSettled(
-              local.map((n) =>
-                fetch("/api/notes", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    title: n.title,
-                    content: n.content,
-                    problem_number: n.problem_number,
-                  }),
-                }),
-              ),
-            );
-          }
-          localStorage.setItem(MIGRATION_KEY, "1");
-        }
-
-        // Load from Supabase
+        // Load from Supabase first to confirm the table is available
+        let apiAvailable = false;
         try {
           const res = await fetch("/api/notes");
           if (res.ok) {
+            apiAvailable = true;
             const data = (await res.json()) as Array<{
               id: string;
               title: string;
@@ -103,9 +84,58 @@ export default function NotesPage() {
                 updatedAt: new Date(n.updated_at).getTime(),
               })),
             );
+          } else {
+            // API unavailable (table may not exist yet) — show localStorage
+            setNotes(loadLocalNotes());
           }
         } catch {
-          // fall through, notes stay empty
+          setNotes(loadLocalNotes());
+        }
+
+        // One-time migration from localStorage — only runs when API is confirmed working
+        if (apiAvailable && !localStorage.getItem(MIGRATION_KEY)) {
+          const local = loadLocalNotes();
+          if (local.length > 0) {
+            const results = await Promise.allSettled(
+              local.map((n) =>
+                fetch("/api/notes", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    title: n.title,
+                    content: n.content,
+                    problem_number: n.problem_number,
+                  }),
+                }),
+              ),
+            );
+            // Only mark migrated if all succeeded
+            if (results.every((r) => r.status === "fulfilled")) {
+              localStorage.setItem(MIGRATION_KEY, "1");
+              // Reload to show migrated notes with their new Supabase IDs
+              const res2 = await fetch("/api/notes");
+              if (res2.ok) {
+                const data2 = (await res2.json()) as Array<{
+                  id: string;
+                  title: string;
+                  content: string;
+                  problem_number: number | null;
+                  updated_at: string;
+                }>;
+                setNotes(
+                  data2.map((n) => ({
+                    id: n.id,
+                    title: n.title,
+                    content: n.content,
+                    problem_number: n.problem_number,
+                    updatedAt: new Date(n.updated_at).getTime(),
+                  })),
+                );
+              }
+            }
+          } else {
+            localStorage.setItem(MIGRATION_KEY, "1");
+          }
         }
       } else {
         // Unauthenticated: localStorage

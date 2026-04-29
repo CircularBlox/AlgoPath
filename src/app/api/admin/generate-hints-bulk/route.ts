@@ -9,6 +9,10 @@ function sse(data: object): Uint8Array {
   return new TextEncoder().encode(`data: ${JSON.stringify(data)}\n\n`);
 }
 
+type HintResult =
+  | { ok: true; hint_1: string; hint_2: string; hint_3: string }
+  | { ok: false; error: string };
+
 async function generateHintsForProblem(
   problem: {
     problem_number: number;
@@ -19,7 +23,7 @@ async function generateHintsForProblem(
     url: unknown;
   },
   apiKey: string,
-): Promise<{ hint_1: string; hint_2: string; hint_3: string } | null> {
+): Promise<HintResult> {
   const tags = (problem.tags as string[] | null) ?? [];
   const contentSnippet = problem.content
     ? `\n\nProblem statement (excerpt):\n${(problem.content as string).replace(/<[^>]+>/g, " ").slice(0, 800)}`
@@ -44,6 +48,7 @@ Rules:
 - Never state what to do — only ask what the solver might notice or wonder about.
 - No labels, bullets, or headers inside the hint text.`;
 
+  let rawText = "";
   try {
     const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
@@ -60,8 +65,17 @@ Rules:
       signal: AbortSignal.timeout(30000),
     });
 
-    const rawText = await res.text();
-    if (!res.ok) return null;
+    rawText = await res.text();
+
+    if (!res.ok) {
+      const reason = `OpenRouter ${res.status}: ${rawText.slice(0, 120)}`;
+      Sentry.captureMessage(reason, {
+        level: "error",
+        tags: { route: "generate-hints-bulk", step: "openrouter" },
+        extra: { problem_number: problem.problem_number },
+      });
+      return { ok: false, error: reason };
+    }
 
     const aiBody = JSON.parse(rawText) as {
       choices: { message: { content: string } }[];
@@ -77,14 +91,27 @@ Rules:
       hint_3?: string;
     };
 
-    if (!hints.hint_1 || !hints.hint_2 || !hints.hint_3) return null;
+    if (!hints.hint_1 || !hints.hint_2 || !hints.hint_3) {
+      return { ok: false, error: "Incomplete hints in AI response" };
+    }
     return {
+      ok: true,
       hint_1: hints.hint_1,
       hint_2: hints.hint_2,
       hint_3: hints.hint_3,
     };
-  } catch {
-    return null;
+  } catch (err) {
+    Sentry.captureException(err, {
+      tags: { route: "generate-hints-bulk", step: "generate" },
+      extra: {
+        problem_number: problem.problem_number,
+        rawText: rawText.slice(0, 200),
+      },
+    });
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Unknown error",
+    };
   }
 }
 
@@ -131,15 +158,15 @@ export async function GET(_request: NextRequest) {
       for (let i = 0; i < toProcess.length; i++) {
         const problem = toProcess[i];
 
-        const hints = await generateHintsForProblem(problem, apiKey);
+        const result = await generateHintsForProblem(problem, apiKey);
 
-        if (hints) {
+        if (result.ok) {
           const { error } = await adminSupabase.from("hints").insert({
             problem_number: problem.problem_number,
             problem_name: problem.title,
-            hint_1: hints.hint_1,
-            hint_2: hints.hint_2,
-            hint_3: hints.hint_3,
+            hint_1: result.hint_1,
+            hint_2: result.hint_2,
+            hint_3: result.hint_3,
           });
 
           if (error) {
@@ -182,13 +209,13 @@ export async function GET(_request: NextRequest) {
               problem_number: problem.problem_number,
               title: problem.title,
               success: false,
-              error: "AI generation failed",
+              error: result.error,
             }),
           );
         }
 
         if (i < toProcess.length - 1) {
-          await new Promise((r) => setTimeout(r, 500));
+          await new Promise((r) => setTimeout(r, 1200));
         }
       }
 
