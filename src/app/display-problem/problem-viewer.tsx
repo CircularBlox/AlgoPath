@@ -177,6 +177,65 @@ export function ProblemViewer({
   const [suggestQuery, setSuggestQuery] = useState("");
   const [isAiLoading, setIsAiLoading] = useState(false);
 
+  const [notesPanelOpen, setNotesPanelOpen] = useState(false);
+  const [problemNotes, setProblemNotes] = useState<
+    { id: string; title: string; content: string; updated_at: string }[]
+  >([]);
+  const [notesLoading, setNotesLoading] = useState(false);
+  const [notesLoaded, setNotesLoaded] = useState(false);
+  const [quickTitle, setQuickTitle] = useState("");
+  const [quickContent, setQuickContent] = useState("");
+  const [quickSaving, setQuickSaving] = useState(false);
+
+  async function loadProblemNotes(problemNumber: number) {
+    setNotesLoading(true);
+    try {
+      const res = await fetch(`/api/notes?problem_number=${problemNumber}`);
+      if (res.ok) {
+        setProblemNotes(
+          (await res.json()) as {
+            id: string;
+            title: string;
+            content: string;
+            updated_at: string;
+          }[],
+        );
+      }
+    } finally {
+      setNotesLoading(false);
+      setNotesLoaded(true);
+    }
+  }
+
+  async function saveQuickNote(problemNumber: number) {
+    if (!quickTitle.trim() && !quickContent.trim()) return;
+    setQuickSaving(true);
+    try {
+      const res = await fetch("/api/notes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: quickTitle.trim() || "Untitled",
+          content: quickContent.trim(),
+          problem_number: problemNumber,
+        }),
+      });
+      if (res.ok) {
+        const data = (await res.json()) as {
+          id: string;
+          title: string;
+          content: string;
+          updated_at: string;
+        };
+        setProblemNotes((prev) => [data, ...prev]);
+        setQuickTitle("");
+        setQuickContent("");
+      }
+    } finally {
+      setQuickSaving(false);
+    }
+  }
+
   async function fetchRandom() {
     setState({ status: "loading" });
     resetPanels();
@@ -250,6 +309,13 @@ export function ProblemViewer({
     setReviewLanguage("C++");
     setProblemViewed(false);
     setReviewPanelOpen(false);
+    setNotesPanelOpen(false);
+    setProblemNotes([]);
+    setNotesLoaded(false);
+    setNotesLoading(false);
+    setQuickTitle("");
+    setQuickContent("");
+    setQuickSaving(false);
   }
 
   async function handleReport(problemNumber: number) {
@@ -1333,6 +1399,170 @@ export function ProblemViewer({
                     </div>
                   );
                 })()}
+            </>
+          );
+        })()}
+
+      {/* ── Notes side tab + panel ───────────────────────────── */}
+      {state.status === "loaded" &&
+        userId &&
+        (() => {
+          const problemNumber = state.problem.problem_number ?? 0;
+          return (
+            <>
+              {!notesPanelOpen && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNotesPanelOpen(true);
+                    if (!notesLoaded) loadProblemNotes(problemNumber);
+                  }}
+                  className="fixed left-0 top-1/2 z-40 flex flex-col items-center gap-2 rounded-r-lg border border-l-0 border-border bg-card px-2.5 py-5 text-foreground shadow-lg transition-all hover:bg-muted"
+                  style={{ transform: "translateY(-50%)" }}
+                  aria-label="Open notes panel"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="16" y1="13" x2="8" y2="13" />
+                    <line x1="16" y1="17" x2="8" y2="17" />
+                    <polyline points="10 9 9 9 8 9" />
+                  </svg>
+                  <span
+                    className="text-[11px] font-semibold tracking-wide"
+                    style={{
+                      writingMode: "vertical-rl",
+                      transform: "rotate(180deg)",
+                    }}
+                  >
+                    Notes
+                  </span>
+                </button>
+              )}
+
+              {notesPanelOpen && (
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setNotesPanelOpen(false)}
+                  aria-hidden="true"
+                />
+              )}
+
+              <div
+                className={`fixed left-0 top-14 z-50 flex h-[calc(100vh-3.5rem)] w-[min(360px,100vw)] flex-col border-r border-border bg-card shadow-2xl transition-transform duration-200 ease-in-out ${
+                  notesPanelOpen ? "translate-x-0" : "-translate-x-full"
+                }`}
+              >
+                <div className="flex items-center justify-between border-b border-border px-5 py-4">
+                  <div className="flex flex-col gap-0.5">
+                    <span className="font-semibold text-sm">Notes</span>
+                    <span className="text-xs text-muted-foreground">
+                      {state.problem.title}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setNotesPanelOpen(false)}
+                    className="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    aria-label="Close notes panel"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Notes list */}
+                <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2">
+                  {notesLoading && (
+                    <p className="text-sm text-muted-foreground">Loading…</p>
+                  )}
+                  {!notesLoading && problemNotes.length === 0 && (
+                    <p className="text-center text-xs text-muted-foreground py-6">
+                      No notes for this problem yet.
+                    </p>
+                  )}
+                  {problemNotes.map((note) => (
+                    <div
+                      key={note.id}
+                      className="rounded-lg border border-border bg-muted/30 px-3 py-2.5 flex flex-col gap-1"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="text-sm font-medium leading-snug">
+                          {note.title}
+                        </span>
+                        <span className="shrink-0 text-[10px] text-muted-foreground">
+                          {new Date(note.updated_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                      {note.content && (
+                        <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">
+                          {note.content}
+                        </p>
+                      )}
+                      <a
+                        href="/notes"
+                        className="mt-1 self-start text-[11px] text-primary hover:underline"
+                      >
+                        Open in Notes ↗
+                      </a>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Quick note form */}
+                <div className="border-t border-border p-4 flex flex-col gap-2">
+                  <p className="text-xs font-medium text-muted-foreground">
+                    New Note
+                  </p>
+                  <input
+                    type="text"
+                    value={quickTitle}
+                    onChange={(e) => setQuickTitle(e.target.value)}
+                    placeholder="Title…"
+                    className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                  <textarea
+                    value={quickContent}
+                    onChange={(e) => setQuickContent(e.target.value)}
+                    placeholder="Write a note…"
+                    rows={3}
+                    className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                  <Button
+                    size="sm"
+                    onClick={() => saveQuickNote(problemNumber)}
+                    disabled={
+                      quickSaving ||
+                      (!quickTitle.trim() && !quickContent.trim())
+                    }
+                  >
+                    {quickSaving ? "Saving…" : "Save Note"}
+                  </Button>
+                </div>
+              </div>
             </>
           );
         })()}
