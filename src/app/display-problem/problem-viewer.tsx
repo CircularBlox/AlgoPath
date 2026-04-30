@@ -1441,11 +1441,15 @@ export function ProblemViewer({
           );
         })()}
 
-      {/* ── Three-tab panel: Notes | Code Editor | AI Review ── */}
+      {/* ── Fixed side tabs + slide-out panel ── */}
       {state.status === "loaded" &&
         userId &&
         (() => {
           const problemNumber = state.problem.problem_number ?? 0;
+          const isOpen = activeTab !== null;
+          const PANEL_W = 420;
+          const editorFont =
+            '"JetBrains Mono","Fira Code","Fira Mono",ui-monospace,monospace';
 
           async function saveCodeAsNote() {
             if (!reviewCode.trim()) return;
@@ -1500,6 +1504,18 @@ export function ProblemViewer({
               requestAnimationFrame(() => {
                 ta.selectionStart = ta.selectionEnd = start + 2;
               });
+            } else if (e.key === "Enter") {
+              e.preventDefault();
+              const ta = e.currentTarget;
+              const start = ta.selectionStart;
+              const lineStart = ta.value.lastIndexOf("\n", start - 1) + 1;
+              const line = ta.value.substring(lineStart, start);
+              const indent = line.match(/^(\s*)/)?.[1] ?? "";
+              const next = `${ta.value.substring(0, start)}\n${indent}${ta.value.substring(ta.selectionEnd)}`;
+              setReviewCode(next);
+              requestAnimationFrame(() => {
+                ta.selectionStart = ta.selectionEnd = start + 1 + indent.length;
+              });
             }
           }
 
@@ -1528,7 +1544,7 @@ export function ProblemViewer({
             },
             {
               id: "code" as const,
-              label: "Code Editor",
+              label: "Code",
               icon: (
                 <svg
                   width="13"
@@ -1548,7 +1564,7 @@ export function ProblemViewer({
             },
             {
               id: "ai" as const,
-              label: "AI Review",
+              label: "AI",
               icon: (
                 <svg
                   width="13"
@@ -1568,9 +1584,21 @@ export function ProblemViewer({
           ];
 
           return (
-            <div className="overflow-hidden rounded-lg border border-border">
-              {/* Tab bar */}
-              <div className="flex border-b border-border bg-muted/20">
+            <>
+              {/* Tab buttons fixed to right edge — shift left when panel is open */}
+              <div
+                style={{
+                  position: "fixed",
+                  right: isOpen ? PANEL_W : 0,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  zIndex: 41,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 3,
+                  transition: "right 0.25s ease",
+                }}
+              >
                 {TABS.map(({ id, label, icon }) => (
                   <button
                     key={id}
@@ -1584,309 +1612,424 @@ export function ProblemViewer({
                           loadProblemNotes(problemNumber);
                       }
                     }}
-                    className={`flex flex-1 items-center justify-center gap-2 border-r border-border px-4 py-3 text-sm font-medium transition-colors last:border-r-0 ${
+                    className={`flex flex-col items-center gap-1.5 rounded-l-md border border-r-0 px-2 py-3 text-[10px] font-medium transition-colors ${
                       activeTab === id
-                        ? "bg-background text-foreground shadow-[inset_0_-2px_0_0] shadow-primary"
-                        : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
                     }`}
                   >
                     {icon}
-                    {label}
-                    {activeTab === id && (
-                      <svg
-                        width="10"
-                        height="10"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="ml-auto opacity-50"
-                        aria-hidden="true"
-                      >
-                        <polyline points="18 15 12 9 6 15" />
-                      </svg>
-                    )}
+                    <span
+                      style={{
+                        writingMode: "vertical-rl",
+                        transform: "rotate(180deg)",
+                        letterSpacing: "0.04em",
+                      }}
+                    >
+                      {label}
+                    </span>
                   </button>
                 ))}
               </div>
 
-              {/* ── Notes panel ── */}
-              {activeTab === "notes" && (
-                <div className="flex flex-col gap-0">
-                  <div className="flex flex-col gap-2 overflow-y-auto max-h-72 p-4">
-                    {notesLoading && (
-                      <p className="text-sm text-muted-foreground">Loading…</p>
-                    )}
-                    {!notesLoading && problemNotes.length === 0 && (
-                      <p className="text-center text-xs text-muted-foreground py-4">
-                        No notes for this problem yet.
-                      </p>
-                    )}
-                    {problemNotes.map((note) => (
-                      <div
-                        key={note.id}
-                        className="rounded-lg border border-border bg-muted/30 px-3 py-2.5 flex flex-col gap-1"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <span className="text-sm font-medium leading-snug">
-                            {note.title}
-                          </span>
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            {note.code && (
-                              <span className="rounded bg-muted px-1.5 py-px font-mono text-[10px] text-muted-foreground">
-                                {note.code_language}
-                              </span>
-                            )}
-                            <span className="text-[10px] text-muted-foreground">
-                              {new Date(note.updated_at).toLocaleDateString()}
-                            </span>
-                          </div>
-                        </div>
-                        {note.content && (
-                          <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
-                            {note.content}
-                          </p>
-                        )}
-                        <a
-                          href="/notes"
-                          className="mt-0.5 self-start text-[11px] text-primary hover:underline"
-                        >
-                          Open in Notes ↗
-                        </a>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="border-t border-border p-4 flex flex-col gap-2">
-                    <p className="text-xs font-medium text-muted-foreground">
-                      New Note
-                    </p>
-                    <input
-                      type="text"
-                      value={quickTitle}
-                      onChange={(e) => setQuickTitle(e.target.value)}
-                      placeholder="Title…"
-                      maxLength={200}
-                      className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                    />
-                    <textarea
-                      value={quickContent}
-                      onChange={(e) => setQuickContent(e.target.value)}
-                      placeholder="Write a note…"
-                      rows={3}
-                      maxLength={10000}
-                      className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                    />
-                    <Button
-                      size="sm"
-                      className="self-start"
-                      onClick={() => saveQuickNote(problemNumber)}
-                      disabled={
-                        quickSaving ||
-                        (!quickTitle.trim() && !quickContent.trim())
-                      }
+              {/* Slide-out panel */}
+              <div
+                style={{
+                  position: "fixed",
+                  top: "3.5rem",
+                  right: 0,
+                  bottom: 0,
+                  width: PANEL_W,
+                  transform: isOpen ? "translateX(0)" : "translateX(100%)",
+                  transition: "transform 0.25s ease",
+                  zIndex: 40,
+                  display: "flex",
+                  flexDirection: "column",
+                }}
+                className="border-l border-border bg-background shadow-2xl"
+              >
+                {/* Panel header: tab switcher + close */}
+                <div className="flex shrink-0 items-center gap-1 border-b border-border px-2 py-2">
+                  {TABS.map(({ id, label, icon }) => (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => {
+                        if (id === "notes" && !notesLoaded)
+                          loadProblemNotes(problemNumber);
+                        setActiveTab(id);
+                      }}
+                      className={`flex items-center gap-1.5 rounded px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                        activeTab === id
+                          ? "bg-primary/10 text-primary"
+                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      }`}
                     >
-                      {quickSaving ? "Saving…" : "Save Note"}
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {/* ── Code editor panel ── */}
-              {activeTab === "code" && (
-                <div className="flex flex-col gap-0">
-                  <div className="flex items-center gap-1 flex-wrap border-b border-border bg-muted/10 px-4 py-2">
-                    {(["C++", "Python", "Java", "JavaScript"] as const).map(
-                      (lang) => (
-                        <button
-                          key={lang}
-                          type="button"
-                          onClick={() => setReviewLanguage(lang)}
-                          className={`rounded px-2.5 py-0.5 text-xs font-medium transition-colors ${
-                            reviewLanguage === lang
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-muted text-muted-foreground hover:text-foreground"
-                          }`}
-                        >
-                          {lang}
-                        </button>
-                      ),
-                    )}
-                    <span className="ml-auto text-[11px] text-muted-foreground">
-                      {reviewCode.length}/50000
-                    </span>
-                  </div>
-                  <textarea
-                    value={reviewCode}
-                    onChange={(e) => setReviewCode(e.target.value)}
-                    onKeyDown={handleEditorKeyDown}
-                    placeholder={`Write or paste your ${reviewLanguage} code here…`}
-                    maxLength={50000}
-                    spellCheck={false}
-                    rows={16}
-                    className="w-full resize-y bg-transparent px-4 py-3 font-mono text-sm leading-relaxed placeholder:text-muted-foreground focus:outline-none"
-                  />
-                  <div className="flex items-center gap-2 border-t border-border px-4 py-3">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={
-                        !reviewCode.trim() || editorSaveStatus === "saving"
-                      }
-                      onClick={saveCodeAsNote}
+                      {icon}
+                      {id === "code"
+                        ? "Code Editor"
+                        : id === "ai"
+                          ? "AI Review"
+                          : label}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab(null)}
+                    className="ml-auto rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    aria-label="Close panel"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
                     >
-                      {editorSaveStatus === "saving"
-                        ? "Saving…"
-                        : editorSaveStatus === "saved"
-                          ? "Saved to Notes"
-                          : "Save as Note"}
-                    </Button>
-                    {editorSaveStatus === "error" && (
-                      <span className="text-xs text-destructive">
-                        Save failed
-                      </span>
-                    )}
-                    <span className="ml-auto text-xs text-muted-foreground">
-                      Tab inserts 2 spaces · code is shared with AI Review
-                    </span>
-                  </div>
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  </button>
                 </div>
-              )}
 
-              {/* ── AI Review panel ── */}
-              {activeTab === "ai" && (
-                <div className="flex flex-col">
-                  <div className="flex items-center justify-between border-b border-border px-4 py-2.5 bg-muted/10">
-                    <p className="text-xs text-muted-foreground">
-                      {chatReviewsLeft !== null
-                        ? `${chatReviewsLeft} request${chatReviewsLeft !== 1 ? "s" : ""} left today${chatMessagesLeft !== null ? ` · ${chatMessagesLeft} left in chat` : ""}.`
-                        : chatMessagesLeft !== null
-                          ? `${chatMessagesLeft} left in chat.`
-                          : "10 requests/day · 15s between messages."}
-                    </p>
-                    {chatMessages.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setChatMessages([]);
-                          setChatError(null);
-                          setChatReviewsLeft(null);
-                        }}
-                        className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-                      >
-                        Clear chat
-                      </button>
-                    )}
-                  </div>
-
-                  {reviewCode ? (
-                    <div className="border-b border-border bg-muted/5 px-4 py-2 flex items-center gap-2">
-                      <span className="rounded bg-muted px-1.5 py-px font-mono text-[10px] text-muted-foreground">
-                        {reviewLanguage}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {reviewCode.split("\n").length} lines from Code Editor
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setActiveTab("code")}
-                        className="ml-auto text-xs text-primary hover:underline"
-                      >
-                        Edit ↗
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="border-b border-border bg-muted/5 px-4 py-2.5 flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">
-                        No code yet —
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setActiveTab("code")}
-                        className="text-xs text-primary hover:underline"
-                      >
-                        open Code Editor ↗
-                      </button>
-                    </div>
-                  )}
-
-                  <div className="flex flex-col gap-3 overflow-y-auto max-h-96 p-4">
-                    {chatMessages.length === 0 &&
-                      !chatLoading &&
-                      !chatError && (
-                        <p className="text-center text-xs text-muted-foreground py-6">
-                          Write your code in the Code Editor tab, then ask a
-                          question here.
+                {/* ── Notes panel ── */}
+                {activeTab === "notes" && (
+                  <div className="flex flex-1 flex-col overflow-hidden">
+                    <div className="flex flex-1 flex-col gap-2 overflow-y-auto p-3">
+                      {notesLoading && (
+                        <p className="text-sm text-muted-foreground">
+                          Loading…
                         </p>
                       )}
-
-                    {chatMessages.map((msg) => (
-                      <div
-                        key={msg.id}
-                        className={`flex flex-col gap-1 ${msg.role === "user" ? "items-end" : "items-start"}`}
-                      >
-                        <span className="text-[10px] font-medium text-muted-foreground">
-                          {msg.role === "user" ? "You" : "AI Mentor"}
-                        </span>
+                      {!notesLoading && problemNotes.length === 0 && (
+                        <p className="py-6 text-center text-xs text-muted-foreground">
+                          No notes for this problem yet.
+                        </p>
+                      )}
+                      {problemNotes.map((note) => (
                         <div
-                          className={`max-w-[92%] rounded-lg px-3 py-2.5 text-sm leading-relaxed whitespace-pre-wrap ${
-                            msg.role === "user"
-                              ? "bg-primary/10 text-foreground"
-                              : "bg-muted text-foreground"
-                          }`}
+                          key={note.id}
+                          className="flex flex-col gap-1 rounded-lg border border-border bg-muted/30 px-3 py-2.5"
                         >
-                          {msg.content}
+                          <div className="flex items-start justify-between gap-2">
+                            <span className="text-sm font-medium leading-snug">
+                              {note.title}
+                            </span>
+                            <div className="flex shrink-0 items-center gap-1.5">
+                              {note.code && (
+                                <span className="rounded bg-muted px-1.5 py-px font-mono text-[10px] text-muted-foreground">
+                                  {note.code_language}
+                                </span>
+                              )}
+                              <span className="text-[10px] text-muted-foreground">
+                                {new Date(note.updated_at).toLocaleDateString()}
+                              </span>
+                            </div>
+                          </div>
+                          {note.content && (
+                            <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+                              {note.content}
+                            </p>
+                          )}
+                          <a
+                            href="/notes"
+                            className="mt-0.5 self-start text-[11px] text-primary hover:underline"
+                          >
+                            Open in Notes ↗
+                          </a>
                         </div>
-                      </div>
-                    ))}
-
-                    {chatLoading && (
-                      <div className="flex flex-col gap-1 items-start">
-                        <span className="text-[10px] font-medium text-muted-foreground">
-                          AI Mentor
-                        </span>
-                        <div className="rounded-lg bg-muted px-3 py-2.5 text-sm text-muted-foreground">
-                          Thinking…
-                        </div>
-                      </div>
-                    )}
-
-                    {chatError && (
-                      <p className="text-xs text-destructive">{chatError}</p>
-                    )}
-
-                    <div ref={chatBottomRef} />
-                  </div>
-
-                  <div className="flex gap-2 border-t border-border p-3">
-                    <input
-                      type="text"
-                      value={chatInput}
-                      onChange={(e) => setChatInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                          e.preventDefault();
-                          void handleChat(problemNumber);
+                      ))}
+                    </div>
+                    <div className="flex shrink-0 flex-col gap-2 border-t border-border p-3">
+                      <p className="text-xs font-medium text-muted-foreground">
+                        New Note
+                      </p>
+                      <input
+                        type="text"
+                        value={quickTitle}
+                        onChange={(e) => setQuickTitle(e.target.value)}
+                        placeholder="Title…"
+                        maxLength={200}
+                        className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                      />
+                      <textarea
+                        value={quickContent}
+                        onChange={(e) => setQuickContent(e.target.value)}
+                        placeholder="Write a note…"
+                        rows={3}
+                        maxLength={10000}
+                        className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                      />
+                      <Button
+                        size="sm"
+                        className="self-start"
+                        onClick={() => saveQuickNote(problemNumber)}
+                        disabled={
+                          quickSaving ||
+                          (!quickTitle.trim() && !quickContent.trim())
                         }
-                      }}
-                      placeholder="Ask about your code…"
-                      maxLength={2000}
-                      disabled={chatLoading}
-                      className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
-                    />
-                    <Button
-                      size="sm"
-                      disabled={chatLoading || !chatInput.trim()}
-                      onClick={() => void handleChat(problemNumber)}
-                    >
-                      Send
-                    </Button>
+                      >
+                        {quickSaving ? "Saving…" : "Save Note"}
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+
+                {/* ── Code editor panel ── */}
+                {activeTab === "code" && (
+                  <div className="flex flex-1 flex-col overflow-hidden">
+                    <div className="flex shrink-0 flex-wrap items-center gap-1 border-b border-border bg-muted/10 px-3 py-2">
+                      {(["C++", "Python", "Java", "JavaScript"] as const).map(
+                        (lang) => (
+                          <button
+                            key={lang}
+                            type="button"
+                            onClick={() => setReviewLanguage(lang)}
+                            className={`rounded px-2.5 py-0.5 text-xs font-medium transition-colors ${
+                              reviewLanguage === lang
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-muted text-muted-foreground hover:text-foreground"
+                            }`}
+                          >
+                            {lang}
+                          </button>
+                        ),
+                      )}
+                      <span className="ml-auto text-[11px] text-muted-foreground">
+                        {reviewCode.length}/50000
+                      </span>
+                    </div>
+                    {/* Prism overlay editor */}
+                    <div
+                      className="relative flex-1 overflow-hidden"
+                      style={{ background: "#1e1e2e" }}
+                    >
+                      <pre
+                        aria-hidden="true"
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          margin: 0,
+                          padding: "0.75rem 1rem",
+                          fontFamily: editorFont,
+                          fontSize: 13,
+                          lineHeight: 1.6,
+                          whiteSpace: "pre-wrap",
+                          wordBreak: "break-all",
+                          overflowY: "auto",
+                          overflowX: "hidden",
+                          pointerEvents: "none",
+                          color: "#cdd6f4",
+                          background: "transparent",
+                          tabSize: 2,
+                        }}
+                        // biome-ignore lint/security/noDangerouslySetInnerHtml: Prism output is sanitised HTML
+                        dangerouslySetInnerHTML={{
+                          __html: `${highlight(
+                            reviewCode || " ",
+                            LANG_GRAMMARS[reviewLanguage] ?? languages.clike,
+                            reviewLanguage,
+                          )}\n`,
+                        }}
+                      />
+                      <textarea
+                        value={reviewCode}
+                        onChange={(e) => setReviewCode(e.target.value)}
+                        onKeyDown={handleEditorKeyDown}
+                        onScroll={(e) => {
+                          const pre = e.currentTarget
+                            .previousElementSibling as HTMLPreElement | null;
+                          if (pre) pre.scrollTop = e.currentTarget.scrollTop;
+                        }}
+                        placeholder={`Write or paste your ${reviewLanguage} code here…`}
+                        maxLength={50000}
+                        spellCheck={false}
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          margin: 0,
+                          padding: "0.75rem 1rem",
+                          fontFamily: editorFont,
+                          fontSize: 13,
+                          lineHeight: 1.6,
+                          whiteSpace: "pre-wrap",
+                          wordBreak: "break-all",
+                          overflowY: "auto",
+                          overflowX: "hidden",
+                          resize: "none",
+                          background: "transparent",
+                          color: "transparent",
+                          caretColor: "#cdd6f4",
+                          outline: "none",
+                          tabSize: 2,
+                          zIndex: 1,
+                        }}
+                      />
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2 border-t border-border px-3 py-2.5">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={
+                          !reviewCode.trim() || editorSaveStatus === "saving"
+                        }
+                        onClick={saveCodeAsNote}
+                      >
+                        {editorSaveStatus === "saving"
+                          ? "Saving…"
+                          : editorSaveStatus === "saved"
+                            ? "Saved ✓"
+                            : "Save as Note"}
+                      </Button>
+                      {editorSaveStatus === "error" && (
+                        <span className="text-xs text-destructive">
+                          Save failed
+                        </span>
+                      )}
+                      <span className="ml-auto text-[11px] text-muted-foreground">
+                        Tab · Enter auto-indents
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* ── AI Review panel ── */}
+                {activeTab === "ai" && (
+                  <div className="flex flex-1 flex-col overflow-hidden">
+                    <div className="flex shrink-0 items-center justify-between border-b border-border bg-muted/10 px-4 py-2">
+                      <p className="text-xs text-muted-foreground">
+                        {chatReviewsLeft !== null
+                          ? `${chatReviewsLeft} request${chatReviewsLeft !== 1 ? "s" : ""} left today${chatMessagesLeft !== null ? ` · ${chatMessagesLeft} left in chat` : ""}.`
+                          : chatMessagesLeft !== null
+                            ? `${chatMessagesLeft} left in chat.`
+                            : "10 requests/day · 15s between messages."}
+                      </p>
+                      {chatMessages.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setChatMessages([]);
+                            setChatError(null);
+                            setChatReviewsLeft(null);
+                          }}
+                          className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+
+                    {reviewCode ? (
+                      <div className="flex shrink-0 items-center gap-2 border-b border-border bg-muted/5 px-4 py-2">
+                        <span className="rounded bg-muted px-1.5 py-px font-mono text-[10px] text-muted-foreground">
+                          {reviewLanguage}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {reviewCode.split("\n").length} lines
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab("code")}
+                          className="ml-auto text-xs text-primary hover:underline"
+                        >
+                          Edit ↗
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex shrink-0 items-center gap-2 border-b border-border bg-muted/5 px-4 py-2.5">
+                        <span className="text-xs text-muted-foreground">
+                          No code yet —
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab("code")}
+                          className="text-xs text-primary hover:underline"
+                        >
+                          open Code Editor ↗
+                        </button>
+                      </div>
+                    )}
+
+                    <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-3">
+                      {chatMessages.length === 0 &&
+                        !chatLoading &&
+                        !chatError && (
+                          <p className="py-6 text-center text-xs text-muted-foreground">
+                            Write your code in the Code Editor tab, then ask a
+                            question here.
+                          </p>
+                        )}
+
+                      {chatMessages.map((msg) => (
+                        <div
+                          key={msg.id}
+                          className={`flex flex-col gap-1 ${msg.role === "user" ? "items-end" : "items-start"}`}
+                        >
+                          <span className="text-[10px] font-medium text-muted-foreground">
+                            {msg.role === "user" ? "You" : "AI Mentor"}
+                          </span>
+                          <div
+                            className={`max-w-[92%] rounded-lg px-3 py-2.5 text-sm leading-relaxed whitespace-pre-wrap ${
+                              msg.role === "user"
+                                ? "bg-primary/10 text-foreground"
+                                : "bg-muted text-foreground"
+                            }`}
+                          >
+                            {msg.content}
+                          </div>
+                        </div>
+                      ))}
+
+                      {chatLoading && (
+                        <div className="flex flex-col items-start gap-1">
+                          <span className="text-[10px] font-medium text-muted-foreground">
+                            AI Mentor
+                          </span>
+                          <div className="rounded-lg bg-muted px-3 py-2.5 text-sm text-muted-foreground">
+                            Thinking…
+                          </div>
+                        </div>
+                      )}
+
+                      {chatError && (
+                        <p className="text-xs text-destructive">{chatError}</p>
+                      )}
+
+                      <div ref={chatBottomRef} />
+                    </div>
+
+                    <div className="flex shrink-0 gap-2 border-t border-border p-2.5">
+                      <input
+                        type="text"
+                        value={chatInput}
+                        onChange={(e) => setChatInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            void handleChat(problemNumber);
+                          }
+                        }}
+                        placeholder="Ask about your code…"
+                        maxLength={2000}
+                        disabled={chatLoading}
+                        className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                      />
+                      <Button
+                        size="sm"
+                        disabled={chatLoading || !chatInput.trim()}
+                        onClick={() => void handleChat(problemNumber)}
+                      >
+                        Send
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
           );
         })()}
     </div>

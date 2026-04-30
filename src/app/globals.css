@@ -90,6 +90,20 @@
   body {
     @apply bg-background text-foreground;
   }
+  /* Restore sub/sup positioning reset by Tailwind preflight */
+  sub,
+  sup {
+    position: relative;
+    vertical-align: baseline;
+    font-size: 0.75em;
+    line-height: 0;
+  }
+  sup {
+    top: -0.45em;
+  }
+  sub {
+    bottom: -0.25em;
+  }
 }
 
 /* Dot-grid hero background — pure CSS, no images */
