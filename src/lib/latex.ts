@@ -11,12 +11,11 @@ function renderMath(tex: string): string {
   s = s.replace(/\\mathit\{([^{}]+)\}/g, "<em>$1</em>");
   s = s.replace(/\\mathrm\{([^{}]+)\}/g, "$1");
   s = s.replace(/\\mathcal\{([^{}]+)\}/g, "$1");
-  // Superscripts / subscripts with braces
+  // Superscripts / subscripts — braced forms first, then single-char
   s = s.replace(/\^\{([^{}]+)\}/g, "<sup>$1</sup>");
   s = s.replace(/_\{([^{}]+)\}/g, "<sub>$1</sub>");
-  // Single-char superscripts / subscripts
-  s = s.replace(/\^(\w)/g, "<sup>$1</sup>");
-  s = s.replace(/_(\w)/g, "<sub>$1</sub>");
+  s = s.replace(/\^(-?\d+|\w)/g, "<sup>$1</sup>");
+  s = s.replace(/_(-?\d+|\w)/g, "<sub>$1</sub>");
   // Inequalities / relations (leq before le, geq before ge, neq before ne)
   s = s.replace(/\\leq\b/g, "≤");
   s = s.replace(/\\le\b/g, "≤");
@@ -133,17 +132,62 @@ function renderMath(tex: string): string {
 }
 
 /**
- * Processes LaTeX math in Codeforces-style HTML ($...$ and $$...$$).
- * Replaces common commands with Unicode/HTML — no external library needed.
+ * Processes LaTeX math in problem HTML from various sources.
+ * Handles CF <span class="math-tex">\(...\)</span>, <code>$...$</code>,
+ * standalone \(...\) / \[...\], $$...$$, and $...$.
  */
 export function processHtmlLatex(html: string): string {
-  // Display math $$...$$ first
-  let out = html.replace(/\$\$([^$]+)\$\$/g, (_, math) => {
-    return `<span class="math-block">${renderMath(math.trim())}</span>`;
-  });
-  // Inline math $...$ — avoid tag attributes and line breaks
-  out = out.replace(/\$([^$\n<>]{1,500})\$/g, (_, math) => {
-    return `<span class="math-inline">${renderMath(math)}</span>`;
-  });
+  let out = html;
+
+  // 1. Codeforces: <span class="math-tex">\(...\)</span> — most common CF format
+  out = out.replace(
+    /<span[^>]*class="math-tex"[^>]*>\\\(([^<]{0,1000})\\\)<\/span>/g,
+    (_, math) => `<span class="math-inline">${renderMath(math.trim())}</span>`,
+  );
+  out = out.replace(
+    /<span[^>]*class="math-tex"[^>]*>\\\[([^<]{0,2000})\\\]<\/span>/g,
+    (_, math) => `<span class="math-block">${renderMath(math.trim())}</span>`,
+  );
+
+  // 2. Math accidentally stored in <code> tags
+  out = out.replace(
+    /<code>\$([^$<>]{1,500})\$<\/code>/g,
+    (_, math) => `<span class="math-inline">${renderMath(math)}</span>`,
+  );
+  // Bare LaTeX command inside <code> (no $ delimiters)
+  out = out.replace(
+    /<code>((?:\\[a-zA-Z]+|[^<>{}]{0,20}){1,20})<\/code>/g,
+    (full, inner) => {
+      if (/\\[a-zA-Z]/.test(inner)) {
+        return `<span class="math-inline">${renderMath(inner.trim())}</span>`;
+      }
+      return full;
+    },
+  );
+
+  // 3. Standalone \(...\) inline math (MathJax style)
+  out = out.replace(
+    /\\\(([^<>\n]{0,1000})\\\)/g,
+    (_, math) => `<span class="math-inline">${renderMath(math.trim())}</span>`,
+  );
+
+  // 4. Standalone \[...\] display math
+  out = out.replace(
+    /\\\[([^<>\n]{0,2000})\\\]/g,
+    (_, math) => `<span class="math-block">${renderMath(math.trim())}</span>`,
+  );
+
+  // 5. $$...$$ display math
+  out = out.replace(
+    /\$\$([^$<>\n]{0,2000})\$\$/g,
+    (_, math) => `<span class="math-block">${renderMath(math.trim())}</span>`,
+  );
+
+  // 6. $...$ inline math — avoid HTML tag boundaries and newlines
+  out = out.replace(
+    /\$([^$\n<>]{1,500})\$/g,
+    (_, math) => `<span class="math-inline">${renderMath(math)}</span>`,
+  );
+
   return out;
 }

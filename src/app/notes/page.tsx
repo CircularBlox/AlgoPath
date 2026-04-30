@@ -2,7 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { useSettings } from "~/components/settings-provider";
+import { highlight, languages } from "~/lib/prism-setup";
 import { createClient } from "~/lib/supabase/client";
+
+const LANG_GRAMMARS: Record<string, Prism.Grammar> = {
+  "C++": languages.cpp,
+  Java: languages.java,
+  JavaScript: languages.javascript,
+  Python: languages.python,
+};
+
+const EDITOR_FONT =
+  '"JetBrains Mono","Fira Code","Fira Mono",ui-monospace,monospace';
 
 interface Note {
   id: string;
@@ -288,6 +299,18 @@ export default function NotesPage() {
       requestAnimationFrame(() => {
         ta.selectionStart = ta.selectionEnd = start + 2;
       });
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      const ta = e.currentTarget;
+      const start = ta.selectionStart;
+      const lineStart = ta.value.lastIndexOf("\n", start - 1) + 1;
+      const line = ta.value.substring(lineStart, start);
+      const indent = line.match(/^(\s*)/)?.[1] ?? "";
+      const next = `${ta.value.substring(0, start)}\n${indent}${ta.value.substring(ta.selectionEnd)}`;
+      setCode(next);
+      requestAnimationFrame(() => {
+        ta.selectionStart = ta.selectionEnd = start + 1 + indent.length;
+      });
     }
   }
 
@@ -437,16 +460,74 @@ export default function NotesPage() {
                       {code.length}/50000
                     </span>
                   </div>
-                  <textarea
-                    value={code}
-                    onChange={(e) => setCode(e.target.value)}
-                    onBlur={autoSave ? updateNote : undefined}
-                    onKeyDown={handleCodeKeyDown}
-                    placeholder={`Write or paste ${codeLanguage} code here…`}
-                    maxLength={50000}
-                    spellCheck={false}
-                    className="flex-1 resize-none bg-transparent p-4 font-mono text-sm leading-relaxed outline-none placeholder:text-muted-foreground"
-                  />
+                  {/* Prism overlay editor */}
+                  <div
+                    className="relative flex-1 overflow-hidden"
+                    style={{ background: "#1e1e2e" }}
+                  >
+                    <pre
+                      aria-hidden="true"
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        margin: 0,
+                        padding: "1rem",
+                        fontFamily: EDITOR_FONT,
+                        fontSize: 13,
+                        lineHeight: 1.6,
+                        whiteSpace: "pre-wrap",
+                        wordBreak: "break-all",
+                        overflowY: "auto",
+                        overflowX: "hidden",
+                        pointerEvents: "none",
+                        color: "#cdd6f4",
+                        background: "transparent",
+                        tabSize: 2,
+                      }}
+                      // biome-ignore lint/security/noDangerouslySetInnerHtml: Prism output is sanitised HTML
+                      dangerouslySetInnerHTML={{
+                        __html: `${highlight(
+                          code || " ",
+                          LANG_GRAMMARS[codeLanguage] ?? languages.clike,
+                          codeLanguage,
+                        )}\n`,
+                      }}
+                    />
+                    <textarea
+                      value={code}
+                      onChange={(e) => setCode(e.target.value)}
+                      onBlur={autoSave ? updateNote : undefined}
+                      onKeyDown={handleCodeKeyDown}
+                      onScroll={(e) => {
+                        const pre = e.currentTarget
+                          .previousElementSibling as HTMLPreElement | null;
+                        if (pre) pre.scrollTop = e.currentTarget.scrollTop;
+                      }}
+                      placeholder={`Write or paste ${codeLanguage} code here…`}
+                      maxLength={50000}
+                      spellCheck={false}
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        margin: 0,
+                        padding: "1rem",
+                        fontFamily: EDITOR_FONT,
+                        fontSize: 13,
+                        lineHeight: 1.6,
+                        whiteSpace: "pre-wrap",
+                        wordBreak: "break-all",
+                        overflowY: "auto",
+                        overflowX: "hidden",
+                        resize: "none",
+                        background: "transparent",
+                        color: "transparent",
+                        caretColor: "#cdd6f4",
+                        outline: "none",
+                        tabSize: 2,
+                        zIndex: 1,
+                      }}
+                    />
+                  </div>
                 </div>
               )}
 

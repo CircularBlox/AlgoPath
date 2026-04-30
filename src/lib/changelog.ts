@@ -6,6 +6,24 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.6.1",
+    date: "2026-04-29",
+    changes: [
+      {
+        type: "improve",
+        text: "Code editors (problem viewer + notes) now use Prism.js syntax highlighting with a dark theme overlay — Tab indents 2 spaces, Enter preserves indentation",
+      },
+      {
+        type: "improve",
+        text: "Problem viewer panels (Notes, Code Editor, AI Review) moved to fixed side tabs that slide in from the right edge without displacing page content",
+      },
+      {
+        type: "fix",
+        text: "LaTeX sub/sup vertical alignment restored — Tailwind preflight was resetting browser defaults for subscript and superscript positioning",
+      },
+    ],
+  },
+  {
     version: "0.6.0",
     date: "2026-04-29",
     changes: [
