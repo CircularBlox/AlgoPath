@@ -17,7 +17,9 @@ export async function GET(request: NextRequest) {
   const supabase = await createClient();
   let query = supabase
     .from("notes")
-    .select("id, title, content, problem_number, updated_at, created_at")
+    .select(
+      "id, title, content, code, code_language, problem_number, updated_at, created_at",
+    )
     .order("updated_at", { ascending: false });
 
   if (filterByProblem && !Number.isNaN(filterByProblem)) {
@@ -45,6 +47,8 @@ export async function POST(request: NextRequest) {
   let body: {
     title?: string;
     content?: string;
+    code?: string;
+    code_language?: string;
     problem_number?: number | null;
   } = {};
   try {
@@ -60,9 +64,13 @@ export async function POST(request: NextRequest) {
       user_id: user.id,
       title: body.title ?? "Untitled",
       content: body.content ?? "",
+      code: body.code ?? "",
+      code_language: body.code_language ?? "C++",
       problem_number: body.problem_number ?? null,
     })
-    .select("id, title, content, problem_number, updated_at, created_at")
+    .select(
+      "id, title, content, code, code_language, problem_number, updated_at, created_at",
+    )
     .single();
 
   if (error) {

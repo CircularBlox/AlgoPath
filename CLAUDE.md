@@ -6,6 +6,7 @@ This is a Next.js + Supabase app for competitive programmers that helps them get
 **Target users:** Competitive programmers who are stuck on coding problems, from intermediate LeetCode users to top contest participants. Especially for programming like USACO.
 
 IMPORTANT - Update MEMORY.md for every prompt.
+IMPORTANT - Update Changelog for any major updates or minor ones with proper conventions, with vx.x.x.
 
 
 

@@ -15,6 +15,8 @@ export async function PATCH(
   let body: {
     title?: string;
     content?: string;
+    code?: string;
+    code_language?: string;
     problem_number?: number | null;
   } = {};
   try {
@@ -28,6 +30,9 @@ export async function PATCH(
   };
   if (body.title !== undefined) patch.title = body.title;
   if (body.content !== undefined) patch.content = body.content;
+  if (body.code !== undefined) patch.code = body.code;
+  if (body.code_language !== undefined)
+    patch.code_language = body.code_language;
   if ("problem_number" in body) patch.problem_number = body.problem_number;
 
   const supabase = await createClient();

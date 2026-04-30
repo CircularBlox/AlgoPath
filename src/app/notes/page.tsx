@@ -8,6 +8,8 @@ interface Note {
   id: string;
   title: string;
   content: string;
+  code: string;
+  code_language: string;
   problem_number: number | null;
   updatedAt: number;
 }
@@ -15,20 +17,43 @@ interface Note {
 const STORAGE_KEY = "lumos-notes";
 const MIGRATION_KEY = "lumos-notes-migrated";
 
+type ApiNote = {
+  id: string;
+  title: string;
+  content: string;
+  code?: string;
+  code_language?: string;
+  problem_number: number | null;
+  updated_at: string;
+};
+
+function apiToNote(n: ApiNote): Note {
+  return {
+    id: n.id,
+    title: n.title,
+    content: n.content,
+    code: n.code ?? "",
+    code_language: n.code_language ?? "C++",
+    problem_number: n.problem_number,
+    updatedAt: new Date(n.updated_at).getTime(),
+  };
+}
+
 function loadLocalNotes(): Note[] {
   if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
-    return (
-      JSON.parse(raw) as Array<{
-        id: string;
-        title: string;
-        content: string;
-        updatedAt: number;
-        problem_number?: number | null;
-      }>
-    ).map((n) => ({ ...n, problem_number: n.problem_number ?? null }));
+    return (JSON.parse(raw) as Array<Record<string, unknown>>).map((n) => ({
+      id: String(n.id ?? ""),
+      title: String(n.title ?? ""),
+      content: String(n.content ?? ""),
+      code: String(n.code ?? ""),
+      code_language: String(n.code_language ?? "C++"),
+      problem_number:
+        typeof n.problem_number === "number" ? n.problem_number : null,
+      updatedAt: typeof n.updatedAt === "number" ? n.updatedAt : Date.now(),
+    }));
   } catch {
     return [];
   }
@@ -38,6 +63,8 @@ function saveLocalNotes(notes: Note[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
 }
 
+const LANGUAGES = ["C++", "Python", "Java", "JavaScript"] as const;
+
 export default function NotesPage() {
   const { settings } = useSettings();
   const [userId, setUserId] = useState<string | null>(null);
@@ -46,10 +73,13 @@ export default function NotesPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [code, setCode] = useState("");
+  const [codeLanguage, setCodeLanguage] = useState("C++");
   const [problemInput, setProblemInput] = useState("");
   const [saveStatus, setSaveStatus] = useState<
     "idle" | "saving" | "saved" | "error"
   >("idle");
+  const [activeSection, setActiveSection] = useState<"notes" | "code">("notes");
 
   const autoSave = settings.autoSave === "on";
 
@@ -62,37 +92,20 @@ export default function NotesPage() {
       setUserId(user?.id ?? null);
 
       if (user) {
-        // Load from Supabase first to confirm the table is available
         let apiAvailable = false;
         try {
           const res = await fetch("/api/notes");
           if (res.ok) {
             apiAvailable = true;
-            const data = (await res.json()) as Array<{
-              id: string;
-              title: string;
-              content: string;
-              problem_number: number | null;
-              updated_at: string;
-            }>;
-            setNotes(
-              data.map((n) => ({
-                id: n.id,
-                title: n.title,
-                content: n.content,
-                problem_number: n.problem_number,
-                updatedAt: new Date(n.updated_at).getTime(),
-              })),
-            );
+            const data = (await res.json()) as ApiNote[];
+            setNotes(data.map(apiToNote));
           } else {
-            // API unavailable (table may not exist yet) — show localStorage
             setNotes(loadLocalNotes());
           }
         } catch {
           setNotes(loadLocalNotes());
         }
 
-        // One-time migration from localStorage — only runs when API is confirmed working
         if (apiAvailable && !localStorage.getItem(MIGRATION_KEY)) {
           const local = loadLocalNotes();
           if (local.length > 0) {
@@ -104,33 +117,19 @@ export default function NotesPage() {
                   body: JSON.stringify({
                     title: n.title,
                     content: n.content,
+                    code: n.code,
+                    code_language: n.code_language,
                     problem_number: n.problem_number,
                   }),
                 }),
               ),
             );
-            // Only mark migrated if all succeeded
             if (results.every((r) => r.status === "fulfilled")) {
               localStorage.setItem(MIGRATION_KEY, "1");
-              // Reload to show migrated notes with their new Supabase IDs
               const res2 = await fetch("/api/notes");
               if (res2.ok) {
-                const data2 = (await res2.json()) as Array<{
-                  id: string;
-                  title: string;
-                  content: string;
-                  problem_number: number | null;
-                  updated_at: string;
-                }>;
-                setNotes(
-                  data2.map((n) => ({
-                    id: n.id,
-                    title: n.title,
-                    content: n.content,
-                    problem_number: n.problem_number,
-                    updatedAt: new Date(n.updated_at).getTime(),
-                  })),
-                );
+                const data2 = (await res2.json()) as ApiNote[];
+                setNotes(data2.map(apiToNote));
               }
             }
           } else {
@@ -138,7 +137,6 @@ export default function NotesPage() {
           }
         }
       } else {
-        // Unauthenticated: localStorage
         setNotes(loadLocalNotes());
       }
 
@@ -153,6 +151,8 @@ export default function NotesPage() {
     setSelectedId(note.id);
     setTitle(note.title);
     setContent(note.content);
+    setCode(note.code);
+    setCodeLanguage(note.code_language);
     setProblemInput(note.problem_number ? String(note.problem_number) : "");
     setSaveStatus("idle");
   }
@@ -166,24 +166,14 @@ export default function NotesPage() {
           body: JSON.stringify({
             title: "Untitled",
             content: "",
+            code: "",
+            code_language: "C++",
             problem_number: null,
           }),
         });
         if (res.ok) {
-          const data = (await res.json()) as {
-            id: string;
-            title: string;
-            content: string;
-            problem_number: number | null;
-            updated_at: string;
-          };
-          const note: Note = {
-            id: data.id,
-            title: data.title,
-            content: data.content,
-            problem_number: data.problem_number,
-            updatedAt: new Date(data.updated_at).getTime(),
-          };
+          const data = (await res.json()) as ApiNote;
+          const note = apiToNote(data);
           setNotes((prev) => [note, ...prev]);
           selectNote(note);
           return;
@@ -193,11 +183,12 @@ export default function NotesPage() {
       }
     }
 
-    // Unauthenticated fallback
     const note: Note = {
       id: crypto.randomUUID(),
       title: "Untitled",
       content: "",
+      code: "",
+      code_language: "C++",
       problem_number: null,
       updatedAt: Date.now(),
     };
@@ -223,7 +214,13 @@ export default function NotesPage() {
         const res = await fetch(`/api/notes/${selectedId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title, content, problem_number: problemNum }),
+          body: JSON.stringify({
+            title,
+            content,
+            code,
+            code_language: codeLanguage,
+            problem_number: problemNum,
+          }),
         });
         if (res.ok) {
           setSaveStatus("saved");
@@ -239,7 +236,15 @@ export default function NotesPage() {
     setNotes((prev) => {
       const next = prev.map((n) =>
         n.id === selectedId
-          ? { ...n, title, content, problem_number: problemNum, updatedAt }
+          ? {
+              ...n,
+              title,
+              content,
+              code,
+              code_language: codeLanguage,
+              problem_number: problemNum,
+              updatedAt,
+            }
           : n,
       );
       if (!userId) saveLocalNotes(next);
@@ -266,8 +271,24 @@ export default function NotesPage() {
     setSelectedId(null);
     setTitle("");
     setContent("");
+    setCode("");
+    setCodeLanguage("C++");
     setProblemInput("");
     setSaveStatus("idle");
+  }
+
+  function handleCodeKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === "Tab") {
+      e.preventDefault();
+      const ta = e.currentTarget;
+      const start = ta.selectionStart;
+      const end = ta.selectionEnd;
+      const next = `${ta.value.substring(0, start)}  ${ta.value.substring(end)}`;
+      setCode(next);
+      requestAnimationFrame(() => {
+        ta.selectionStart = ta.selectionEnd = start + 2;
+      });
+    }
   }
 
   return (
@@ -306,7 +327,7 @@ export default function NotesPage() {
               }`}
             >
               <span className="block truncate font-medium">{note.title}</span>
-              <div className="mt-0.5 flex items-center gap-1.5">
+              <div className="mt-0.5 flex items-center gap-1.5 flex-wrap">
                 <span className="text-xs opacity-60">
                   {new Date(note.updatedAt).toLocaleDateString()}
                 </span>
@@ -315,56 +336,122 @@ export default function NotesPage() {
                     #{note.problem_number}
                   </span>
                 )}
+                {note.code && (
+                  <span className="rounded-full bg-muted px-1.5 py-px text-[10px] text-muted-foreground font-mono">
+                    {note.code_language}
+                  </span>
+                )}
               </div>
             </button>
           ))}
         </div>
 
         {/* Editor */}
-        <div className="flex flex-col gap-3 p-4">
+        <div className="flex flex-col gap-0 overflow-hidden">
           {selected ? (
             <>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                onBlur={autoSave ? updateNote : undefined}
-                placeholder="Note title"
-                className="bg-transparent text-lg font-semibold outline-none placeholder:text-muted-foreground"
-              />
-
-              {/* Problem link row */}
-              <div className="flex items-center gap-2 border-b border-border/50 pb-2 text-xs text-muted-foreground">
-                <span>Problem #</span>
+              {/* Header fields */}
+              <div className="flex flex-col gap-2 p-4 pb-2">
                 <input
-                  type="number"
-                  min={1}
-                  value={problemInput}
-                  onChange={(e) => setProblemInput(e.target.value)}
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
                   onBlur={autoSave ? updateNote : undefined}
-                  placeholder="—"
-                  className="w-16 bg-transparent outline-none placeholder:text-muted-foreground/50 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                  placeholder="Note title"
+                  maxLength={200}
+                  className="bg-transparent text-lg font-semibold outline-none placeholder:text-muted-foreground"
                 />
-                {problemInput && Number(problemInput) > 0 && (
-                  <a
-                    href={`/display-problem?p=${problemInput}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary hover:underline"
-                  >
-                    Open ↗
-                  </a>
-                )}
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span>Problem #</span>
+                  <input
+                    type="number"
+                    min={1}
+                    value={problemInput}
+                    onChange={(e) => setProblemInput(e.target.value)}
+                    onBlur={autoSave ? updateNote : undefined}
+                    placeholder="—"
+                    className="w-16 bg-transparent outline-none placeholder:text-muted-foreground/50 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                  />
+                  {problemInput && Number(problemInput) > 0 && (
+                    <a
+                      href={`/display-problem?p=${problemInput}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline"
+                    >
+                      Open ↗
+                    </a>
+                  )}
+                </div>
               </div>
 
-              <textarea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                onBlur={autoSave ? updateNote : undefined}
-                placeholder="Start writing..."
-                className="flex-1 resize-none bg-transparent text-sm leading-relaxed outline-none placeholder:text-muted-foreground"
-              />
-              <div className="flex items-center justify-between">
+              {/* Section tabs */}
+              <div className="flex border-b border-border bg-muted/20">
+                {(["notes", "code"] as const).map((tab) => (
+                  <button
+                    key={tab}
+                    type="button"
+                    onClick={() => setActiveSection(tab)}
+                    className={`px-4 py-2 text-xs font-medium transition-colors capitalize ${
+                      activeSection === tab
+                        ? "border-b-2 border-primary bg-background text-foreground"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {tab === "notes" ? "Notes" : "Code Editor"}
+                  </button>
+                ))}
+              </div>
+
+              {/* Notes section */}
+              {activeSection === "notes" && (
+                <textarea
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  onBlur={autoSave ? updateNote : undefined}
+                  placeholder="Start writing..."
+                  maxLength={10000}
+                  className="flex-1 resize-none bg-transparent p-4 text-sm leading-relaxed outline-none placeholder:text-muted-foreground"
+                />
+              )}
+
+              {/* Code editor section */}
+              {activeSection === "code" && (
+                <div className="flex flex-1 flex-col gap-0 overflow-hidden">
+                  <div className="flex items-center gap-1 flex-wrap border-b border-border/50 px-3 py-2 bg-muted/10">
+                    {LANGUAGES.map((lang) => (
+                      <button
+                        key={lang}
+                        type="button"
+                        onClick={() => setCodeLanguage(lang)}
+                        className={`rounded px-2.5 py-0.5 text-xs font-medium transition-colors ${
+                          codeLanguage === lang
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {lang}
+                      </button>
+                    ))}
+                    <span className="ml-auto text-[11px] text-muted-foreground">
+                      {code.length}/50000
+                    </span>
+                  </div>
+                  <textarea
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    onBlur={autoSave ? updateNote : undefined}
+                    onKeyDown={handleCodeKeyDown}
+                    placeholder={`Write or paste ${codeLanguage} code here…`}
+                    maxLength={50000}
+                    spellCheck={false}
+                    className="flex-1 resize-none bg-transparent p-4 font-mono text-sm leading-relaxed outline-none placeholder:text-muted-foreground"
+                  />
+                </div>
+              )}
+
+              {/* Footer */}
+              <div className="flex items-center justify-between border-t border-border px-4 py-2">
                 <span className="text-xs text-muted-foreground">
                   {saveStatus === "saving" && "Saving…"}
                   {saveStatus === "saved" && "Saved"}
