@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
+import { processHtmlLatex } from "~/lib/latex";
 import { highlight, languages } from "~/lib/prism-setup";
 
 const LANG_GRAMMARS: Record<string, Prism.Grammar> = {
@@ -170,35 +171,56 @@ export function ProblemViewer({
   const [reviewCode, setReviewCode] = useState("");
   const [reviewLanguage, setReviewLanguage] = useState("C++");
   const [problemViewed, setProblemViewed] = useState(false);
-  const [reviewPanelOpen, setReviewPanelOpen] = useState(false);
   const chatBottomRef = useRef<HTMLDivElement>(null);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [suggestQuery, setSuggestQuery] = useState("");
   const [isAiLoading, setIsAiLoading] = useState(false);
 
-  const [notesPanelOpen, setNotesPanelOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<"notes" | "code" | "ai" | null>(
+    null,
+  );
   const [problemNotes, setProblemNotes] = useState<
-    { id: string; title: string; content: string; updated_at: string }[]
+    {
+      id: string;
+      title: string;
+      content: string;
+      code: string;
+      code_language: string;
+      updated_at: string;
+    }[]
   >([]);
   const [notesLoading, setNotesLoading] = useState(false);
   const [notesLoaded, setNotesLoaded] = useState(false);
   const [quickTitle, setQuickTitle] = useState("");
   const [quickContent, setQuickContent] = useState("");
   const [quickSaving, setQuickSaving] = useState(false);
+  const [editorSaveStatus, setEditorSaveStatus] = useState<
+    "idle" | "saving" | "saved" | "error"
+  >("idle");
 
   async function loadProblemNotes(problemNumber: number) {
     setNotesLoading(true);
     try {
       const res = await fetch(`/api/notes?problem_number=${problemNumber}`);
       if (res.ok) {
+        const raw = (await res.json()) as {
+          id: string;
+          title: string;
+          content: string;
+          code?: string;
+          code_language?: string;
+          updated_at: string;
+        }[];
         setProblemNotes(
-          (await res.json()) as {
-            id: string;
-            title: string;
-            content: string;
-            updated_at: string;
-          }[],
+          raw.map((n) => ({
+            id: n.id,
+            title: n.title,
+            content: n.content,
+            code: n.code ?? "",
+            code_language: n.code_language ?? "C++",
+            updated_at: n.updated_at,
+          })),
         );
       }
     } finally {
@@ -225,9 +247,21 @@ export function ProblemViewer({
           id: string;
           title: string;
           content: string;
+          code?: string;
+          code_language?: string;
           updated_at: string;
         };
-        setProblemNotes((prev) => [data, ...prev]);
+        setProblemNotes((prev) => [
+          {
+            id: data.id,
+            title: data.title,
+            content: data.content,
+            code: data.code ?? "",
+            code_language: data.code_language ?? "C++",
+            updated_at: data.updated_at,
+          },
+          ...prev,
+        ]);
         setQuickTitle("");
         setQuickContent("");
       }
@@ -308,14 +342,14 @@ export function ProblemViewer({
     setReviewCode("");
     setReviewLanguage("C++");
     setProblemViewed(false);
-    setReviewPanelOpen(false);
-    setNotesPanelOpen(false);
+    setActiveTab(null);
     setProblemNotes([]);
     setNotesLoaded(false);
     setNotesLoading(false);
     setQuickTitle("");
     setQuickContent("");
     setQuickSaving(false);
+    setEditorSaveStatus("idle");
   }
 
   async function handleReport(problemNumber: number) {
@@ -1098,8 +1132,12 @@ export function ProblemViewer({
 
               {contentOpen && problem.content && (
                 <div className="cf-problem rounded-xl border border-border bg-card px-6 py-5 text-card-foreground shadow-sm">
-                  {/* biome-ignore lint/security/noDangerouslySetInnerHtml: content is authored by the site admin and stored in our own DB */}
-                  <div dangerouslySetInnerHTML={{ __html: problem.content }} />
+                  <div
+                    // biome-ignore lint/security/noDangerouslySetInnerHtml: admin-authored DB content; LaTeX processed client-side
+                    dangerouslySetInnerHTML={{
+                      __html: processHtmlLatex(problem.content),
+                    }}
+                  />
                 </div>
               )}
 
@@ -1403,268 +1441,324 @@ export function ProblemViewer({
           );
         })()}
 
-      {/* ── Notes side tab + panel ───────────────────────────── */}
+      {/* ── Three-tab panel: Notes | Code Editor | AI Review ── */}
       {state.status === "loaded" &&
         userId &&
         (() => {
           const problemNumber = state.problem.problem_number ?? 0;
-          return (
-            <>
-              {!notesPanelOpen && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setNotesPanelOpen(true);
-                    if (!notesLoaded) loadProblemNotes(problemNumber);
-                  }}
-                  className="fixed left-0 top-1/2 z-40 flex flex-col items-center gap-2 rounded-r-lg border border-l-0 border-border bg-card px-2.5 py-5 text-foreground shadow-lg transition-all hover:bg-muted"
-                  style={{ transform: "translateY(-50%)" }}
-                  aria-label="Open notes panel"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                    <polyline points="14 2 14 8 20 8" />
-                    <line x1="16" y1="13" x2="8" y2="13" />
-                    <line x1="16" y1="17" x2="8" y2="17" />
-                    <polyline points="10 9 9 9 8 9" />
-                  </svg>
-                  <span
-                    className="text-[11px] font-semibold tracking-wide"
-                    style={{
-                      writingMode: "vertical-rl",
-                      transform: "rotate(180deg)",
-                    }}
-                  >
-                    Notes
-                  </span>
-                </button>
-              )}
 
-              {notesPanelOpen && (
-                <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setNotesPanelOpen(false)}
+          async function saveCodeAsNote() {
+            if (!reviewCode.trim()) return;
+            setEditorSaveStatus("saving");
+            try {
+              const res = await fetch("/api/notes", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  title:
+                    state.status === "loaded"
+                      ? `${state.problem.title} (${reviewLanguage})`
+                      : "Untitled",
+                  content: "",
+                  code: reviewCode,
+                  code_language: reviewLanguage,
+                  problem_number: problemNumber,
+                }),
+              });
+              if (res.ok) {
+                setEditorSaveStatus("saved");
+                setTimeout(() => setEditorSaveStatus("idle"), 2000);
+                if (notesLoaded) {
+                  const data = (await res.json()) as {
+                    id: string;
+                    title: string;
+                    content: string;
+                    code: string;
+                    code_language: string;
+                    updated_at: string;
+                  };
+                  setProblemNotes((prev) => [data, ...prev]);
+                }
+              } else {
+                setEditorSaveStatus("error");
+              }
+            } catch {
+              setEditorSaveStatus("error");
+            }
+          }
+
+          function handleEditorKeyDown(
+            e: React.KeyboardEvent<HTMLTextAreaElement>,
+          ) {
+            if (e.key === "Tab") {
+              e.preventDefault();
+              const ta = e.currentTarget;
+              const start = ta.selectionStart;
+              const end = ta.selectionEnd;
+              const next = `${ta.value.substring(0, start)}  ${ta.value.substring(end)}`;
+              setReviewCode(next);
+              requestAnimationFrame(() => {
+                ta.selectionStart = ta.selectionEnd = start + 2;
+              });
+            }
+          }
+
+          const TABS = [
+            {
+              id: "notes" as const,
+              label: "Notes",
+              icon: (
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                   aria-hidden="true"
-                />
-              )}
+                >
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="16" y1="13" x2="8" y2="13" />
+                  <line x1="16" y1="17" x2="8" y2="17" />
+                </svg>
+              ),
+            },
+            {
+              id: "code" as const,
+              label: "Code Editor",
+              icon: (
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <polyline points="16 18 22 12 16 6" />
+                  <polyline points="8 6 2 12 8 18" />
+                </svg>
+              ),
+            },
+            {
+              id: "ai" as const,
+              label: "AI Review",
+              icon: (
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                </svg>
+              ),
+            },
+          ];
 
-              <div
-                className={`fixed left-0 top-14 z-50 flex h-[calc(100vh-3.5rem)] w-[min(360px,100vw)] flex-col border-r border-border bg-card shadow-2xl transition-transform duration-200 ease-in-out ${
-                  notesPanelOpen ? "translate-x-0" : "-translate-x-full"
-                }`}
-              >
-                <div className="flex items-center justify-between border-b border-border px-5 py-4">
-                  <div className="flex flex-col gap-0.5">
-                    <span className="font-semibold text-sm">Notes</span>
-                    <span className="text-xs text-muted-foreground">
-                      {state.problem.title}
-                    </span>
-                  </div>
+          return (
+            <div className="overflow-hidden rounded-lg border border-border">
+              {/* Tab bar */}
+              <div className="flex border-b border-border bg-muted/20">
+                {TABS.map(({ id, label, icon }) => (
                   <button
+                    key={id}
                     type="button"
-                    onClick={() => setNotesPanelOpen(false)}
-                    className="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                    aria-label="Close notes panel"
+                    onClick={() => {
+                      if (activeTab === id) {
+                        setActiveTab(null);
+                      } else {
+                        setActiveTab(id);
+                        if (id === "notes" && !notesLoaded)
+                          loadProblemNotes(problemNumber);
+                      }
+                    }}
+                    className={`flex flex-1 items-center justify-center gap-2 border-r border-border px-4 py-3 text-sm font-medium transition-colors last:border-r-0 ${
+                      activeTab === id
+                        ? "bg-background text-foreground shadow-[inset_0_-2px_0_0] shadow-primary"
+                        : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                    }`}
                   >
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden="true"
-                    >
-                      <line x1="18" y1="6" x2="6" y2="18" />
-                      <line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
-                  </button>
-                </div>
-
-                {/* Notes list */}
-                <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2">
-                  {notesLoading && (
-                    <p className="text-sm text-muted-foreground">Loading…</p>
-                  )}
-                  {!notesLoading && problemNotes.length === 0 && (
-                    <p className="text-center text-xs text-muted-foreground py-6">
-                      No notes for this problem yet.
-                    </p>
-                  )}
-                  {problemNotes.map((note) => (
-                    <div
-                      key={note.id}
-                      className="rounded-lg border border-border bg-muted/30 px-3 py-2.5 flex flex-col gap-1"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <span className="text-sm font-medium leading-snug">
-                          {note.title}
-                        </span>
-                        <span className="shrink-0 text-[10px] text-muted-foreground">
-                          {new Date(note.updated_at).toLocaleDateString()}
-                        </span>
-                      </div>
-                      {note.content && (
-                        <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">
-                          {note.content}
-                        </p>
-                      )}
-                      <a
-                        href="/notes"
-                        className="mt-1 self-start text-[11px] text-primary hover:underline"
+                    {icon}
+                    {label}
+                    {activeTab === id && (
+                      <svg
+                        width="10"
+                        height="10"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="ml-auto opacity-50"
+                        aria-hidden="true"
                       >
-                        Open in Notes ↗
-                      </a>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Quick note form */}
-                <div className="border-t border-border p-4 flex flex-col gap-2">
-                  <p className="text-xs font-medium text-muted-foreground">
-                    New Note
-                  </p>
-                  <input
-                    type="text"
-                    value={quickTitle}
-                    onChange={(e) => setQuickTitle(e.target.value)}
-                    placeholder="Title…"
-                    className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  />
-                  <textarea
-                    value={quickContent}
-                    onChange={(e) => setQuickContent(e.target.value)}
-                    placeholder="Write a note…"
-                    rows={3}
-                    className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  />
-                  <Button
-                    size="sm"
-                    onClick={() => saveQuickNote(problemNumber)}
-                    disabled={
-                      quickSaving ||
-                      (!quickTitle.trim() && !quickContent.trim())
-                    }
-                  >
-                    {quickSaving ? "Saving…" : "Save Note"}
-                  </Button>
-                </div>
+                        <polyline points="18 15 12 9 6 15" />
+                      </svg>
+                    )}
+                  </button>
+                ))}
               </div>
-            </>
-          );
-        })()}
 
-      {/* ── AI Review side tab + panel ───────────────────────── */}
-      {state.status === "loaded" &&
-        userId &&
-        (() => {
-          const problemTitle = state.problem.title;
-          const problemNumber = state.problem.problem_number ?? 0;
+              {/* ── Notes panel ── */}
+              {activeTab === "notes" && (
+                <div className="flex flex-col gap-0">
+                  <div className="flex flex-col gap-2 overflow-y-auto max-h-72 p-4">
+                    {notesLoading && (
+                      <p className="text-sm text-muted-foreground">Loading…</p>
+                    )}
+                    {!notesLoading && problemNotes.length === 0 && (
+                      <p className="text-center text-xs text-muted-foreground py-4">
+                        No notes for this problem yet.
+                      </p>
+                    )}
+                    {problemNotes.map((note) => (
+                      <div
+                        key={note.id}
+                        className="rounded-lg border border-border bg-muted/30 px-3 py-2.5 flex flex-col gap-1"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="text-sm font-medium leading-snug">
+                            {note.title}
+                          </span>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {note.code && (
+                              <span className="rounded bg-muted px-1.5 py-px font-mono text-[10px] text-muted-foreground">
+                                {note.code_language}
+                              </span>
+                            )}
+                            <span className="text-[10px] text-muted-foreground">
+                              {new Date(note.updated_at).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </div>
+                        {note.content && (
+                          <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+                            {note.content}
+                          </p>
+                        )}
+                        <a
+                          href="/notes"
+                          className="mt-0.5 self-start text-[11px] text-primary hover:underline"
+                        >
+                          Open in Notes ↗
+                        </a>
+                      </div>
+                    ))}
+                  </div>
 
-          return (
-            <>
-              {/* Tab button — sticks to right edge */}
-              {!reviewPanelOpen && (
-                <button
-                  type="button"
-                  onClick={() => setReviewPanelOpen(true)}
-                  className="fixed right-0 top-1/2 z-40 flex flex-col items-center gap-2 rounded-l-lg bg-primary px-2.5 py-5 text-primary-foreground shadow-lg shadow-primary/30 transition-all hover:bg-primary/90 hover:shadow-primary/50"
-                  style={{
-                    transform: "translateY(-50%)",
-                  }}
-                  aria-label="Open AI code review panel"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
-                  >
-                    <polyline points="16 18 22 12 16 6" />
-                    <polyline points="8 6 2 12 8 18" />
-                  </svg>
-                  <span
-                    className="text-[11px] font-semibold tracking-wide"
-                    style={{
-                      writingMode: "vertical-rl",
-                      transform: "rotate(180deg)",
-                    }}
-                  >
-                    AI Review
-                  </span>
-                </button>
+                  <div className="border-t border-border p-4 flex flex-col gap-2">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      New Note
+                    </p>
+                    <input
+                      type="text"
+                      value={quickTitle}
+                      onChange={(e) => setQuickTitle(e.target.value)}
+                      placeholder="Title…"
+                      maxLength={200}
+                      className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    />
+                    <textarea
+                      value={quickContent}
+                      onChange={(e) => setQuickContent(e.target.value)}
+                      placeholder="Write a note…"
+                      rows={3}
+                      maxLength={10000}
+                      className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    />
+                    <Button
+                      size="sm"
+                      className="self-start"
+                      onClick={() => saveQuickNote(problemNumber)}
+                      disabled={
+                        quickSaving ||
+                        (!quickTitle.trim() && !quickContent.trim())
+                      }
+                    >
+                      {quickSaving ? "Saving…" : "Save Note"}
+                    </Button>
+                  </div>
+                </div>
               )}
 
-              {/* Click-away backdrop */}
-              {reviewPanelOpen && (
-                <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setReviewPanelOpen(false)}
-                  aria-hidden="true"
-                />
-              )}
-
-              {/* Slide-out panel */}
-              <div
-                className={`fixed right-0 top-14 z-50 flex h-[calc(100vh-3.5rem)] w-[min(400px,100vw)] flex-col border-l border-border bg-card shadow-2xl transition-transform duration-200 ease-in-out ${
-                  reviewPanelOpen ? "translate-x-0" : "translate-x-full"
-                }`}
-              >
-                {/* Panel header */}
-                <div className="flex items-center justify-between border-b border-border px-5 py-4">
-                  <div className="flex flex-col gap-0.5">
-                    <span className="font-semibold text-sm">
-                      AI Code Review
-                    </span>
-                    <span className="text-xs text-muted-foreground truncate max-w-[260px]">
-                      {problemTitle}
+              {/* ── Code editor panel ── */}
+              {activeTab === "code" && (
+                <div className="flex flex-col gap-0">
+                  <div className="flex items-center gap-1 flex-wrap border-b border-border bg-muted/10 px-4 py-2">
+                    {(["C++", "Python", "Java", "JavaScript"] as const).map(
+                      (lang) => (
+                        <button
+                          key={lang}
+                          type="button"
+                          onClick={() => setReviewLanguage(lang)}
+                          className={`rounded px-2.5 py-0.5 text-xs font-medium transition-colors ${
+                            reviewLanguage === lang
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          {lang}
+                        </button>
+                      ),
+                    )}
+                    <span className="ml-auto text-[11px] text-muted-foreground">
+                      {reviewCode.length}/50000
                     </span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setReviewPanelOpen(false)}
-                    className="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                    aria-label="Close panel"
-                  >
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden="true"
+                  <textarea
+                    value={reviewCode}
+                    onChange={(e) => setReviewCode(e.target.value)}
+                    onKeyDown={handleEditorKeyDown}
+                    placeholder={`Write or paste your ${reviewLanguage} code here…`}
+                    maxLength={50000}
+                    spellCheck={false}
+                    rows={16}
+                    className="w-full resize-y bg-transparent px-4 py-3 font-mono text-sm leading-relaxed placeholder:text-muted-foreground focus:outline-none"
+                  />
+                  <div className="flex items-center gap-2 border-t border-border px-4 py-3">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={
+                        !reviewCode.trim() || editorSaveStatus === "saving"
+                      }
+                      onClick={saveCodeAsNote}
                     >
-                      <line x1="18" y1="6" x2="6" y2="18" />
-                      <line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
-                  </button>
+                      {editorSaveStatus === "saving"
+                        ? "Saving…"
+                        : editorSaveStatus === "saved"
+                          ? "Saved to Notes"
+                          : "Save as Note"}
+                    </Button>
+                    {editorSaveStatus === "error" && (
+                      <span className="text-xs text-destructive">
+                        Save failed
+                      </span>
+                    )}
+                    <span className="ml-auto text-xs text-muted-foreground">
+                      Tab inserts 2 spaces · code is shared with AI Review
+                    </span>
+                  </div>
                 </div>
+              )}
 
-                {/* Code input section */}
-                <div className="flex flex-col gap-3 border-b border-border p-4">
-                  <div className="flex items-center justify-between">
+              {/* ── AI Review panel ── */}
+              {activeTab === "ai" && (
+                <div className="flex flex-col">
+                  <div className="flex items-center justify-between border-b border-border px-4 py-2.5 bg-muted/10">
                     <p className="text-xs text-muted-foreground">
                       {chatReviewsLeft !== null
                         ? `${chatReviewsLeft} request${chatReviewsLeft !== 1 ? "s" : ""} left today${chatMessagesLeft !== null ? ` · ${chatMessagesLeft} left in chat` : ""}.`
@@ -1682,119 +1776,117 @@ export function ProblemViewer({
                         }}
                         className="text-xs text-muted-foreground transition-colors hover:text-foreground"
                       >
-                        Clear
+                        Clear chat
                       </button>
                     )}
                   </div>
 
-                  {/* Language selector */}
-                  <div className="flex flex-wrap gap-1">
-                    {(["C++", "Python", "Java", "JavaScript"] as const).map(
-                      (lang) => (
-                        <button
-                          key={lang}
-                          type="button"
-                          onClick={() => setReviewLanguage(lang)}
-                          className={`rounded px-2.5 py-0.5 text-xs font-medium transition-colors ${
-                            reviewLanguage === lang
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-muted text-muted-foreground hover:text-foreground"
+                  {reviewCode ? (
+                    <div className="border-b border-border bg-muted/5 px-4 py-2 flex items-center gap-2">
+                      <span className="rounded bg-muted px-1.5 py-px font-mono text-[10px] text-muted-foreground">
+                        {reviewLanguage}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {reviewCode.split("\n").length} lines from Code Editor
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab("code")}
+                        className="ml-auto text-xs text-primary hover:underline"
+                      >
+                        Edit ↗
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="border-b border-border bg-muted/5 px-4 py-2.5 flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">
+                        No code yet —
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab("code")}
+                        className="text-xs text-primary hover:underline"
+                      >
+                        open Code Editor ↗
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="flex flex-col gap-3 overflow-y-auto max-h-96 p-4">
+                    {chatMessages.length === 0 &&
+                      !chatLoading &&
+                      !chatError && (
+                        <p className="text-center text-xs text-muted-foreground py-6">
+                          Write your code in the Code Editor tab, then ask a
+                          question here.
+                        </p>
+                      )}
+
+                    {chatMessages.map((msg) => (
+                      <div
+                        key={msg.id}
+                        className={`flex flex-col gap-1 ${msg.role === "user" ? "items-end" : "items-start"}`}
+                      >
+                        <span className="text-[10px] font-medium text-muted-foreground">
+                          {msg.role === "user" ? "You" : "AI Mentor"}
+                        </span>
+                        <div
+                          className={`max-w-[92%] rounded-lg px-3 py-2.5 text-sm leading-relaxed whitespace-pre-wrap ${
+                            msg.role === "user"
+                              ? "bg-primary/10 text-foreground"
+                              : "bg-muted text-foreground"
                           }`}
                         >
-                          {lang}
-                        </button>
-                      ),
+                          {msg.content}
+                        </div>
+                      </div>
+                    ))}
+
+                    {chatLoading && (
+                      <div className="flex flex-col gap-1 items-start">
+                        <span className="text-[10px] font-medium text-muted-foreground">
+                          AI Mentor
+                        </span>
+                        <div className="rounded-lg bg-muted px-3 py-2.5 text-sm text-muted-foreground">
+                          Thinking…
+                        </div>
+                      </div>
                     )}
+
+                    {chatError && (
+                      <p className="text-xs text-destructive">{chatError}</p>
+                    )}
+
+                    <div ref={chatBottomRef} />
                   </div>
 
-                  {/* Code textarea */}
-                  <textarea
-                    value={reviewCode}
-                    onChange={(e) => setReviewCode(e.target.value)}
-                    placeholder={`Paste your ${reviewLanguage} code here…`}
-                    rows={8}
-                    maxLength={10000}
-                    spellCheck={false}
-                    className="w-full resize-y rounded-md border border-input bg-background px-3 py-2 font-mono text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  />
-                  <span className="text-right text-xs text-muted-foreground">
-                    {reviewCode.length}/10000
-                  </span>
-                </div>
-
-                {/* Chat thread */}
-                <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-4">
-                  {chatMessages.length === 0 && !chatLoading && !chatError && (
-                    <p className="text-center text-xs text-muted-foreground py-6">
-                      Paste your code and ask a question to get started.
-                    </p>
-                  )}
-
-                  {chatMessages.map((msg) => (
-                    <div
-                      key={msg.id}
-                      className={`flex flex-col gap-1 ${msg.role === "user" ? "items-end" : "items-start"}`}
+                  <div className="flex gap-2 border-t border-border p-3">
+                    <input
+                      type="text"
+                      value={chatInput}
+                      onChange={(e) => setChatInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          void handleChat(problemNumber);
+                        }
+                      }}
+                      placeholder="Ask about your code…"
+                      maxLength={2000}
+                      disabled={chatLoading}
+                      className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                    />
+                    <Button
+                      size="sm"
+                      disabled={chatLoading || !chatInput.trim()}
+                      onClick={() => void handleChat(problemNumber)}
                     >
-                      <span className="text-[10px] font-medium text-muted-foreground">
-                        {msg.role === "user" ? "You" : "AI Mentor"}
-                      </span>
-                      <div
-                        className={`max-w-[92%] rounded-lg px-3 py-2.5 text-sm leading-relaxed whitespace-pre-wrap ${
-                          msg.role === "user"
-                            ? "bg-primary/10 text-foreground"
-                            : "bg-muted text-foreground"
-                        }`}
-                      >
-                        {msg.content}
-                      </div>
-                    </div>
-                  ))}
-
-                  {chatLoading && (
-                    <div className="flex flex-col gap-1 items-start">
-                      <span className="text-[10px] font-medium text-muted-foreground">
-                        AI Mentor
-                      </span>
-                      <div className="rounded-lg bg-muted px-3 py-2.5 text-sm text-muted-foreground">
-                        Thinking…
-                      </div>
-                    </div>
-                  )}
-
-                  {chatError && (
-                    <p className="text-xs text-destructive">{chatError}</p>
-                  )}
-
-                  <div ref={chatBottomRef} />
+                      Send
+                    </Button>
+                  </div>
                 </div>
-
-                {/* Chat input */}
-                <div className="flex gap-2 border-t border-border p-3">
-                  <input
-                    type="text"
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        void handleChat(problemNumber);
-                      }
-                    }}
-                    placeholder="Ask about your code…"
-                    maxLength={2000}
-                    disabled={chatLoading}
-                    className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
-                  />
-                  <Button
-                    size="sm"
-                    disabled={chatLoading || !chatInput.trim()}
-                    onClick={() => void handleChat(problemNumber)}
-                  >
-                    Send
-                  </Button>
-                </div>
-              </div>
-            </>
+              )}
+            </div>
           );
         })()}
     </div>

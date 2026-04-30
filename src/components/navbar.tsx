@@ -11,6 +11,8 @@ const navLinks = [
   { href: "/settings", label: "Settings" },
 ];
 
+const publicNavLinks = [{ href: "/changelog", label: "Changelog" }];
+
 function todayUtc(): string {
   return new Date().toISOString().slice(0, 10);
 }
@@ -51,9 +53,9 @@ export async function Navbar() {
             AlgoPath
           </Link>
 
-          {user && (
-            <div className="flex gap-4">
-              {navLinks.map((link) => (
+          <div className="flex gap-4">
+            {user &&
+              navLinks.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
@@ -62,9 +64,17 @@ export async function Navbar() {
                   {link.label}
                 </Link>
               ))}
-              {isAdmin(user.email) && <AdminDropdown />}
-            </div>
-          )}
+            {publicNavLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+              >
+                {link.label}
+              </Link>
+            ))}
+            {user && isAdmin(user.email) && <AdminDropdown />}
+          </div>
 
           <div className="ml-auto flex items-center gap-3">
             {user ? (
