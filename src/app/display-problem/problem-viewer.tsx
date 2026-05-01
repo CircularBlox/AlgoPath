@@ -1708,13 +1708,13 @@ export function ProblemViewer({
                           loadProblemNotes(problemNumber);
                       }
                     }}
-                    className={`flex flex-col items-center gap-1.5 rounded-l-md border border-r-0 px-2 py-3 text-[10px] font-medium transition-colors ${
+                    className={`flex flex-col items-center gap-2 rounded-l-md border-2 border-r-0 px-3 py-4 text-xs font-semibold transition-colors shadow-md ${
                       activeTab === id
                         ? "border-primary bg-primary text-primary-foreground"
-                        : "border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
+                        : "border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 hover:border-primary/60"
                     }`}
                   >
-                    {icon}
+                    <div className="scale-125">{icon}</div>
                     <span
                       style={{
                         writingMode: "vertical-rl",
