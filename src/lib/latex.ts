@@ -16,13 +16,15 @@ function renderMath(tex: string): string {
   s = s.replace(/_\{([^{}]+)\}/g, "<sub>$1</sub>");
   s = s.replace(/\^(-?\d+|\w)/g, "<sup>$1</sup>");
   s = s.replace(/_(-?\d+|\w)/g, "<sub>$1</sub>");
-  // Inequalities / relations (leq before le, geq before ge, neq before ne)
+  // Inequalities / relations (leq before le, geq before ge, neq before ne, lt/gt strict)
   s = s.replace(/\\leq\b/g, "≤");
   s = s.replace(/\\le\b/g, "≤");
   s = s.replace(/\\geq\b/g, "≥");
   s = s.replace(/\\ge\b/g, "≥");
   s = s.replace(/\\neq\b/g, "≠");
   s = s.replace(/\\ne\b/g, "≠");
+  s = s.replace(/\\lt\b/g, "<");
+  s = s.replace(/\\gt\b/g, ">");
   s = s.replace(/\\approx\b/g, "≈");
   s = s.replace(/\\equiv\b/g, "≡");
   s = s.replace(/\\sim\b/g, "∼");
