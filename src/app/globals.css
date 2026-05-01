@@ -216,22 +216,8 @@
   }
 }
 
-/* LaTeX math rendered from processHtmlLatex */
-.math-inline {
-  font-style: italic;
-  font-family: "STIX Two Math", "Computer Modern", "Times New Roman", serif;
-  white-space: nowrap;
-}
-.math-inline sup,
-.math-inline sub {
-  font-size: 0.72em;
-}
-.math-block {
-  display: block;
-  text-align: center;
+/* KaTeX display-mode blocks get some breathing room */
+.katex-display {
   margin: 0.75rem 0;
-  font-style: italic;
-  font-family: "STIX Two Math", "Computer Modern", "Times New Roman", serif;
-  font-size: 1.05em;
   overflow-x: auto;
 }
