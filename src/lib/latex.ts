@@ -1,14 +1,18 @@
 import katex from "katex";
 
 function renderMath(tex: string, display: boolean): string {
+  // CF uses \color{red}{...} to highlight constraints; strip the color command and keep the content
+  const processed = tex
+    .replace(/\\color\{[^}]+\}/g, "")
+    .replace(/\\textcolor\{[^}]+\}/g, "");
   try {
-    return katex.renderToString(tex, {
+    return katex.renderToString(processed, {
       throwOnError: false,
       displayMode: display,
       output: "html",
     });
   } catch {
-    return tex;
+    return processed;
   }
 }
 
