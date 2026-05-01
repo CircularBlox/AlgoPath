@@ -14,6 +14,7 @@ import {
 import { Input } from "~/components/ui/input";
 import { processHtmlLatex } from "~/lib/latex";
 import { highlight, languages } from "~/lib/prism-setup";
+import { timeAgo } from "~/lib/time";
 
 const LANG_GRAMMARS: Record<string, Prism.Grammar> = {
   "C++": languages.cpp,
@@ -147,6 +148,54 @@ export function ProblemViewer({
     }
   }, [solutionState.status]);
 
+  const loadedProblemNumber =
+    state.status === "loaded" ? (state.problem.problem_number ?? null) : null;
+
+  // Fire a view event and load solve timestamps whenever a problem is loaded
+  useEffect(() => {
+    if (!loadedProblemNumber || !userId) return;
+    const num = loadedProblemNumber;
+    fetch(`/api/problems/${num}/view`, { method: "POST" })
+      .then(async (r) => {
+        if (r.ok) {
+          const viewData = (await r.json()) as {
+            first_viewed_at?: string;
+            last_viewed_at?: string;
+            view_count?: number;
+          };
+          const sr = await fetch(`/api/problems/${num}/view`);
+          if (sr.ok) {
+            const full = (await sr.json()) as {
+              view: {
+                first_viewed_at: string;
+                last_viewed_at: string;
+                view_count: number;
+              } | null;
+              solve: {
+                solved_at: string;
+                xp_gained: number;
+                hints_used: number;
+              } | null;
+            };
+            setTimestamps(full);
+          } else {
+            setTimestamps({
+              view:
+                viewData.first_viewed_at && viewData.last_viewed_at
+                  ? {
+                      first_viewed_at: viewData.first_viewed_at,
+                      last_viewed_at: viewData.last_viewed_at,
+                      view_count: viewData.view_count ?? 1,
+                    }
+                  : null,
+              solve: null,
+            });
+          }
+        }
+      })
+      .catch(() => {});
+  }, [loadedProblemNumber, userId]);
+
   const [hintRatings, setHintRatings] = useState<
     Record<1 | 2 | 3, "up" | "down" | null>
   >({ 1: null, 2: null, 3: null });
@@ -198,6 +247,16 @@ export function ProblemViewer({
   const [editorSaveStatus, setEditorSaveStatus] = useState<
     "idle" | "saving" | "saved" | "error"
   >("idle");
+
+  type ProblemTimestamps = {
+    view: {
+      first_viewed_at: string;
+      last_viewed_at: string;
+      view_count: number;
+    } | null;
+    solve: { solved_at: string; xp_gained: number; hints_used: number } | null;
+  };
+  const [timestamps, setTimestamps] = useState<ProblemTimestamps | null>(null);
 
   async function loadProblemNotes(problemNumber: number) {
     setNotesLoading(true);
@@ -350,6 +409,7 @@ export function ProblemViewer({
     setQuickContent("");
     setQuickSaving(false);
     setEditorSaveStatus("idle");
+    setTimestamps(null);
   }
 
   async function handleReport(problemNumber: number) {
@@ -998,6 +1058,42 @@ export function ProblemViewer({
                   )}
                 </CardFooter>
               </Card>
+
+              {/* Timestamp strip */}
+              {userId &&
+                timestamps &&
+                (timestamps.view || timestamps.solve) && (
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-1 text-xs text-muted-foreground">
+                    {timestamps.solve && (
+                      <span className="flex items-center gap-1">
+                        <span className="font-medium text-green-500">
+                          ✓ Solved
+                        </span>
+                        <span
+                          title={new Date(
+                            timestamps.solve.solved_at,
+                          ).toLocaleString()}
+                        >
+                          {timeAgo(timestamps.solve.solved_at)}
+                        </span>
+                        {timestamps.solve.xp_gained > 0 && (
+                          <span className="text-muted-foreground/70">
+                            (+{timestamps.solve.xp_gained} XP)
+                          </span>
+                        )}
+                      </span>
+                    )}
+                    {timestamps.view && (
+                      <span
+                        title={`First viewed ${new Date(timestamps.view.first_viewed_at).toLocaleString()}`}
+                      >
+                        {timestamps.view.view_count === 1
+                          ? `Viewed once, ${timeAgo(timestamps.view.first_viewed_at)}`
+                          : `Viewed ${timestamps.view.view_count}× · first ${timeAgo(timestamps.view.first_viewed_at)}`}
+                      </span>
+                    )}
+                  </div>
+                )}
 
               {/* Report form */}
               {userId &&

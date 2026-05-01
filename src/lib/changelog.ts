@@ -6,6 +6,28 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.7.0",
+    date: "2026-04-30",
+    changes: [
+      {
+        type: "feat",
+        text: "Activity page — timestamped log of all solves, problem views, notes, and AI reviews, with filter tabs and per-category counts",
+      },
+      {
+        type: "feat",
+        text: "Problem view tracking — each problem visit records first/last viewed and view count; shown below the problem card",
+      },
+      {
+        type: "feat",
+        text: "Solve timestamp log — every solve is now recorded in a dedicated table with XP earned and hints used, enabling per-solve history",
+      },
+      {
+        type: "improve",
+        text: "timeAgo() utility for human-readable relative timestamps (just now, 3m ago, 2d ago, etc.) used throughout the app",
+      },
+    ],
+  },
+  {
     version: "0.6.1",
     date: "2026-04-29",
     changes: [
