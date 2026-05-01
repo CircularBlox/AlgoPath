@@ -200,6 +200,20 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Record solve event with timestamp
+  const { error: solveLogError } = await supabase.from("solves").insert({
+    user_id: user.id,
+    problem_number,
+    xp_gained: xp_gain,
+    hints_used: hints_viewed,
+  });
+  if (solveLogError) {
+    Sentry.captureException(solveLogError, {
+      tags: { route: "solve", step: "log_solve" },
+      extra: { userId: user.id, problem_number },
+    });
+  }
+
   return NextResponse.json({
     already_solved: false,
     rating_gain,
