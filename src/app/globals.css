@@ -181,6 +181,29 @@
     overflow-x: auto;
     margin-bottom: 0.5rem;
   }
+  .cf-problem ul {
+    list-style-type: disc;
+    padding-left: 1.5rem;
+    margin-bottom: 0.75rem;
+  }
+  .cf-problem ol {
+    list-style-type: decimal;
+    padding-left: 1.5rem;
+    margin-bottom: 0.75rem;
+  }
+  .cf-problem li {
+    margin-bottom: 0.25rem;
+    line-height: 1.6;
+  }
+  .cf-problem li > ul {
+    list-style-type: circle;
+    margin-top: 0.25rem;
+    margin-bottom: 0;
+  }
+  .cf-problem li > ol {
+    margin-top: 0.25rem;
+    margin-bottom: 0;
+  }
   .cf-problem table {
     border-collapse: collapse;
     font-size: 0.875rem;
@@ -193,22 +216,8 @@
   }
 }
 
-/* LaTeX math rendered from processHtmlLatex */
-.math-inline {
-  font-style: italic;
-  font-family: "STIX Two Math", "Computer Modern", "Times New Roman", serif;
-  white-space: nowrap;
-}
-.math-inline sup,
-.math-inline sub {
-  font-size: 0.72em;
-}
-.math-block {
-  display: block;
-  text-align: center;
+/* KaTeX display-mode blocks get some breathing room */
+.katex-display {
   margin: 0.75rem 0;
-  font-style: italic;
-  font-family: "STIX Two Math", "Computer Modern", "Times New Roman", serif;
-  font-size: 1.05em;
   overflow-x: auto;
 }
