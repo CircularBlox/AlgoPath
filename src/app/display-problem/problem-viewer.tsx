@@ -154,50 +154,38 @@ export function ProblemViewer({
   const loadedProblemNumber =
     state.status === "loaded" ? (state.problem.problem_number ?? null) : null;
 
-  // Fire a view event and load solve timestamps whenever a problem is loaded
+  // Load solve timestamp whenever a problem is loaded
   useEffect(() => {
     if (!loadedProblemNumber || !userId) return;
     const num = loadedProblemNumber;
-    fetch(`/api/problems/${num}/view`, { method: "POST" })
+    fetch(`/api/problems/${num}/view`)
       .then(async (r) => {
         if (r.ok) {
-          const viewData = (await r.json()) as {
-            first_viewed_at?: string;
-            last_viewed_at?: string;
-            view_count?: number;
+          const data = (await r.json()) as {
+            solve: {
+              solved_at: string;
+              xp_gained: number;
+              hints_used: number;
+            } | null;
           };
-          const sr = await fetch(`/api/problems/${num}/view`);
-          if (sr.ok) {
-            const full = (await sr.json()) as {
-              view: {
-                first_viewed_at: string;
-                last_viewed_at: string;
-                view_count: number;
-              } | null;
-              solve: {
-                solved_at: string;
-                xp_gained: number;
-                hints_used: number;
-              } | null;
-            };
-            setTimestamps(full);
-          } else {
-            setTimestamps({
-              view:
-                viewData.first_viewed_at && viewData.last_viewed_at
-                  ? {
-                      first_viewed_at: viewData.first_viewed_at,
-                      last_viewed_at: viewData.last_viewed_at,
-                      view_count: viewData.view_count ?? 1,
-                    }
-                  : null,
-              solve: null,
-            });
-          }
+          setSolveTimestamp(data.solve ?? null);
         }
       })
       .catch(() => {});
   }, [loadedProblemNumber, userId]);
+
+  // Fetch recently attempted problems (has notes/reviews, not yet solved)
+  useEffect(() => {
+    if (!userId) return;
+    fetch("/api/problems/recent")
+      .then(async (r) => {
+        if (r.ok) {
+          const data = (await r.json()) as Problem[];
+          setRecentProblems(data);
+        }
+      })
+      .catch(() => {});
+  }, [userId]);
 
   const [hintRatings, setHintRatings] = useState<
     Record<1 | 2 | 3, "up" | "down" | null>
@@ -227,6 +215,10 @@ export function ProblemViewer({
   const [panelWidth, setPanelWidth] = useState(420);
   const [codeFullscreen, setCodeFullscreen] = useState(false);
   const dragRef = useRef<{ x: number; w: number } | null>(null);
+  const [skipWarningPending, setSkipWarningPending] = useState<
+    (() => void) | null
+  >(null);
+  const [recentProblems, setRecentProblems] = useState<Problem[] | null>(null);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [suggestQuery, setSuggestQuery] = useState("");
@@ -254,15 +246,12 @@ export function ProblemViewer({
     "idle" | "saving" | "saved" | "error"
   >("idle");
 
-  type ProblemTimestamps = {
-    view: {
-      first_viewed_at: string;
-      last_viewed_at: string;
-      view_count: number;
-    } | null;
-    solve: { solved_at: string; xp_gained: number; hints_used: number } | null;
-  };
-  const [timestamps, setTimestamps] = useState<ProblemTimestamps | null>(null);
+  type SolveTimestamp = {
+    solved_at: string;
+    xp_gained: number;
+    hints_used: number;
+  } | null;
+  const [solveTimestamp, setSolveTimestamp] = useState<SolveTimestamp>(null);
 
   async function loadProblemNotes(problemNumber: number) {
     setNotesLoading(true);
@@ -415,7 +404,8 @@ export function ProblemViewer({
     setQuickContent("");
     setQuickSaving(false);
     setEditorSaveStatus("idle");
-    setTimestamps(null);
+    setSolveTimestamp(null);
+    setSkipWarningPending(null);
     setPanelWidth(420);
     setCodeFullscreen(false);
   }
@@ -795,6 +785,14 @@ export function ProblemViewer({
     window.addEventListener("mouseup", onUp);
   }
 
+  function triggerWithSkipWarning(action: () => void) {
+    if (state.status === "loaded") {
+      setSkipWarningPending(() => action);
+    } else {
+      action();
+    }
+  }
+
   const isLoading = state.status === "loading";
 
   return (
@@ -824,7 +822,7 @@ export function ProblemViewer({
           <div className="h-px flex-1 bg-border" />
         </div>
         <Button
-          onClick={fetchRandom}
+          onClick={() => triggerWithSkipWarning(fetchRandom)}
           disabled={isLoading}
           className="self-start"
         >
@@ -853,6 +851,76 @@ export function ProblemViewer({
           </Button>
         </div>
       </div>
+
+      {/* Skip warning */}
+      {skipWarningPending && (
+        <div className="flex items-center gap-2 rounded-md border border-amber-500/30 bg-amber-500/8 px-3 py-1.5">
+          <span className="text-xs text-amber-400">
+            Skipping counts as giving up this problem.
+          </span>
+          <div className="ml-auto flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => {
+                const action = skipWarningPending;
+                setSkipWarningPending(null);
+                action();
+              }}
+              className="rounded px-2 py-0.5 text-xs font-medium text-amber-400 hover:bg-amber-500/20 transition-colors"
+            >
+              Skip anyway
+            </button>
+            <button
+              type="button"
+              onClick={() => setSkipWarningPending(null)}
+              className="rounded px-2 py-0.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Continue where you left off */}
+      {state.status === "idle" &&
+        userId &&
+        recentProblems &&
+        recentProblems.length > 0 && (
+          <div className="flex flex-col gap-2">
+            <p className="text-xs font-medium text-muted-foreground">
+              Continue where you left off
+            </p>
+            <div className="overflow-hidden rounded-lg border border-border divide-y divide-border">
+              {recentProblems.map((problem) => (
+                <button
+                  key={problem.id}
+                  type="button"
+                  onClick={() => selectProblem(problem)}
+                  className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-muted/50"
+                >
+                  {problem.problem_number != null && (
+                    <span className="w-8 shrink-0 font-mono text-xs text-muted-foreground">
+                      #{problem.problem_number}
+                    </span>
+                  )}
+                  <span className="flex-1 truncate text-sm font-medium">
+                    {problem.title}
+                  </span>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    {problem.difficulty && (
+                      <Badge variant="outline" className="text-xs">
+                        {problem.difficulty}
+                      </Badge>
+                    )}
+                    <Badge variant="secondary" className="text-xs">
+                      {problem.platform === "codeforces" ? "CF" : "LC"}
+                    </Badge>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
       {isAiLoading && (
         <div className="flex items-center gap-1.5 px-1">
@@ -1076,7 +1144,7 @@ export function ProblemViewer({
                   )}
                   <Button
                     variant="ghost"
-                    onClick={fetchRandom}
+                    onClick={() => triggerWithSkipWarning(fetchRandom)}
                     className={userId ? "" : "ml-auto"}
                   >
                     Skip
@@ -1116,41 +1184,26 @@ export function ProblemViewer({
                 </CardFooter>
               </Card>
 
-              {/* Timestamp strip */}
-              {userId &&
-                timestamps &&
-                (timestamps.view || timestamps.solve) && (
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-1 text-xs text-muted-foreground">
-                    {timestamps.solve && (
-                      <span className="flex items-center gap-1">
-                        <span className="font-medium text-green-500">
-                          ✓ Solved
-                        </span>
-                        <span
-                          title={new Date(
-                            timestamps.solve.solved_at,
-                          ).toLocaleString()}
-                        >
-                          {timeAgo(timestamps.solve.solved_at)}
-                        </span>
-                        {timestamps.solve.xp_gained > 0 && (
-                          <span className="text-muted-foreground/70">
-                            (+{timestamps.solve.xp_gained} XP)
-                          </span>
-                        )}
+              {/* Solve timestamp strip */}
+              {userId && solveTimestamp && (
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-1 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <span className="font-medium text-green-500">✓ Solved</span>
+                    <span
+                      title={new Date(
+                        solveTimestamp.solved_at,
+                      ).toLocaleString()}
+                    >
+                      {timeAgo(solveTimestamp.solved_at)}
+                    </span>
+                    {solveTimestamp.xp_gained > 0 && (
+                      <span className="text-muted-foreground/70">
+                        (+{solveTimestamp.xp_gained} XP)
                       </span>
                     )}
-                    {timestamps.view && (
-                      <span
-                        title={`First viewed ${new Date(timestamps.view.first_viewed_at).toLocaleString()}`}
-                      >
-                        {timestamps.view.view_count === 1
-                          ? `Viewed once, ${timeAgo(timestamps.view.first_viewed_at)}`
-                          : `Viewed ${timestamps.view.view_count}× · first ${timeAgo(timestamps.view.first_viewed_at)}`}
-                      </span>
-                    )}
-                  </div>
-                )}
+                  </span>
+                </div>
+              )}
 
               {/* Report form */}
               {userId &&

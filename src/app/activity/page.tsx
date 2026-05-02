@@ -11,14 +11,6 @@ type Solve = {
   solved_at: string;
 };
 
-type View = {
-  problem_number: number;
-  problem_title: string | null;
-  first_viewed_at: string;
-  last_viewed_at: string;
-  view_count: number;
-};
-
 type NoteActivity = {
   id: string;
   title: string;
@@ -35,22 +27,18 @@ type Review = {
 
 type ActivityData = {
   solves: Solve[];
-  views: View[];
   notes: NoteActivity[];
   reviews: Review[];
 };
 
 type Event =
   | { kind: "solve"; ts: string; data: Solve }
-  | { kind: "view"; ts: string; data: View }
   | { kind: "note"; ts: string; data: NoteActivity }
   | { kind: "review"; ts: string; data: Review };
 
 function kindLabel(kind: Event["kind"]) {
   if (kind === "solve")
     return { label: "Solved", color: "text-green-500", bg: "bg-green-500/10" };
-  if (kind === "view")
-    return { label: "Viewed", color: "text-blue-500", bg: "bg-blue-500/10" };
   if (kind === "note")
     return { label: "Note", color: "text-primary", bg: "bg-primary/10" };
   return {
@@ -89,9 +77,6 @@ export default function ActivityPage() {
         ...data.solves.map(
           (s): Event => ({ kind: "solve", ts: s.solved_at, data: s }),
         ),
-        ...data.views.map(
-          (v): Event => ({ kind: "view", ts: v.last_viewed_at, data: v }),
-        ),
         ...data.notes.map(
           (n): Event => ({ kind: "note", ts: n.updated_at, data: n }),
         ),
@@ -107,7 +92,6 @@ export default function ActivityPage() {
   const FILTERS: { id: typeof filter; label: string }[] = [
     { id: "all", label: "All" },
     { id: "solve", label: "Solves" },
-    { id: "view", label: "Views" },
     { id: "note", label: "Notes" },
     { id: "review", label: "AI Reviews" },
   ];
@@ -123,17 +107,12 @@ export default function ActivityPage() {
 
       {/* Stats strip */}
       {data && (
-        <div className="mb-6 grid grid-cols-4 gap-3">
+        <div className="mb-6 grid grid-cols-3 gap-3">
           {[
             {
               label: "Solves",
               value: data.solves.length,
               color: "text-green-500",
-            },
-            {
-              label: "Problems viewed",
-              value: data.views.length,
-              color: "text-blue-500",
             },
             { label: "Notes", value: data.notes.length, color: "text-primary" },
             {
@@ -196,12 +175,6 @@ export default function ActivityPage() {
               event.data.problem_title ??
               `Problem #${event.data.problem_number}`;
             detail = `+${event.data.xp_gained} XP${event.data.hints_used > 0 ? ` · ${event.data.hints_used} hint${event.data.hints_used !== 1 ? "s" : ""} used` : ""}`;
-            href = `/display-problem?p=${event.data.problem_number}`;
-          } else if (event.kind === "view") {
-            title =
-              event.data.problem_title ??
-              `Problem #${event.data.problem_number}`;
-            detail = `${event.data.view_count} view${event.data.view_count !== 1 ? "s" : ""} · first seen ${timeAgo(event.data.first_viewed_at)}`;
             href = `/display-problem?p=${event.data.problem_number}`;
           } else if (event.kind === "note") {
             title = event.data.title || "Untitled note";

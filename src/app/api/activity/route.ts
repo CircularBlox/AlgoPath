@@ -9,20 +9,13 @@ export async function GET(_req: NextRequest) {
 
   const supabase = await createClient();
 
-  const [solvesRes, viewsRes, notesRes, reviewsRes] = await Promise.all([
+  const [solvesRes, notesRes, reviewsRes] = await Promise.all([
     supabase
       .from("solves")
       .select("problem_number, xp_gained, hints_used, solved_at")
       .eq("user_id", user.id)
       .order("solved_at", { ascending: false })
       .limit(50),
-
-    supabase
-      .from("problem_views")
-      .select("problem_number, first_viewed_at, last_viewed_at, view_count")
-      .eq("user_id", user.id)
-      .order("last_viewed_at", { ascending: false })
-      .limit(30),
 
     supabase
       .from("notes")
@@ -39,22 +32,15 @@ export async function GET(_req: NextRequest) {
       .limit(20),
   ]);
 
-  for (const { error, data: _ } of [
-    solvesRes,
-    viewsRes,
-    notesRes,
-    reviewsRes,
-  ]) {
+  for (const { error } of [solvesRes, notesRes, reviewsRes]) {
     if (error) {
       Sentry.captureException(error, { tags: { route: "activity" } });
     }
   }
 
-  // Attach problem titles via a single query for all referenced problem numbers
   const allNumbers = Array.from(
     new Set([
       ...(solvesRes.data ?? []).map((r) => r.problem_number),
-      ...(viewsRes.data ?? []).map((r) => r.problem_number),
       ...(notesRes.data ?? [])
         .filter((r) => r.problem_number != null)
         .map((r) => r.problem_number as number),
@@ -75,10 +61,6 @@ export async function GET(_req: NextRequest) {
 
   return NextResponse.json({
     solves: (solvesRes.data ?? []).map((r) => ({
-      ...r,
-      problem_title: titleMap[r.problem_number] ?? null,
-    })),
-    views: (viewsRes.data ?? []).map((r) => ({
       ...r,
       problem_title: titleMap[r.problem_number] ?? null,
     })),
