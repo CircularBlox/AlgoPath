@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import posthog from "posthog-js";
 import { useEffect, useRef, useState } from "react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -22,6 +23,9 @@ const LANG_GRAMMARS: Record<string, Prism.Grammar> = {
   JavaScript: languages.javascript,
   Python: languages.python,
 };
+
+const MIN_PANEL_W = 300;
+const MAX_PANEL_W = 900;
 
 function InlineCode({ text }: { text: string }) {
   const html = text.replace(
@@ -150,51 +154,53 @@ export function ProblemViewer({
 
   const loadedProblemNumber =
     state.status === "loaded" ? (state.problem.problem_number ?? null) : null;
+  const loadedProblemPlatform =
+    state.status === "loaded" ? state.problem.platform : null;
+  const loadedProblemDifficulty =
+    state.status === "loaded" ? state.problem.difficulty : null;
 
-  // Fire a view event and load solve timestamps whenever a problem is loaded
+  // Track problem view at the top of the hint-consumption funnel
+  useEffect(() => {
+    if (!loadedProblemNumber) return;
+    posthog.capture("problem_viewed", {
+      problem_number: loadedProblemNumber,
+      platform: loadedProblemPlatform,
+      difficulty: loadedProblemDifficulty,
+    });
+  }, [loadedProblemNumber, loadedProblemPlatform, loadedProblemDifficulty]);
+
+  // Load solve timestamp whenever a problem is loaded
   useEffect(() => {
     if (!loadedProblemNumber || !userId) return;
     const num = loadedProblemNumber;
-    fetch(`/api/problems/${num}/view`, { method: "POST" })
+    fetch(`/api/problems/${num}/view`)
       .then(async (r) => {
         if (r.ok) {
-          const viewData = (await r.json()) as {
-            first_viewed_at?: string;
-            last_viewed_at?: string;
-            view_count?: number;
+          const data = (await r.json()) as {
+            solve: {
+              solved_at: string;
+              xp_gained: number;
+              hints_used: number;
+            } | null;
           };
-          const sr = await fetch(`/api/problems/${num}/view`);
-          if (sr.ok) {
-            const full = (await sr.json()) as {
-              view: {
-                first_viewed_at: string;
-                last_viewed_at: string;
-                view_count: number;
-              } | null;
-              solve: {
-                solved_at: string;
-                xp_gained: number;
-                hints_used: number;
-              } | null;
-            };
-            setTimestamps(full);
-          } else {
-            setTimestamps({
-              view:
-                viewData.first_viewed_at && viewData.last_viewed_at
-                  ? {
-                      first_viewed_at: viewData.first_viewed_at,
-                      last_viewed_at: viewData.last_viewed_at,
-                      view_count: viewData.view_count ?? 1,
-                    }
-                  : null,
-              solve: null,
-            });
-          }
+          setSolveTimestamp(data.solve ?? null);
         }
       })
       .catch(() => {});
   }, [loadedProblemNumber, userId]);
+
+  // Fetch recently attempted problems (has notes/reviews, not yet solved)
+  useEffect(() => {
+    if (!userId) return;
+    fetch("/api/problems/recent")
+      .then(async (r) => {
+        if (r.ok) {
+          const data = (await r.json()) as Problem[];
+          setRecentProblems(data);
+        }
+      })
+      .catch(() => {});
+  }, [userId]);
 
   const [hintRatings, setHintRatings] = useState<
     Record<1 | 2 | 3, "up" | "down" | null>
@@ -221,6 +227,13 @@ export function ProblemViewer({
   const [reviewLanguage, setReviewLanguage] = useState("C++");
   const [problemViewed, setProblemViewed] = useState(false);
   const chatBottomRef = useRef<HTMLDivElement>(null);
+  const [panelWidth, setPanelWidth] = useState(420);
+  const [codeFullscreen, setCodeFullscreen] = useState(false);
+  const dragRef = useRef<{ x: number; w: number } | null>(null);
+  const [skipWarningPending, setSkipWarningPending] = useState<
+    (() => void) | null
+  >(null);
+  const [recentProblems, setRecentProblems] = useState<Problem[] | null>(null);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [suggestQuery, setSuggestQuery] = useState("");
@@ -248,15 +261,12 @@ export function ProblemViewer({
     "idle" | "saving" | "saved" | "error"
   >("idle");
 
-  type ProblemTimestamps = {
-    view: {
-      first_viewed_at: string;
-      last_viewed_at: string;
-      view_count: number;
-    } | null;
-    solve: { solved_at: string; xp_gained: number; hints_used: number } | null;
-  };
-  const [timestamps, setTimestamps] = useState<ProblemTimestamps | null>(null);
+  type SolveTimestamp = {
+    solved_at: string;
+    xp_gained: number;
+    hints_used: number;
+  } | null;
+  const [solveTimestamp, setSolveTimestamp] = useState<SolveTimestamp>(null);
 
   async function loadProblemNotes(problemNumber: number) {
     setNotesLoading(true);
@@ -409,7 +419,10 @@ export function ProblemViewer({
     setQuickContent("");
     setQuickSaving(false);
     setEditorSaveStatus("idle");
-    setTimestamps(null);
+    setSolveTimestamp(null);
+    setSkipWarningPending(null);
+    setPanelWidth(420);
+    setCodeFullscreen(false);
   }
 
   async function handleReport(problemNumber: number) {
@@ -536,6 +549,7 @@ export function ProblemViewer({
       } else {
         const solution: Solution = data;
         setSolutionState({ status: "open", data: solution });
+        posthog.capture("solution_viewed", { problem_number: problemNumber });
         const codes = solution.solution_codes ?? [];
         const preferred = codes.find((c) => c.language === "C++") ?? codes[0];
         if (preferred) setSelectedLanguage(preferred.language);
@@ -613,6 +627,11 @@ export function ProblemViewer({
             "x-csrf-token": csrfToken,
           },
           body: JSON.stringify({ hint_number: hintNumber, rating: next }),
+        });
+        posthog.capture("hint_rated", {
+          problem_number: problemNumber,
+          hint_number: hintNumber,
+          rating: next,
         });
       }
     } catch {
@@ -728,6 +747,15 @@ export function ProblemViewer({
           xpGain: data.xp_gain ?? data.rating_gain ?? 0,
           newLevel: data.new_level ?? 1,
         });
+        posthog.capture("problem_solved", {
+          problem_number: problem.problem_number,
+          difficulty: problem.difficulty,
+          hints_used: hintsUsed,
+          xp_gain: data.xp_gain,
+          rating_gain: data.rating_gain,
+          new_level: data.new_level,
+          streak: data.streak,
+        });
       }
       setTimeout(() => fetchRandom(), 1500);
     } catch {
@@ -735,6 +763,63 @@ export function ProblemViewer({
         status: "error",
         message: "Failed to reach the server.",
       });
+    }
+  }
+
+  // Expand the page <main> to fill the full viewport when the panel is open,
+  // so the problem content uses all available left-side space.
+  useEffect(() => {
+    const isPanelOpen =
+      activeTab !== null && state.status === "loaded" && !!userId;
+    const main = document.querySelector<HTMLElement>("main");
+    if (!main) return;
+    main.style.transition = "padding-right 0.25s ease";
+    if (isPanelOpen) {
+      main.style.maxWidth = "none";
+      main.style.marginLeft = "0";
+      main.style.marginRight = "0";
+      main.style.paddingRight = `${panelWidth + 24}px`;
+    } else {
+      main.style.maxWidth = "";
+      main.style.marginLeft = "";
+      main.style.marginRight = "";
+      main.style.paddingRight = "";
+    }
+    return () => {
+      const m = document.querySelector<HTMLElement>("main");
+      if (!m) return;
+      m.style.maxWidth = "";
+      m.style.marginLeft = "";
+      m.style.marginRight = "";
+      m.style.paddingRight = "";
+      m.style.transition = "";
+    };
+  }, [activeTab, panelWidth, state.status, userId]);
+
+  function startDrag(e: React.MouseEvent) {
+    e.preventDefault();
+    dragRef.current = { x: e.clientX, w: panelWidth };
+    const onMove = (ev: MouseEvent) => {
+      if (!dragRef.current) return;
+      const dx = dragRef.current.x - ev.clientX;
+      setPanelWidth(
+        Math.max(MIN_PANEL_W, Math.min(MAX_PANEL_W, dragRef.current.w + dx)),
+      );
+    };
+    const onUp = () => {
+      dragRef.current = null;
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  }
+
+  function triggerWithSkipWarning(action: () => void) {
+    if (state.status === "loaded") {
+      setSkipWarningPending(() => action);
+    } else {
+      action();
     }
   }
 
@@ -767,7 +852,7 @@ export function ProblemViewer({
           <div className="h-px flex-1 bg-border" />
         </div>
         <Button
-          onClick={fetchRandom}
+          onClick={() => triggerWithSkipWarning(fetchRandom)}
           disabled={isLoading}
           className="self-start"
         >
@@ -796,6 +881,76 @@ export function ProblemViewer({
           </Button>
         </div>
       </div>
+
+      {/* Skip warning */}
+      {skipWarningPending && (
+        <div className="flex items-center gap-2 rounded-md border border-amber-500/30 bg-amber-500/8 px-3 py-1.5">
+          <span className="text-xs text-amber-400">
+            Skipping counts as giving up this problem.
+          </span>
+          <div className="ml-auto flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => {
+                const action = skipWarningPending;
+                setSkipWarningPending(null);
+                action();
+              }}
+              className="rounded px-2 py-0.5 text-xs font-medium text-amber-400 hover:bg-amber-500/20 transition-colors"
+            >
+              Skip anyway
+            </button>
+            <button
+              type="button"
+              onClick={() => setSkipWarningPending(null)}
+              className="rounded px-2 py-0.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Continue where you left off */}
+      {state.status === "idle" &&
+        userId &&
+        recentProblems &&
+        recentProblems.length > 0 && (
+          <div className="flex flex-col gap-2">
+            <p className="text-xs font-medium text-muted-foreground">
+              Continue where you left off
+            </p>
+            <div className="overflow-hidden rounded-lg border border-border divide-y divide-border">
+              {recentProblems.map((problem) => (
+                <button
+                  key={problem.id}
+                  type="button"
+                  onClick={() => selectProblem(problem)}
+                  className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-muted/50"
+                >
+                  {problem.problem_number != null && (
+                    <span className="w-8 shrink-0 font-mono text-xs text-muted-foreground">
+                      #{problem.problem_number}
+                    </span>
+                  )}
+                  <span className="flex-1 truncate text-sm font-medium">
+                    {problem.title}
+                  </span>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    {problem.difficulty && (
+                      <Badge variant="outline" className="text-xs">
+                        {problem.difficulty}
+                      </Badge>
+                    )}
+                    <Badge variant="secondary" className="text-xs">
+                      {problem.platform === "codeforces" ? "CF" : "LC"}
+                    </Badge>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
       {isAiLoading && (
         <div className="flex items-center gap-1.5 px-1">
@@ -1019,7 +1174,7 @@ export function ProblemViewer({
                   )}
                   <Button
                     variant="ghost"
-                    onClick={fetchRandom}
+                    onClick={() => triggerWithSkipWarning(fetchRandom)}
                     className={userId ? "" : "ml-auto"}
                   >
                     Skip
@@ -1059,41 +1214,26 @@ export function ProblemViewer({
                 </CardFooter>
               </Card>
 
-              {/* Timestamp strip */}
-              {userId &&
-                timestamps &&
-                (timestamps.view || timestamps.solve) && (
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-1 text-xs text-muted-foreground">
-                    {timestamps.solve && (
-                      <span className="flex items-center gap-1">
-                        <span className="font-medium text-green-500">
-                          ✓ Solved
-                        </span>
-                        <span
-                          title={new Date(
-                            timestamps.solve.solved_at,
-                          ).toLocaleString()}
-                        >
-                          {timeAgo(timestamps.solve.solved_at)}
-                        </span>
-                        {timestamps.solve.xp_gained > 0 && (
-                          <span className="text-muted-foreground/70">
-                            (+{timestamps.solve.xp_gained} XP)
-                          </span>
-                        )}
+              {/* Solve timestamp strip */}
+              {userId && solveTimestamp && (
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-1 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <span className="font-medium text-green-500">✓ Solved</span>
+                    <span
+                      title={new Date(
+                        solveTimestamp.solved_at,
+                      ).toLocaleString()}
+                    >
+                      {timeAgo(solveTimestamp.solved_at)}
+                    </span>
+                    {solveTimestamp.xp_gained > 0 && (
+                      <span className="text-muted-foreground/70">
+                        (+{solveTimestamp.xp_gained} XP)
                       </span>
                     )}
-                    {timestamps.view && (
-                      <span
-                        title={`First viewed ${new Date(timestamps.view.first_viewed_at).toLocaleString()}`}
-                      >
-                        {timestamps.view.view_count === 1
-                          ? `Viewed once, ${timeAgo(timestamps.view.first_viewed_at)}`
-                          : `Viewed ${timestamps.view.view_count}× · first ${timeAgo(timestamps.view.first_viewed_at)}`}
-                      </span>
-                    )}
-                  </div>
-                )}
+                  </span>
+                </div>
+              )}
 
               {/* Report form */}
               {userId &&
@@ -1363,9 +1503,15 @@ export function ProblemViewer({
                             <Button
                               variant="outline"
                               className="self-start"
-                              onClick={() =>
-                                setHintsRevealed((r) => Math.min(r + 1, 3))
-                              }
+                              onClick={() => {
+                                const next = Math.min(hintsRevealed + 1, 3);
+                                setHintsRevealed(next);
+                                posthog.capture("hint_revealed", {
+                                  problem_number: problem.problem_number,
+                                  hint_number: next,
+                                  difficulty: problem.difficulty,
+                                });
+                              }}
                             >
                               Reveal Hint {hintsRevealed + 1}
                             </Button>
@@ -1543,7 +1689,6 @@ export function ProblemViewer({
         (() => {
           const problemNumber = state.problem.problem_number ?? 0;
           const isOpen = activeTab !== null;
-          const PANEL_W = 420;
           const editorFont =
             '"JetBrains Mono","Fira Code","Fira Mono",ui-monospace,monospace';
 
@@ -1685,7 +1830,7 @@ export function ProblemViewer({
               <div
                 style={{
                   position: "fixed",
-                  right: isOpen ? PANEL_W : 0,
+                  right: isOpen ? panelWidth : 0,
                   top: "50%",
                   transform: "translateY(-50%)",
                   zIndex: 41,
@@ -1735,7 +1880,7 @@ export function ProblemViewer({
                   top: "3.5rem",
                   right: 0,
                   bottom: 0,
-                  width: PANEL_W,
+                  width: panelWidth,
                   transform: isOpen ? "translateX(0)" : "translateX(100%)",
                   transition: "transform 0.25s ease",
                   zIndex: 40,
@@ -1744,6 +1889,21 @@ export function ProblemViewer({
                 }}
                 className="border-l border-border bg-background shadow-2xl"
               >
+                {/* Drag handle */}
+                <div
+                  aria-hidden="true"
+                  onMouseDown={startDrag}
+                  style={{
+                    position: "absolute",
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: 5,
+                    cursor: "col-resize",
+                    zIndex: 2,
+                  }}
+                  className="hover:bg-primary/30 transition-colors"
+                />
                 {/* Panel header: tab switcher + close */}
                 <div className="flex shrink-0 items-center gap-1 border-b border-border px-2 py-2">
                   {TABS.map(({ id, label, icon }) => (
@@ -1895,8 +2055,38 @@ export function ProblemViewer({
                           </button>
                         ),
                       )}
-                      <span className="ml-auto text-[11px] text-muted-foreground">
-                        {reviewCode.length}/50000
+                      <span className="ml-auto flex items-center gap-2">
+                        <span className="text-[11px] text-muted-foreground">
+                          {reviewCode.length}/50000
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (codeFullscreen) {
+                              setPanelWidth(420);
+                              setCodeFullscreen(false);
+                            } else {
+                              setPanelWidth(
+                                Math.min(
+                                  Math.max(
+                                    Math.floor(window.innerWidth * 0.62),
+                                    MIN_PANEL_W,
+                                  ),
+                                  MAX_PANEL_W,
+                                ),
+                              );
+                              setCodeFullscreen(true);
+                            }
+                          }}
+                          className="rounded px-2 py-0.5 text-[11px] font-medium bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                          title={
+                            codeFullscreen
+                              ? "Collapse editor"
+                              : "Expand to split view"
+                          }
+                        >
+                          {codeFullscreen ? "↙ Collapse" : "↗ Expand"}
+                        </button>
                       </span>
                     </div>
                     {/* Prism overlay editor */}

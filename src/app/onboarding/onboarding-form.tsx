@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import posthog from "posthog-js";
 import { useState } from "react";
 
 const SKILL_OPTIONS = [
@@ -122,6 +123,13 @@ export function OnboardingForm({ csrfToken }: { csrfToken: string }) {
     } catch {
       // Non-fatal — proceed regardless
     }
+    posthog.capture("onboarding_completed", {
+      skill_level: skillLevel,
+      starting_rating: startingRating,
+      cp_goal: cpGoal,
+      preferred_languages: langs,
+      daily_goal: dailyGoal,
+    });
     router.push("/display-problem");
   }
 

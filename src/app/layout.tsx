@@ -2,6 +2,7 @@ import { Analytics } from "@vercel/analytics/next";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { Navbar } from "~/components/navbar";
+import { PostHogIdentify } from "~/components/posthog-identify";
 import { SettingsProvider } from "~/components/settings-provider";
 import { ThemeProvider } from "./theme-provider";
 import "./globals.css";
@@ -32,6 +33,7 @@ export default function RootLayout({
             {children}
           </SettingsProvider>
         </ThemeProvider>
+        <PostHogIdentify />
         <Analytics />
       </body>
     </html>

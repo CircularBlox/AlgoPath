@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import posthog from "posthog-js";
 import { useEffect, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -34,19 +35,23 @@ export default function LoginPage() {
     e.preventDefault();
     setError(null);
     setLoading(true);
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (authError) {
+      posthog.captureException(authError, { tags: { action: "login" } });
       setError(authError.message);
     } else {
+      if (user) posthog.identify(user.id, { email: user.email });
+      posthog.capture("user_logged_in", { method: "email" });
       router.replace(nextPath);
     }
   }
 
   async function handleOAuth(provider: "google" | "github") {
+    posthog.capture("oauth_clicked", { provider, page: "login" });
     await supabase.auth.signInWithOAuth({
       provider,
       options: {
