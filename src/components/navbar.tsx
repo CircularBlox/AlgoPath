@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AdminDropdown } from "~/components/admin-dropdown";
 import { isAdmin } from "~/lib/is-admin";
+import { streakStatus } from "~/lib/streak";
 import { createClient, getUser } from "~/lib/supabase/server";
 
 const navLinks = [
@@ -14,10 +15,6 @@ const navLinks = [
 
 const publicNavLinks = [{ href: "/changelog", label: "Changelog" }];
 
-function todayUtc(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-
 async function signOut() {
   "use server";
   const supabase = await createClient();
@@ -29,7 +26,7 @@ export async function Navbar() {
   const user = await getUser();
 
   let streak = 0;
-  let streakActiveToday = true;
+  let status: ReturnType<typeof streakStatus> = "none";
 
   if (user) {
     const supabase = await createClient();
@@ -40,7 +37,7 @@ export async function Navbar() {
       .single<{ streak: number; last_solved_date: string | null }>();
 
     streak = profile?.streak ?? 0;
-    streakActiveToday = profile?.last_solved_date === todayUtc();
+    status = streakStatus(streak, profile?.last_solved_date ?? null);
   }
 
   return (
@@ -99,8 +96,8 @@ export async function Navbar() {
         </div>
       </nav>
 
-      {/* Streak nudge — only when logged in and streak not fulfilled today */}
-      {user && !streakActiveToday && (
+      {/* Streak at-risk banner */}
+      {user && status === "at_risk" && (
         <div className="animate-banner-in border-b border-primary/20 bg-primary/5">
           <div className="mx-auto flex max-w-3xl items-center justify-center gap-3 px-4 py-2.5">
             <span
@@ -110,14 +107,32 @@ export async function Navbar() {
               🔥
             </span>
             <p className="text-sm text-foreground/80">
-              {streak > 0
-                ? `Your ${streak}-day streak is at risk —`
-                : "No streak yet —"}{" "}
+              Your {streak}-day streak is at risk —{" "}
               <Link
                 href="/display-problem"
                 className="font-semibold text-primary underline underline-offset-2 transition-colors hover:text-primary/80"
               >
                 solve a problem today →
+              </Link>
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Streak broken banner */}
+      {user && status === "broken" && (
+        <div className="animate-banner-in border-b border-destructive/20 bg-destructive/5">
+          <div className="mx-auto flex max-w-3xl items-center justify-center gap-3 px-4 py-2.5">
+            <span className="text-base" style={{ display: "inline-block" }}>
+              💔
+            </span>
+            <p className="text-sm text-foreground/80">
+              Your {streak}-day streak was broken —{" "}
+              <Link
+                href="/display-problem"
+                className="font-semibold text-destructive underline underline-offset-2 transition-colors hover:text-destructive/80"
+              >
+                start a new one →
               </Link>
             </p>
           </div>

@@ -3,13 +3,10 @@ import { redirect } from "next/navigation";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { effectiveStreak, streakStatus } from "~/lib/streak";
 import { createClient, getUser } from "~/lib/supabase/server";
 import { levelFromXp, levelTitle, xpProgress } from "~/lib/xp";
 import { SkillLevelEditor } from "./skill-level-editor";
-
-function todayUtc(): string {
-  return new Date().toISOString().slice(0, 10);
-}
 
 type Profile = {
   username: string;
@@ -167,8 +164,10 @@ export default async function ProfilePage() {
   const progress = xpProgress(xp, level);
   const skillLevel = profile?.skill_level ?? "intermediate";
   const solvedProblems: number[] = profile?.solved_problems ?? [];
-  const streak = profile?.streak ?? 0;
-  const streakActiveToday = profile?.last_solved_date === todayUtc();
+  const rawStreak = profile?.streak ?? 0;
+  const lastSolvedDate = profile?.last_solved_date ?? null;
+  const status = streakStatus(rawStreak, lastSolvedDate);
+  const streak = effectiveStreak(rawStreak, lastSolvedDate);
 
   const joinedDate = profile?.created_at
     ? new Intl.DateTimeFormat("en-US", {
@@ -227,7 +226,7 @@ export default async function ProfilePage() {
       label: "Streak",
       value: String(streak),
       fire: true,
-      fireActive: streakActiveToday,
+      fireActive: status === "active",
     },
   ];
 
@@ -310,8 +309,8 @@ export default async function ProfilePage() {
       </div>
 
       {/* ── Streak nudge ────────────────────────────────────────── */}
-      {!streakActiveToday && (
-        <div className="flex items-start gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3">
+      {status === "at_risk" && (
+        <div className="flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
           <span
             style={{ filter: "grayscale(1) opacity(0.4)", fontSize: "1.1rem" }}
           >
@@ -319,14 +318,52 @@ export default async function ProfilePage() {
           </span>
           <div className="flex flex-col gap-0.5">
             <p className="text-sm font-medium">
-              {streak > 0
-                ? `Your ${streak}-day streak is at risk`
-                : "No streak yet"}
+              Your {rawStreak}-day streak is at risk
             </p>
             <p className="text-xs text-muted-foreground">
-              {streak > 0
-                ? "Solve a problem today to keep it going."
-                : "Solve a problem today to start your streak."}{" "}
+              Solve a problem today to keep it going.{" "}
+              <Link
+                href="/display-problem"
+                className="text-foreground underline underline-offset-2"
+              >
+                Practice now
+              </Link>
+            </p>
+          </div>
+        </div>
+      )}
+
+      {status === "broken" && (
+        <div className="flex items-start gap-3 rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3">
+          <span style={{ fontSize: "1.1rem" }}>💔</span>
+          <div className="flex flex-col gap-0.5">
+            <p className="text-sm font-medium">
+              Your {rawStreak}-day streak was broken
+            </p>
+            <p className="text-xs text-muted-foreground">
+              You missed a day. Solve a problem today to start a new streak.{" "}
+              <Link
+                href="/display-problem"
+                className="text-foreground underline underline-offset-2"
+              >
+                Practice now
+              </Link>
+            </p>
+          </div>
+        </div>
+      )}
+
+      {status === "none" && (
+        <div className="flex items-start gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3">
+          <span
+            style={{ filter: "grayscale(1) opacity(0.4)", fontSize: "1.1rem" }}
+          >
+            🔥
+          </span>
+          <div className="flex flex-col gap-0.5">
+            <p className="text-sm font-medium">No streak yet</p>
+            <p className="text-xs text-muted-foreground">
+              Solve a problem today to start your streak.{" "}
               <Link
                 href="/display-problem"
                 className="text-foreground underline underline-offset-2"
