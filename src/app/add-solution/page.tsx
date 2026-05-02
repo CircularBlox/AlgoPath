@@ -29,6 +29,7 @@ export default function AddSolutionPage() {
   const [state, formAction, isPending] = useActionState(addSolution, initial);
   const [code, setCode] = useState("");
   const [language, setLanguage] = useState("C++");
+  const [explanation, setExplanation] = useState("");
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-12">
@@ -73,6 +74,32 @@ export default function AddSolutionPage() {
               <SelectItem value="JavaScript">JavaScript</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+
+        {/* Explanation */}
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="explanation">
+            Explanation{" "}
+            <span className="text-muted-foreground font-normal">
+              (optional)
+            </span>
+          </Label>
+          <textarea
+            id="explanation"
+            name="explanation"
+            value={explanation}
+            onChange={(e) => setExplanation(e.target.value)}
+            placeholder="Describe the approach, complexity, key observations…"
+            rows={6}
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm leading-relaxed placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-y"
+          />
+          <p className="text-xs text-muted-foreground">
+            Supports <code className="font-mono">**bold**</code>,{" "}
+            <code className="font-mono">`code`</code>, and{" "}
+            <code className="font-mono">$math$</code> formatting. Bullet lines
+            start with <code className="font-mono">- </code> or{" "}
+            <code className="font-mono">* </code>.
+          </p>
         </div>
 
         {/* Solution code — IDE editor */}

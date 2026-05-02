@@ -23,6 +23,7 @@ export async function addSolution(
   const problemNumber = Number(formData.get("problem_number"));
   const language = (formData.get("language") as string)?.trim();
   const solutionCode = (formData.get("solution_code") as string)?.trim();
+  const explanation = (formData.get("explanation") as string)?.trim() || null;
 
   if (!problemNumber || !language || !solutionCode) {
     return { success: false, error: "All fields are required." };
@@ -52,12 +53,19 @@ export async function addSolution(
 
   if (existing) {
     solutionId = existing.id;
+    if (explanation !== null) {
+      await supabase
+        .from("solutions")
+        .update({ explanation })
+        .eq("id", solutionId);
+    }
   } else {
     const { data: created, error: createError } = await supabase
       .from("solutions")
       .insert({
         problem_name: problem.title,
         problem_number: problem.problem_number,
+        ...(explanation !== null && { explanation }),
       })
       .select("id")
       .single();
