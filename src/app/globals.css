@@ -79,8 +79,8 @@
   --color-accent-foreground: oklch(0.97 0 0);
   --color-destructive: oklch(0.55 0.2 25);
   --color-ring: oklch(0.65 0.22 250);
-  --color-code-background: oklch(0.12 0 0);
-  --color-code-border: oklch(0.25 0 0);
+  --color-code-background: oklch(0.16 0 0);
+  --color-code-border: oklch(0.3 0 0);
 }
 
 @layer base {
