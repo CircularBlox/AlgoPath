@@ -23,6 +23,9 @@ const LANG_GRAMMARS: Record<string, Prism.Grammar> = {
   Python: languages.python,
 };
 
+const MIN_PANEL_W = 300;
+const MAX_PANEL_W = 900;
+
 function InlineCode({ text }: { text: string }) {
   const html = text.replace(
     /\$([^$]+)\$/g,
@@ -221,6 +224,9 @@ export function ProblemViewer({
   const [reviewLanguage, setReviewLanguage] = useState("C++");
   const [problemViewed, setProblemViewed] = useState(false);
   const chatBottomRef = useRef<HTMLDivElement>(null);
+  const [panelWidth, setPanelWidth] = useState(420);
+  const [codeFullscreen, setCodeFullscreen] = useState(false);
+  const dragRef = useRef<{ x: number; w: number } | null>(null);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [suggestQuery, setSuggestQuery] = useState("");
@@ -410,6 +416,8 @@ export function ProblemViewer({
     setQuickSaving(false);
     setEditorSaveStatus("idle");
     setTimestamps(null);
+    setPanelWidth(420);
+    setCodeFullscreen(false);
   }
 
   async function handleReport(problemNumber: number) {
@@ -738,10 +746,38 @@ export function ProblemViewer({
     }
   }
 
+  function startDrag(e: React.MouseEvent) {
+    e.preventDefault();
+    dragRef.current = { x: e.clientX, w: panelWidth };
+    const onMove = (ev: MouseEvent) => {
+      if (!dragRef.current) return;
+      const dx = dragRef.current.x - ev.clientX;
+      setPanelWidth(
+        Math.max(MIN_PANEL_W, Math.min(MAX_PANEL_W, dragRef.current.w + dx)),
+      );
+    };
+    const onUp = () => {
+      dragRef.current = null;
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  }
+
   const isLoading = state.status === "loading";
 
   return (
-    <div className="flex flex-col gap-6">
+    <div
+      className="flex flex-col gap-6"
+      style={{
+        paddingRight:
+          activeTab !== null && state.status === "loaded" && !!userId
+            ? panelWidth
+            : 0,
+        transition: "padding-right 0.25s ease",
+      }}
+    >
       {/* Controls */}
       <div className="flex flex-col gap-3">
         <div className="flex gap-2">
@@ -1543,7 +1579,6 @@ export function ProblemViewer({
         (() => {
           const problemNumber = state.problem.problem_number ?? 0;
           const isOpen = activeTab !== null;
-          const PANEL_W = 420;
           const editorFont =
             '"JetBrains Mono","Fira Code","Fira Mono",ui-monospace,monospace';
 
@@ -1685,7 +1720,7 @@ export function ProblemViewer({
               <div
                 style={{
                   position: "fixed",
-                  right: isOpen ? PANEL_W : 0,
+                  right: isOpen ? panelWidth : 0,
                   top: "50%",
                   transform: "translateY(-50%)",
                   zIndex: 41,
@@ -1735,7 +1770,7 @@ export function ProblemViewer({
                   top: "3.5rem",
                   right: 0,
                   bottom: 0,
-                  width: PANEL_W,
+                  width: panelWidth,
                   transform: isOpen ? "translateX(0)" : "translateX(100%)",
                   transition: "transform 0.25s ease",
                   zIndex: 40,
@@ -1744,6 +1779,21 @@ export function ProblemViewer({
                 }}
                 className="border-l border-border bg-background shadow-2xl"
               >
+                {/* Drag handle */}
+                <div
+                  aria-hidden="true"
+                  onMouseDown={startDrag}
+                  style={{
+                    position: "absolute",
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: 5,
+                    cursor: "col-resize",
+                    zIndex: 2,
+                  }}
+                  className="hover:bg-primary/30 transition-colors"
+                />
                 {/* Panel header: tab switcher + close */}
                 <div className="flex shrink-0 items-center gap-1 border-b border-border px-2 py-2">
                   {TABS.map(({ id, label, icon }) => (
@@ -1895,8 +1945,38 @@ export function ProblemViewer({
                           </button>
                         ),
                       )}
-                      <span className="ml-auto text-[11px] text-muted-foreground">
-                        {reviewCode.length}/50000
+                      <span className="ml-auto flex items-center gap-2">
+                        <span className="text-[11px] text-muted-foreground">
+                          {reviewCode.length}/50000
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (codeFullscreen) {
+                              setPanelWidth(420);
+                              setCodeFullscreen(false);
+                            } else {
+                              setPanelWidth(
+                                Math.min(
+                                  Math.max(
+                                    Math.floor(window.innerWidth * 0.62),
+                                    MIN_PANEL_W,
+                                  ),
+                                  MAX_PANEL_W,
+                                ),
+                              );
+                              setCodeFullscreen(true);
+                            }
+                          }}
+                          className="rounded px-2 py-0.5 text-[11px] font-medium bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                          title={
+                            codeFullscreen
+                              ? "Collapse editor"
+                              : "Expand to split view"
+                          }
+                        >
+                          {codeFullscreen ? "↙ Collapse" : "↗ Expand"}
+                        </button>
                       </span>
                     </div>
                     {/* Prism overlay editor */}
