@@ -1,6 +1,7 @@
 import * as Sentry from "@sentry/nextjs";
 import { type NextRequest, NextResponse } from "next/server";
 import { CSRF_HEADER, validateCsrfToken } from "~/lib/csrf";
+import { getPostHogClient } from "~/lib/posthog-server";
 import { createClient } from "~/lib/supabase/server";
 import { calcXpGain, levelFromXp } from "~/lib/xp";
 
@@ -213,6 +214,23 @@ export async function POST(request: NextRequest) {
       extra: { userId: user.id, problem_number },
     });
   }
+
+  const posthog = getPostHogClient();
+  posthog.capture({
+    distinctId: user.id,
+    event: "problem_solved_server",
+    properties: {
+      problem_number,
+      difficulty: difficulty ?? null,
+      hints_viewed,
+      xp_gain,
+      rating_gain,
+      new_rating,
+      new_level,
+      streak,
+    },
+  });
+  await posthog.shutdown();
 
   return NextResponse.json({
     already_solved: false,

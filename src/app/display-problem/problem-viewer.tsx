@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import posthog from "posthog-js";
 import { useEffect, useRef, useState } from "react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -153,6 +154,20 @@ export function ProblemViewer({
 
   const loadedProblemNumber =
     state.status === "loaded" ? (state.problem.problem_number ?? null) : null;
+  const loadedProblemPlatform =
+    state.status === "loaded" ? state.problem.platform : null;
+  const loadedProblemDifficulty =
+    state.status === "loaded" ? state.problem.difficulty : null;
+
+  // Track problem view at the top of the hint-consumption funnel
+  useEffect(() => {
+    if (!loadedProblemNumber) return;
+    posthog.capture("problem_viewed", {
+      problem_number: loadedProblemNumber,
+      platform: loadedProblemPlatform,
+      difficulty: loadedProblemDifficulty,
+    });
+  }, [loadedProblemNumber, loadedProblemPlatform, loadedProblemDifficulty]);
 
   // Load solve timestamp whenever a problem is loaded
   useEffect(() => {
@@ -534,6 +549,7 @@ export function ProblemViewer({
       } else {
         const solution: Solution = data;
         setSolutionState({ status: "open", data: solution });
+        posthog.capture("solution_viewed", { problem_number: problemNumber });
         const codes = solution.solution_codes ?? [];
         const preferred = codes.find((c) => c.language === "C++") ?? codes[0];
         if (preferred) setSelectedLanguage(preferred.language);
@@ -611,6 +627,11 @@ export function ProblemViewer({
             "x-csrf-token": csrfToken,
           },
           body: JSON.stringify({ hint_number: hintNumber, rating: next }),
+        });
+        posthog.capture("hint_rated", {
+          problem_number: problemNumber,
+          hint_number: hintNumber,
+          rating: next,
         });
       }
     } catch {
@@ -725,6 +746,15 @@ export function ProblemViewer({
           status: "done",
           xpGain: data.xp_gain ?? data.rating_gain ?? 0,
           newLevel: data.new_level ?? 1,
+        });
+        posthog.capture("problem_solved", {
+          problem_number: problem.problem_number,
+          difficulty: problem.difficulty,
+          hints_used: hintsUsed,
+          xp_gain: data.xp_gain,
+          rating_gain: data.rating_gain,
+          new_level: data.new_level,
+          streak: data.streak,
         });
       }
       setTimeout(() => fetchRandom(), 1500);
@@ -1473,9 +1503,15 @@ export function ProblemViewer({
                             <Button
                               variant="outline"
                               className="self-start"
-                              onClick={() =>
-                                setHintsRevealed((r) => Math.min(r + 1, 3))
-                              }
+                              onClick={() => {
+                                const next = Math.min(hintsRevealed + 1, 3);
+                                setHintsRevealed(next);
+                                posthog.capture("hint_revealed", {
+                                  problem_number: problem.problem_number,
+                                  hint_number: next,
+                                  difficulty: problem.difficulty,
+                                });
+                              }}
                             >
                               Reveal Hint {hintsRevealed + 1}
                             </Button>

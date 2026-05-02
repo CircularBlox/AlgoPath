@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import posthog from "posthog-js";
 import { useEffect, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -42,6 +43,7 @@ export default function SignupPage() {
   }, [username]);
 
   async function handleOAuth(provider: "google" | "github") {
+    posthog.capture("oauth_clicked", { provider, page: "signup" });
     await supabase.auth.signInWithOAuth({
       provider,
       options: {
@@ -55,7 +57,10 @@ export default function SignupPage() {
     e.preventDefault();
     setError(null);
     setLoading(true);
-    const { error: authError } = await supabase.auth.signUp({
+    const {
+      data: { user: newUser },
+      error: authError,
+    } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -65,8 +70,14 @@ export default function SignupPage() {
     });
     setLoading(false);
     if (authError) {
+      posthog.captureException(authError, { tags: { action: "signup" } });
       setError(authError.message);
     } else {
+      posthog.identify(newUser?.id ?? email, {
+        email,
+        username,
+      });
+      posthog.capture("user_signed_up", { method: "email", username });
       setDone(true);
     }
   }

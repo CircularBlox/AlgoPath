@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { CSRF_HEADER, validateCsrfToken } from "~/lib/csrf";
+import { getPostHogClient } from "~/lib/posthog-server";
 import { createClient, getUser } from "~/lib/supabase/server";
 
 export async function GET(
@@ -109,6 +110,18 @@ export async function POST(
       { status: 500 },
     );
   }
+
+  const posthog = getPostHogClient();
+  posthog.capture({
+    distinctId: user.id,
+    event: "hint_rated_server",
+    properties: {
+      problem_number: problemNumber,
+      hint_number: hintNumber,
+      rating,
+    },
+  });
+  await posthog.shutdown();
 
   return NextResponse.json({ success: true });
 }
