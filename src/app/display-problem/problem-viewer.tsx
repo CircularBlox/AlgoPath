@@ -28,7 +28,7 @@ const MIN_PANEL_W = 300;
 const MAX_PANEL_W = 900;
 
 const CODE_CLS =
-  "rounded bg-[oklch(0.87_0_0)] dark:bg-[oklch(0.25_0_0)] px-1 font-mono text-xs";
+  "rounded bg-[oklch(0.92_0_0)] dark:bg-[oklch(0.32_0_0)] px-1 font-mono text-xs";
 
 function formatInline(s: string): string {
   return s
