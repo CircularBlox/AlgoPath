@@ -746,6 +746,36 @@ export function ProblemViewer({
     }
   }
 
+  // Expand the page <main> to fill the full viewport when the panel is open,
+  // so the problem content uses all available left-side space.
+  useEffect(() => {
+    const isPanelOpen =
+      activeTab !== null && state.status === "loaded" && !!userId;
+    const main = document.querySelector<HTMLElement>("main");
+    if (!main) return;
+    main.style.transition = "padding-right 0.25s ease";
+    if (isPanelOpen) {
+      main.style.maxWidth = "none";
+      main.style.marginLeft = "0";
+      main.style.marginRight = "0";
+      main.style.paddingRight = `${panelWidth + 24}px`;
+    } else {
+      main.style.maxWidth = "";
+      main.style.marginLeft = "";
+      main.style.marginRight = "";
+      main.style.paddingRight = "";
+    }
+    return () => {
+      const m = document.querySelector<HTMLElement>("main");
+      if (!m) return;
+      m.style.maxWidth = "";
+      m.style.marginLeft = "";
+      m.style.marginRight = "";
+      m.style.paddingRight = "";
+      m.style.transition = "";
+    };
+  }, [activeTab, panelWidth, state.status, userId]);
+
   function startDrag(e: React.MouseEvent) {
     e.preventDefault();
     dragRef.current = { x: e.clientX, w: panelWidth };
@@ -768,16 +798,7 @@ export function ProblemViewer({
   const isLoading = state.status === "loading";
 
   return (
-    <div
-      className="flex flex-col gap-6"
-      style={{
-        paddingRight:
-          activeTab !== null && state.status === "loaded" && !!userId
-            ? panelWidth
-            : 0,
-        transition: "padding-right 0.25s ease",
-      }}
-    >
+    <div className="flex flex-col gap-6">
       {/* Controls */}
       <div className="flex flex-col gap-3">
         <div className="flex gap-2">
