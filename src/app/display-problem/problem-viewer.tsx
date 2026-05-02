@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import posthog from "posthog-js";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
@@ -27,13 +27,49 @@ const LANG_GRAMMARS: Record<string, Prism.Grammar> = {
 const MIN_PANEL_W = 300;
 const MAX_PANEL_W = 900;
 
-function InlineCode({ text }: { text: string }) {
-  const html = text.replace(
-    /\$([^$]+)\$/g,
-    '<code class="rounded bg-[oklch(0.87_0_0)] dark:bg-[oklch(0.87_0_0)] px-1 font-mono text-xs">$1</code>',
-  );
-  // biome-ignore lint/security/noDangerouslySetInnerHtml: admin-authored DB content, $ segments replaced with safe <code> tags
-  return <span dangerouslySetInnerHTML={{ __html: html }} />;
+const CODE_CLS =
+  "rounded bg-[oklch(0.87_0_0)] dark:bg-[oklch(0.25_0_0)] px-1 font-mono text-xs";
+
+function formatInline(s: string): string {
+  return s
+    .replace(/\$\s*([^$]+?)\s*\$/g, `<code class="${CODE_CLS}">$1</code>`)
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/`([^`]+)`/g, `<code class="${CODE_CLS}">$1</code>`);
+}
+
+function FormattedText({ text }: { text: string }) {
+  const html = useMemo(() => {
+    const parts: string[] = [];
+    let inList = false;
+    for (const raw of text.split("\n")) {
+      const line = raw.trim();
+      if (!line) {
+        if (inList) {
+          parts.push("</ul>");
+          inList = false;
+        }
+        continue;
+      }
+      if (/^[*-] /.test(line)) {
+        if (!inList) {
+          parts.push('<ul class="list-disc list-inside space-y-0.5 my-1">');
+          inList = true;
+        }
+        parts.push(`<li>${formatInline(line.slice(2))}</li>`);
+      } else {
+        if (inList) {
+          parts.push("</ul>");
+          inList = false;
+        }
+        parts.push(`<p class="mb-1">${formatInline(line)}</p>`);
+      }
+    }
+    if (inList) parts.push("</ul>");
+    return parts.join("");
+  }, [text]);
+
+  // biome-ignore lint/security/noDangerouslySetInnerHtml: admin-authored DB content
+  return <div dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
 type Problem = {
@@ -1419,9 +1455,9 @@ export function ProblemViewer({
                                   <span className="text-xs font-medium text-muted-foreground">
                                     Hint {n}
                                   </span>
-                                  <p className="text-sm leading-relaxed">
-                                    <InlineCode text={text} />
-                                  </p>
+                                  <div className="text-sm leading-relaxed">
+                                    <FormattedText text={text} />
+                                  </div>
                                   {userId && (
                                     <div className="flex items-center gap-1 pt-1">
                                       <span className="text-xs text-muted-foreground mr-1">
@@ -1669,9 +1705,9 @@ export function ProblemViewer({
                           <span className="text-sm font-medium">
                             Explanation
                           </span>
-                          <p className="text-sm text-muted-foreground leading-relaxed">
-                            <InlineCode text={solution.explanation} />
-                          </p>
+                          <div className="text-sm text-muted-foreground leading-relaxed">
+                            <FormattedText text={solution.explanation} />
+                          </div>
                         </div>
                       )}
 
