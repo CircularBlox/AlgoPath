@@ -26,6 +26,16 @@ export default async function DisplayProblemPage({
     generateCsrfToken(),
   ]);
 
+  let showFocusPrompt = false;
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("focus, onboarding_completed")
+      .eq("id", user.id)
+      .maybeSingle();
+    showFocusPrompt = profile?.onboarding_completed === true && !profile?.focus;
+  }
+
   let initialProblem: Problem | null = null;
   const problemNumber = p ? Number.parseInt(p, 10) : null;
 
@@ -47,6 +57,7 @@ export default async function DisplayProblemPage({
         userId={user?.id ?? null}
         initialProblem={initialProblem}
         csrfToken={csrfToken}
+        showFocusPrompt={showFocusPrompt}
       />
     </main>
   );

@@ -19,6 +19,7 @@ type Profile = {
   last_solved_date: string | null;
   created_at: string;
   recommended_problem_number: number | null;
+  focus: string | null;
 };
 
 type Problem = {
@@ -40,6 +41,7 @@ async function getRecommendation(
   supabase: Awaited<ReturnType<typeof createClient>>,
   solved: number[],
   rating: number,
+  focus: string | null = null,
 ): Promise<Problem | null> {
   const target = targetDifficulty(rating);
   const notSolvedFilter = solved.length > 0 ? `(${solved.join(",")})` : null;
@@ -56,6 +58,10 @@ async function getRecommendation(
       notSolvedFilter,
     );
   }
+  if (focus === "interviews")
+    candidateQuery = candidateQuery.eq("platform", "LeetCode");
+  else if (focus === "comp_programming")
+    candidateQuery = candidateQuery.neq("platform", "LeetCode");
   const { data: candidates } = await candidateQuery;
 
   let pool: Problem[] = (candidates as Problem[]) ?? [];
@@ -71,6 +77,10 @@ async function getRecommendation(
         notSolvedFilter,
       );
     }
+    if (focus === "interviews")
+      fallbackQuery = fallbackQuery.eq("platform", "LeetCode");
+    else if (focus === "comp_programming")
+      fallbackQuery = fallbackQuery.neq("platform", "LeetCode");
     const { data: fallback } = await fallbackQuery;
     pool = (fallback as Problem[]) ?? [];
   }
@@ -151,7 +161,7 @@ export default async function ProfilePage() {
   const { data: profile } = await supabase
     .from("profiles")
     .select(
-      "username, rating, xp, level, skill_level, solved_problems, streak, last_solved_date, created_at, recommended_problem_number",
+      "username, rating, xp, level, skill_level, solved_problems, streak, last_solved_date, created_at, recommended_problem_number, focus",
     )
     .eq("id", user.id)
     .single<Profile>();
@@ -179,6 +189,7 @@ export default async function ProfilePage() {
   const initial = username[0]?.toUpperCase() ?? "U";
 
   const cachedRecNumber = profile?.recommended_problem_number ?? null;
+  const focus = profile?.focus ?? null;
 
   const [recommended, solvedProblemDetails] = await Promise.all([
     cachedRecNumber
@@ -188,7 +199,7 @@ export default async function ProfilePage() {
           .eq("problem_number", cachedRecNumber)
           .single<Problem>()
           .then(({ data }) => data)
-      : getRecommendation(supabase, solvedProblems, rating),
+      : getRecommendation(supabase, solvedProblems, rating, focus),
     solvedProblems.length > 0
       ? supabase
           .from("problems")

@@ -2,47 +2,35 @@ import Link from "next/link";
 import { Button } from "~/components/ui/button";
 import { getUser } from "~/lib/supabase/server";
 
-const useCases = [
+const recommendedProblems = [
   {
-    label: "LeetCode & interview prep",
-    desc: "Work through classic algorithm problems with guided hints instead of copy-pasting solutions.",
+    number: 1,
+    title: "Two Sum",
+    difficulty: "Easy",
+    platform: "LeetCode",
+    status: "unsolved",
   },
   {
-    label: "Competitive programming",
-    desc: "Tackle Codeforces rounds without spoiling yourself — hints nudge your thinking, not your clipboard.",
+    number: 2,
+    title: "Add Two Numbers",
+    difficulty: "Medium",
+    platform: "LeetCode",
+    status: "in-progress",
   },
   {
-    label: "Learning algorithms",
-    desc: "Build genuine intuition for new problem types. Each hint teaches a concept, not just a solution.",
-  },
-];
-
-const steps = [
-  {
-    number: "01",
-    title: "Paste a problem URL",
-    description:
-      "Grab any LeetCode or Codeforces problem URL and paste it in. AlgoPath fetches the statement automatically — no copy-pasting problem text.",
-  },
-  {
-    number: "02",
-    title: "Add your current attempt",
-    description:
-      "Paste your code or notes — whatever you've tried so far. The more context you give, the more targeted your hints will be.",
-  },
-  {
-    number: "03",
-    title: "Unlock hints one by one",
-    description:
-      "Reveal up to 3 progressive hints at your own pace. Each one nudges you forward without giving the answer.",
+    number: 3,
+    title: "Longest Substring Without Repeating Characters",
+    difficulty: "Medium",
+    platform: "LeetCode",
+    status: "unsolved",
   },
 ];
 
 const features = [
   {
-    title: "Progressive Hints",
+    title: "Guided Hints",
     description:
-      "Three AI-generated hints per problem. Each level goes a step further without handing you the solution.",
+      "Three progressive hints per problem, each nudging your thinking without spoiling the solution.",
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -64,8 +52,7 @@ const features = [
   {
     title: "AI Code Review",
     description:
-      "Paste your attempt and get feedback on complexity and correctness. Unlocked after you've seen all three hints.",
-    isNew: true,
+      "Instant feedback on complexity, correctness, and approach. Learn what works and what to improve.",
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -85,9 +72,31 @@ const features = [
     ),
   },
   {
-    title: "Skill Rating",
+    title: "Curated Problems",
     description:
-      "Your rating updates every solve. Fewer hints used means more rating gained — a real incentive to think first.",
+      "Practice the right problems at the right difficulty. Recommended based on your skill level and goals.",
+    icon: (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
+        <path d="M16 12l-4-4-4 4" />
+      </svg>
+    ),
+  },
+  {
+    title: "Track Progress",
+    description:
+      "Watch your rating grow with every solve. See stats on hints used, problems completed, and skill improvement.",
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -103,28 +112,6 @@ const features = [
       >
         <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
         <polyline points="16 7 22 7 22 13" />
-      </svg>
-    ),
-  },
-  {
-    title: "Solve History",
-    description:
-      "Every problem, hint, and rating is saved. Come back to review your thinking and track real improvement over time.",
-    icon: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="18"
-        height="18"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        <path d="M9 11l3 3L22 4" />
-        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
       </svg>
     ),
   },
@@ -161,9 +148,9 @@ export default async function Home() {
           </h1>
 
           <p className="max-w-md text-base text-muted-foreground leading-relaxed">
-            Stuck on a problem? Get AI-powered hints tailored to your attempt.
-            Paste a LeetCode or Codeforces URL, share your code, and unlock
-            three progressive hints that guide your thinking—never the answer.
+            Practice recommended problems. Get guided hints when stuck. Receive
+            instant AI feedback on your code. Build the skills that matter in
+            competitive programming and interviews.
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-3">
@@ -181,48 +168,90 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ── Use cases strip ───────────────────────────────────── */}
+      {/* ── Recommended Problems ──────────────────────────────── */}
       <section className="border-t border-border">
-        <div className="mx-auto max-w-3xl px-6 py-14">
-          <p className="mb-8 text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            Works for
-          </p>
-          <div className="grid gap-4 sm:grid-cols-3">
-            {useCases.map((uc) => (
+        <div className="mx-auto max-w-3xl px-6 py-16">
+          <div className="mb-10">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-primary">
+              Recommended for you
+            </p>
+            <h2 className="text-2xl font-semibold tracking-tight">
+              Practice problems tailored to your level
+            </h2>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            {recommendedProblems.map((problem) => (
               <div
-                key={uc.label}
-                className="flex flex-col gap-2 rounded-xl border border-border bg-card p-5"
+                key={problem.number}
+                className="flex items-center justify-between gap-4 rounded-lg border border-border bg-card p-4 transition-colors hover:border-primary/40 hover:bg-card/80"
               >
-                <span className="text-sm font-semibold text-foreground">
-                  {uc.label}
-                </span>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  {uc.desc}
-                </p>
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-1">
+                    <span className="font-mono text-sm font-bold text-muted-foreground">
+                      #{problem.number}
+                    </span>
+                    <span className="text-sm font-medium">{problem.title}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                        problem.difficulty === "Easy"
+                          ? "bg-emerald-500/10 text-emerald-400"
+                          : problem.difficulty === "Medium"
+                            ? "bg-amber-500/10 text-amber-400"
+                            : "bg-red-500/10 text-red-400"
+                      }`}
+                    >
+                      {problem.difficulty}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {problem.platform}
+                    </span>
+                  </div>
+                </div>
+                <div>
+                  {problem.status === "unsolved" ? (
+                    <span className="text-xs text-muted-foreground">
+                      Unsolved
+                    </span>
+                  ) : (
+                    <span className="text-xs text-primary">In progress →</span>
+                  )}
+                </div>
               </div>
             ))}
+          </div>
+
+          <div className="mt-8 text-center">
+            <Button asChild variant="outline">
+              <Link href={user ? "/display-problem" : "/auth/login"}>
+                Browse all problems
+              </Link>
+            </Button>
           </div>
         </div>
       </section>
 
-      {/* ── Hint preview ──────────────────────────────────────── */}
+      {/* ── Guided Hints in Action ────────────────────────────── */}
       <section className="border-t border-border bg-muted/20">
         <div className="mx-auto max-w-3xl px-6 py-20">
           <div className="mb-10 text-center">
             <h2 className="text-2xl font-semibold tracking-tight">
-              See it in action
+              Guided hints that teach, not spoil
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Here's what it looks like when you get stuck on a classic problem.
+              Progressive hints unlock as you think through the problem. Each
+              one nudges your thinking forward without giving away the solution.
             </p>
           </div>
 
           {/* Problem context */}
-          <div className="mb-3 rounded-xl border border-border bg-card px-5 py-4">
+          <div className="mb-6 rounded-lg border border-border bg-card px-5 py-4">
             <div className="flex items-center justify-between gap-3 mb-3">
               <span className="text-sm font-semibold">Two Sum</span>
               <div className="flex items-center gap-2">
-                <span className="rounded-full border border-border px-2 py-0.5 font-mono text-xs text-muted-foreground">
+                <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 font-mono text-xs text-emerald-400">
                   Easy
                 </span>
                 <span className="rounded-full border border-border px-2 py-0.5 font-mono text-xs text-muted-foreground">
@@ -247,112 +276,191 @@ export default async function Home() {
             </p>
           </div>
 
-          {/* Hint terminal */}
-          <div className="overflow-hidden rounded-xl border border-border bg-[oklch(0.09_0_0)]">
-            {/* Title bar */}
-            <div className="flex items-center gap-1.5 border-b border-border px-4 py-3">
-              <span className="size-3 rounded-full bg-[oklch(0.55_0.2_25)]" />
-              <span className="size-3 rounded-full bg-[oklch(0.75_0.15_80)]" />
-              <span className="size-3 rounded-full bg-[oklch(0.65_0.18_145)]" />
-              <span className="ml-3 font-mono text-xs text-muted-foreground">
-                algopath — hint-engine
-              </span>
+          {/* Hints panel */}
+          <div className="flex flex-col gap-3">
+            {/* Hint 1 — revealed */}
+            <div className="rounded-lg border border-border bg-muted/40 px-4 py-3">
+              <div className="mb-2 flex items-center gap-2">
+                <span className="font-mono text-xs font-semibold text-primary">
+                  Hint 1
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  observation
+                </span>
+              </div>
+              <p className="text-sm leading-relaxed text-foreground">
+                As you walk through the array, what information would let you
+                instantly know whether you've already seen the complement of the
+                current number?
+              </p>
             </div>
 
-            <div className="flex flex-col gap-3 p-5">
-              {/* Hint 1 — revealed */}
-              <div className="rounded-lg border border-border bg-card px-4 py-3">
-                <div className="mb-2 flex items-center gap-2">
-                  <span className="font-mono text-xs text-primary">HINT 1</span>
-                  <span className="text-xs text-muted-foreground">
-                    · observation
-                  </span>
-                </div>
-                <p className="text-sm leading-relaxed">
-                  As you walk through the array, what information would let you
-                  instantly know whether you've already seen the complement of
-                  the current number?
-                </p>
-              </div>
-
-              {/* Hint 2 — revealed (dimmed to suggest progression) */}
-              <div className="rounded-lg border border-border bg-card px-4 py-3">
-                <div className="mb-2 flex items-center gap-2">
-                  <span className="font-mono text-xs text-primary">HINT 2</span>
-                  <span className="text-xs text-muted-foreground">
-                    · direction
-                  </span>
-                </div>
-                <p className="text-sm leading-relaxed">
-                  Think about a structure that maps a value to its position. If
-                  you build it as you go, can a single pass be enough?
-                </p>
-              </div>
-
-              {/* Hint 3 — locked */}
-              <div className="rounded-lg border border-dashed border-border px-4 py-3 opacity-40">
-                <div className="mb-2 flex items-center gap-2">
-                  <span className="font-mono text-xs text-muted-foreground">
-                    HINT 3
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    · locked — reveal when ready
-                  </span>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Unlock after you've given hint 2 a fair shot.
-                </p>
-              </div>
-
-              {/* Actions */}
-              <div className="flex flex-wrap gap-2 pt-1">
-                <span className="rounded border border-border bg-card px-2.5 py-1 font-mono text-xs text-muted-foreground">
-                  reveal hint 3 →
+            {/* Hint 2 — revealed */}
+            <div className="rounded-lg border border-border bg-muted/40 px-4 py-3">
+              <div className="mb-2 flex items-center gap-2">
+                <span className="font-mono text-xs font-semibold text-primary">
+                  Hint 2
                 </span>
-                <span className="rounded border border-border bg-card px-2.5 py-1 font-mono text-xs text-muted-foreground">
-                  rate usefulness
-                </span>
-                <span className="ml-auto rounded border border-primary/30 bg-primary/5 px-2.5 py-1 font-mono text-xs text-primary">
-                  AI code review ↗
-                </span>
+                <span className="text-xs text-muted-foreground">direction</span>
               </div>
+              <p className="text-sm leading-relaxed text-foreground">
+                Think about a structure that maps a value to its position. If
+                you build it as you go, can a single pass be enough?
+              </p>
             </div>
+
+            {/* Hint 3 — locked */}
+            <div className="rounded-lg border border-dashed border-border bg-card/30 px-4 py-3 opacity-50">
+              <div className="mb-2 flex items-center gap-2">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="text-muted-foreground"
+                  aria-hidden="true"
+                >
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+                <span className="font-mono text-xs font-semibold text-muted-foreground">
+                  Hint 3
+                </span>
+                <span className="text-xs text-muted-foreground">locked</span>
+              </div>
+              <p className="text-sm text-muted-foreground italic">
+                Reveal after you've spent time on hint 2
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-6 flex justify-center">
+            <Button asChild size="sm" variant="outline">
+              <Link href={user ? "/display-problem" : "/auth/login"}>
+                Try it yourself
+              </Link>
+            </Button>
           </div>
         </div>
       </section>
 
-      {/* ── How it works ──────────────────────────────────────── */}
+      {/* ── Instant AI Code Review ────────────────────────────── */}
       <section className="border-t border-border">
         <div className="mx-auto max-w-3xl px-6 py-20">
           <div className="mb-10 text-center">
             <h2 className="text-2xl font-semibold tracking-tight">
-              How it works
+              Instant feedback on your code
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Three steps. No spoilers.
+              After you've worked through hints, get AI-powered analysis of your
+              solution. Learn what works, what doesn't, and how to improve.
             </p>
           </div>
 
-          <div className="flex flex-col gap-0 divide-y divide-border rounded-xl border border-border overflow-hidden">
-            {steps.map((step) => (
-              <div
-                key={step.number}
-                className="flex items-start gap-5 bg-card px-6 py-6 transition-colors hover:bg-muted/30"
-              >
-                <span
-                  className="shrink-0 font-mono text-3xl font-bold leading-none text-primary/30 select-none"
-                  aria-hidden="true"
-                >
-                  {step.number}
+          <div className="grid gap-6 sm:grid-cols-2">
+            {/* Code snippet */}
+            <div className="rounded-lg border border-border bg-card p-5">
+              <div className="mb-3 flex items-center gap-2">
+                <span className="font-mono text-xs font-semibold text-primary">
+                  Python
                 </span>
-                <div className="flex flex-col gap-1.5">
-                  <h3 className="font-semibold">{step.title}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {step.description}
-                  </p>
-                </div>
               </div>
-            ))}
+              <pre className="text-xs leading-relaxed overflow-x-auto">
+                <code className="text-muted-foreground">{`def twoSum(nums, target):
+  seen = {}
+  for i, num in enumerate(nums):
+    complement = target - num
+    if complement in seen:
+      return [seen[complement], i]
+    seen[num] = i
+  return []`}</code>
+              </pre>
+            </div>
+
+            {/* AI Review */}
+            <div className="flex flex-col gap-3">
+              <div className="rounded-lg border border-primary/30 bg-primary/5 p-4">
+                <div className="mb-2 flex items-center gap-2">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-primary"
+                    aria-hidden="true"
+                  >
+                    <polyline points="20 6 9 17l-5-5" />
+                  </svg>
+                  <span className="text-xs font-semibold text-primary">
+                    Complexity
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  O(n) time, O(n) space — optimal for this problem. Single pass
+                  with hash map.
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-4">
+                <div className="mb-2 flex items-center gap-2">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-emerald-400"
+                    aria-hidden="true"
+                  >
+                    <polyline points="20 6 9 17l-5-5" />
+                  </svg>
+                  <span className="text-xs font-semibold text-emerald-400">
+                    Strengths
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Clean implementation, correct edge cases, efficient approach.
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4">
+                <div className="mb-2 flex items-center gap-2">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-amber-400"
+                    aria-hidden="true"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="16" />
+                    <line x1="8" y1="12" x2="16" y2="12" />
+                  </svg>
+                  <span className="text-xs font-semibold text-amber-400">
+                    Consider
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Could handle empty input gracefully. Great solution overall.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -362,10 +470,10 @@ export default async function Home() {
         <div className="mx-auto max-w-3xl px-6 py-20">
           <div className="mb-10 text-center">
             <h2 className="text-2xl font-semibold tracking-tight">
-              Everything you need to improve
+              Everything built for learning
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Built for how competitive programmers actually learn.
+              Practice smarter, improve faster.
             </p>
           </div>
 
@@ -373,18 +481,13 @@ export default async function Home() {
             {features.map((feature) => (
               <div
                 key={feature.title}
-                className="relative flex flex-col gap-3 rounded-xl border border-border bg-card p-6 transition-colors hover:border-primary/40"
+                className="flex flex-col gap-3 rounded-lg border border-border bg-card p-5 transition-colors hover:border-primary/40"
               >
-                {feature.isNew && (
-                  <span className="absolute right-4 top-4 rounded-full border border-primary/30 bg-primary/5 px-2 py-0.5 text-xs font-medium text-primary">
-                    New
-                  </span>
-                )}
-                <div className="flex size-9 items-center justify-center rounded-lg border border-primary/20 bg-primary/5 text-primary">
+                <div className="flex size-9 items-center justify-center rounded-md border border-primary/20 bg-primary/5 text-primary">
                   {feature.icon}
                 </div>
-                <h3 className="font-semibold">{feature.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
+                <h3 className="font-semibold text-sm">{feature.title}</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">
                   {feature.description}
                 </p>
               </div>
@@ -401,18 +504,17 @@ export default async function Home() {
             aria-hidden="true"
           />
           <h2 className="relative text-3xl font-bold tracking-tight">
-            Every problem you solve
+            Start practicing
             <br />
-            <span className="text-primary">makes you sharper.</span>
+            <span className="text-primary">in 30 seconds.</span>
           </h2>
           <p className="relative max-w-sm text-muted-foreground">
-            Skip the endless searching for hints. Get instant, targeted guidance
-            that helps you learn and improve. Free account. No credit card
-            required.
+            No setup. No paywalls. Just curated problems, guided hints, and
+            instant feedback. Build real skills through deliberate practice.
           </p>
           <Button asChild size="lg" className="relative">
             <Link href={user ? "/display-problem" : "/auth/login"}>
-              {user ? "Go to problems" : "Create free account"}
+              {user ? "Continue practicing" : "Start free today"}
             </Link>
           </Button>
           <p className="relative text-xs text-muted-foreground">

@@ -146,10 +146,12 @@ export function ProblemViewer({
   userId,
   initialProblem = null,
   csrfToken,
+  showFocusPrompt = false,
 }: {
   userId: string | null;
   initialProblem?: Problem | null;
   csrfToken: string;
+  showFocusPrompt?: boolean;
 }) {
   const [state, setState] = useState<State>(
     initialProblem
@@ -168,6 +170,8 @@ export function ProblemViewer({
   const [codeCopied, setCodeCopied] = useState(false);
   const hintsPanelRef = useRef<HTMLDivElement>(null);
   const solutionPanelRef = useRef<HTMLDivElement>(null);
+  const [focusBanner, setFocusBanner] = useState(showFocusPrompt);
+  const [focusSaving, setFocusSaving] = useState(false);
 
   useEffect(() => {
     if (hintsState.status === "open") {
@@ -860,8 +864,65 @@ export function ProblemViewer({
 
   const isLoading = state.status === "loading";
 
+  async function saveFocus(value: string) {
+    setFocusSaving(true);
+    try {
+      await fetch("/api/profiles/focus", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-csrf-token": csrfToken,
+        },
+        body: JSON.stringify({ focus: value }),
+      });
+    } catch {
+      // non-fatal
+    }
+    setFocusBanner(false);
+    setFocusSaving(false);
+  }
+
   return (
     <div className="flex flex-col gap-6">
+      {/* Focus prompt — shown once for onboarded users who haven't set a focus yet */}
+      {focusBanner && (
+        <div className="rounded-lg border border-border bg-muted/50 px-5 py-4 flex flex-col gap-3">
+          <div>
+            <p className="text-sm font-semibold text-foreground">
+              What are you focusing on?
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Helps us surface the right problems for you.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {(
+              [
+                { value: "interviews", label: "Interview Prep" },
+                { value: "comp_programming", label: "Competitive Programming" },
+                { value: "both", label: "Both / Not sure" },
+              ] as const
+            ).map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                disabled={focusSaving}
+                onClick={() => saveFocus(opt.value)}
+                className="rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                {opt.label}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => setFocusBanner(false)}
+              className="rounded-md px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
       {/* Controls */}
       <div className="flex flex-col gap-3">
         <div className="flex gap-2">

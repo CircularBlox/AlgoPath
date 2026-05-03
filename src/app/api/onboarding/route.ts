@@ -22,6 +22,7 @@ export async function POST(request: NextRequest) {
   }
 
   let body: {
+    focus?: string | null;
     skill_level?: string | null;
     cp_goal?: string | null;
     preferred_languages?: string[];
@@ -38,6 +39,7 @@ export async function POST(request: NextRequest) {
   }
 
   const {
+    focus,
     skill_level,
     cp_goal,
     preferred_languages,
@@ -46,6 +48,11 @@ export async function POST(request: NextRequest) {
   } = body;
 
   const update: Record<string, unknown> = { onboarding_completed: true };
+
+  const VALID_FOCUS = ["interviews", "comp_programming", "both"];
+  if (focus && VALID_FOCUS.includes(focus)) {
+    update.focus = focus;
+  }
 
   const VALID_SKILLS = ["beginner", "intermediate", "advanced"];
   if (skill_level && VALID_SKILLS.includes(skill_level)) {

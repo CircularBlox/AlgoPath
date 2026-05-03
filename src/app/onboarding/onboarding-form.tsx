@@ -4,6 +4,24 @@ import { useRouter } from "next/navigation";
 import posthog from "posthog-js";
 import { useState } from "react";
 
+const FOCUS_OPTIONS = [
+  {
+    value: "interviews",
+    label: "Interview Prep",
+    desc: "LeetCode-style problems for FAANG and top-tier companies",
+  },
+  {
+    value: "comp_programming",
+    label: "Competitive Programming",
+    desc: "USACO, Codeforces, IOI — contest preparation",
+  },
+  {
+    value: "both",
+    label: "Both / Not sure",
+    desc: "Mix of interview and contest problems",
+  },
+];
+
 const SKILL_OPTIONS = [
   {
     value: "beginner",
@@ -82,8 +100,15 @@ const DAILY_OPTIONS = [
   { value: 10, label: "10+ problems / day", desc: "Serious preparation" },
 ];
 
-const TOTAL_STEPS = 5;
-const STEP_KEYS = ["dot-1", "dot-2", "dot-3", "dot-4", "dot-5"] as const;
+const TOTAL_STEPS = 6;
+const STEP_KEYS = [
+  "dot-1",
+  "dot-2",
+  "dot-3",
+  "dot-4",
+  "dot-5",
+  "dot-6",
+] as const;
 
 export function OnboardingForm({ csrfToken }: { csrfToken: string }) {
   const router = useRouter();
@@ -91,6 +116,7 @@ export function OnboardingForm({ csrfToken }: { csrfToken: string }) {
   const [saving, setSaving] = useState(false);
 
   // Answers — all optional (skip allowed)
+  const [focus, setFocus] = useState<string | null>(null);
   const [skillLevel, setSkillLevel] = useState<string | null>(null);
   const [startingRating, setStartingRating] = useState<number | null>(null);
   const [cpGoal, setCpGoal] = useState<string | null>(null);
@@ -113,6 +139,7 @@ export function OnboardingForm({ csrfToken }: { csrfToken: string }) {
           "x-csrf-token": csrfToken,
         },
         body: JSON.stringify({
+          focus,
           skill_level: skillLevel,
           starting_rating: startingRating,
           cp_goal: cpGoal,
@@ -124,6 +151,7 @@ export function OnboardingForm({ csrfToken }: { csrfToken: string }) {
       // Non-fatal — proceed regardless
     }
     posthog.capture("onboarding_completed", {
+      focus,
       skill_level: skillLevel,
       starting_rating: startingRating,
       cp_goal: cpGoal,
@@ -225,11 +253,12 @@ export function OnboardingForm({ csrfToken }: { csrfToken: string }) {
                 margin: 0,
               }}
             >
-              {step === 1 && "What's your experience level?"}
-              {step === 2 && "Estimate your starting rating"}
-              {step === 3 && "What brings you here?"}
-              {step === 4 && "Preferred languages?"}
-              {step === 5 && "Daily practice goal?"}
+              {step === 1 && "What are you focusing on?"}
+              {step === 2 && "What's your experience level?"}
+              {step === 3 && "Estimate your starting rating"}
+              {step === 4 && "What brings you here?"}
+              {step === 5 && "Preferred languages?"}
+              {step === 6 && "Daily practice goal?"}
             </h1>
             <p
               style={{
@@ -238,20 +267,43 @@ export function OnboardingForm({ csrfToken }: { csrfToken: string }) {
                 color: "var(--color-muted-foreground)",
               }}
             >
-              {step === 1 &&
-                "We'll tailor problem difficulty to your background."}
+              {step === 1 && "Shapes which problems we surface for you."}
               {step === 2 &&
+                "We'll tailor problem difficulty to your background."}
+              {step === 3 &&
                 "Sets your starting rating so you see appropriately-difficult problems from day one."}
-              {step === 3 && "Helps us recommend the right problem types."}
-              {step === 4 &&
+              {step === 4 && "Helps us recommend the right problem types."}
+              {step === 5 &&
                 "Solutions will default to your preferred language."}
-              {step === 5 && "We'll remind you to keep your streak going."}
+              {step === 6 && "We'll remind you to keep your streak going."}
             </p>
           </div>
 
           {/* Options */}
           <div style={{ padding: "1.25rem 1.75rem" }}>
             {step === 1 && (
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "0.6rem",
+                }}
+              >
+                {FOCUS_OPTIONS.map((opt) => (
+                  <OptionCard
+                    key={opt.value}
+                    label={opt.label}
+                    desc={opt.desc}
+                    selected={focus === opt.value}
+                    onClick={() =>
+                      setFocus(focus === opt.value ? null : opt.value)
+                    }
+                  />
+                ))}
+              </div>
+            )}
+
+            {step === 2 && (
               <div
                 style={{
                   display: "flex",
@@ -273,7 +325,7 @@ export function OnboardingForm({ csrfToken }: { csrfToken: string }) {
               </div>
             )}
 
-            {step === 2 && (
+            {step === 3 && (
               <div
                 style={{
                   display: "flex",
@@ -298,7 +350,7 @@ export function OnboardingForm({ csrfToken }: { csrfToken: string }) {
               </div>
             )}
 
-            {step === 3 && (
+            {step === 4 && (
               <div
                 style={{
                   display: "grid",
@@ -320,7 +372,7 @@ export function OnboardingForm({ csrfToken }: { csrfToken: string }) {
               </div>
             )}
 
-            {step === 4 && (
+            {step === 5 && (
               <div
                 style={{
                   display: "grid",
@@ -340,7 +392,7 @@ export function OnboardingForm({ csrfToken }: { csrfToken: string }) {
               </div>
             )}
 
-            {step === 5 && (
+            {step === 6 && (
               <div
                 style={{
                   display: "grid",
