@@ -148,9 +148,8 @@ export default async function Home() {
           </h1>
 
           <p className="max-w-md text-base text-muted-foreground leading-relaxed">
-            Practice recommended problems. Get guided hints when stuck. Receive
-            instant AI feedback on your code. Build the skills that matter in
-            competitive programming and interviews.
+          Practice curated coding problems tailored to you with guided hints, instant AI feedback, and 
+          personalized recommendations to help you prepare for interviews and competitive programming.
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-3">
