@@ -102,7 +102,9 @@ export async function POST(request: NextRequest) {
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("rating, xp, level, solved_problems, streak, last_solved_date")
+    .select(
+      "rating, xp, level, solved_problems, streak, last_solved_date, focus",
+    )
     .eq("id", user.id)
     .single();
 
@@ -146,6 +148,7 @@ export async function POST(request: NextRequest) {
   const target =
     new_rating < 1250 ? "Easy" : new_rating < 1500 ? "Medium" : "Hard";
   const solvedFilter = newSolved.length > 0 ? `(${newSolved.join(",")})` : null;
+  const focus = (profile.focus as string | null) ?? null;
 
   let recommended_problem_number: number | null = null;
   {
@@ -155,6 +158,8 @@ export async function POST(request: NextRequest) {
       .eq("difficulty", target)
       .limit(30);
     if (solvedFilter) q = q.not("problem_number", "in", solvedFilter);
+    if (focus === "interviews") q = q.eq("platform", "LeetCode");
+    else if (focus === "comp_programming") q = q.neq("platform", "LeetCode");
     const { data: candidates } = await q;
 
     const pool = candidates ?? [];
@@ -165,6 +170,9 @@ export async function POST(request: NextRequest) {
       // Fallback: any unsolved problem regardless of difficulty
       let fb = supabase.from("problems").select("problem_number").limit(30);
       if (solvedFilter) fb = fb.not("problem_number", "in", solvedFilter);
+      if (focus === "interviews") fb = fb.eq("platform", "LeetCode");
+      else if (focus === "comp_programming")
+        fb = fb.neq("platform", "LeetCode");
       const { data: fallback } = await fb;
       const fbPool = fallback ?? [];
       if (fbPool.length > 0) {

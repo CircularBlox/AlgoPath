@@ -7,6 +7,7 @@ export async function GET() {
 
   let difficulty: string | null = null;
   let excluded: number[] = [];
+  let focus: string | null = null;
 
   try {
     const {
@@ -16,7 +17,7 @@ export async function GET() {
     if (user) {
       const { data: profile } = await supabase
         .from("profiles")
-        .select("rating, solved_problems")
+        .select("rating, solved_problems, focus")
         .eq("id", user.id)
         .maybeSingle();
 
@@ -24,6 +25,7 @@ export async function GET() {
         const r = (profile.rating as number | null) ?? 1200;
         difficulty = r < 1250 ? "Easy" : r < 1500 ? "Medium" : "Hard";
         excluded = (profile.solved_problems as number[] | null) ?? [];
+        focus = (profile.focus as string | null) ?? null;
       }
     }
   } catch (err) {
@@ -36,6 +38,8 @@ export async function GET() {
   let q = supabase.from("problems").select("*").limit(50);
   if (difficulty) q = q.eq("difficulty", difficulty);
   if (solvedFilter) q = q.not("problem_number", "in", solvedFilter);
+  if (focus === "interviews") q = q.eq("platform", "LeetCode");
+  else if (focus === "comp_programming") q = q.neq("platform", "LeetCode");
 
   const { data, error } = await q;
 
