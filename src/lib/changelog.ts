@@ -6,6 +6,44 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.8.0",
+    date: "2026-05-03",
+    changes: [
+      {
+        type: "feat",
+        text: "Redesigned landing page — feature sections, live hints demo, AI code review preview, and a closing CTA; focused on getting new users to sign up and start immediately",
+      },
+      {
+        type: "feat",
+        text: "Focus system — users can set a practice focus (Interview Prep / Competitive Programming / Both) from the practice page; biases random problem selection toward LeetCode or Codeforces accordingly",
+      },
+      {
+        type: "improve",
+        text: "Random problem selection now uses weighted platform bias (3:1) instead of hard filtering — comp programming focus favors Codeforces but still surfaces LeetCode problems occasionally, and vice versa",
+      },
+      {
+        type: "improve",
+        text: "Practice page UX — \"Continue where you left off\" now appears above the search controls for returning users, and the random problem button is renamed to \"Pick a Problem for Me\" with a dice icon",
+      },
+      {
+        type: "improve",
+        text: "Onboarding flow extended — captures skill level and focus preference, applies both immediately to problem recommendations",
+      },
+      {
+        type: "improve",
+        text: "Code editor redesign — improved syntax highlighting theme, dark background, and editor color consistency across the side panel",
+      },
+      {
+        type: "fix",
+        text: "Streak reset logic — streak now correctly resets to 0 when a day is missed rather than holding the stale value",
+      },
+      {
+        type: "improve",
+        text: "Add-solution admin page now supports per-language code input and shared explanation field with live preview",
+      },
+    ],
+  },
+  {
     version: "0.7.0",
     date: "2026-04-30",
     changes: [

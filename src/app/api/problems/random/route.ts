@@ -35,16 +35,30 @@ export async function GET() {
   const solvedFilter = excluded.length > 0 ? `(${excluded.join(",")})` : null;
 
   // Try to find a problem matching the user's difficulty, excluding already-solved
-  let q = supabase.from("problems").select("*").limit(50);
+  let q = supabase.from("problems").select("*").limit(100);
   if (difficulty) q = q.eq("difficulty", difficulty);
   if (solvedFilter) q = q.not("problem_number", "in", solvedFilter);
-  if (focus === "interviews") q = q.eq("platform", "LeetCode");
-  else if (focus === "comp_programming") q = q.neq("platform", "LeetCode");
 
   const { data, error } = await q;
 
   if (!error && data && data.length > 0) {
-    return NextResponse.json(data[Math.floor(Math.random() * data.length)]);
+    // Apply soft platform bias: 3:1 weighting toward preferred platform
+    type Row = (typeof data)[number];
+    const isLC = (p: Row) =>
+      String(p.platform ?? "").toLowerCase() === "leetcode";
+    let pool: Row[];
+    if (focus === "comp_programming") {
+      const cf = data.filter((p) => !isLC(p));
+      const lc = data.filter(isLC);
+      pool = cf.length > 0 ? [...cf, ...cf, ...cf, ...lc] : data;
+    } else if (focus === "interviews") {
+      const lc = data.filter(isLC);
+      const others = data.filter((p) => !isLC(p));
+      pool = lc.length > 0 ? [...lc, ...lc, ...lc, ...others] : data;
+    } else {
+      pool = data;
+    }
+    return NextResponse.json(pool[Math.floor(Math.random() * pool.length)]);
   }
 
   // Fallback: any unsolved problem, ignore difficulty

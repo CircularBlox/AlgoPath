@@ -923,6 +923,53 @@ export function ProblemViewer({
           </div>
         </div>
       )}
+
+      {/* Continue where you left off — shown first when returning */}
+      {state.status === "idle" &&
+        userId &&
+        recentProblems &&
+        recentProblems.length > 0 && (
+          <div className="flex flex-col gap-2">
+            <p className="text-xs font-medium text-muted-foreground">
+              Continue where you left off
+            </p>
+            <div className="overflow-hidden rounded-lg border border-border divide-y divide-border">
+              {recentProblems.map((problem) => (
+                <button
+                  key={problem.id}
+                  type="button"
+                  onClick={() => selectProblem(problem)}
+                  className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-muted/50"
+                >
+                  {problem.problem_number != null && (
+                    <span className="w-8 shrink-0 font-mono text-xs text-muted-foreground">
+                      #{problem.problem_number}
+                    </span>
+                  )}
+                  <span className="flex-1 truncate text-sm font-medium">
+                    {problem.title}
+                  </span>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    {problem.difficulty && (
+                      <Badge variant="outline" className="text-xs">
+                        {problem.difficulty}
+                      </Badge>
+                    )}
+                    <Badge variant="secondary" className="text-xs">
+                      {problem.platform === "codeforces" ? "CF" : "LC"}
+                    </Badge>
+                  </div>
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center gap-3 mt-1">
+              <div className="h-px flex-1 bg-border" />
+              <span className="text-xs text-muted-foreground">or start fresh</span>
+              <div className="h-px flex-1 bg-border" />
+            </div>
+          </div>
+        )}
+
       {/* Controls */}
       <div className="flex flex-col gap-3">
         <div className="flex gap-2">
@@ -950,9 +997,27 @@ export function ProblemViewer({
         <Button
           onClick={() => triggerWithSkipWarning(fetchRandom)}
           disabled={isLoading}
-          className="self-start"
+          className="self-start flex items-center gap-2"
         >
-          {isLoading ? "Loading…" : "Find Random Problem"}
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <rect x="2" y="2" width="20" height="20" rx="3" ry="3" />
+            <circle cx="8" cy="8" r="1.5" fill="currentColor" stroke="none" />
+            <circle cx="16" cy="8" r="1.5" fill="currentColor" stroke="none" />
+            <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
+            <circle cx="8" cy="16" r="1.5" fill="currentColor" stroke="none" />
+            <circle cx="16" cy="16" r="1.5" fill="currentColor" stroke="none" />
+          </svg>
+          {isLoading ? "Loading…" : "Pick a Problem for Me"}
         </Button>
         <div className="flex items-center gap-3">
           <div className="h-px flex-1 bg-border" />
@@ -1007,46 +1072,6 @@ export function ProblemViewer({
         </div>
       )}
 
-      {/* Continue where you left off */}
-      {state.status === "idle" &&
-        userId &&
-        recentProblems &&
-        recentProblems.length > 0 && (
-          <div className="flex flex-col gap-2">
-            <p className="text-xs font-medium text-muted-foreground">
-              Continue where you left off
-            </p>
-            <div className="overflow-hidden rounded-lg border border-border divide-y divide-border">
-              {recentProblems.map((problem) => (
-                <button
-                  key={problem.id}
-                  type="button"
-                  onClick={() => selectProblem(problem)}
-                  className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-muted/50"
-                >
-                  {problem.problem_number != null && (
-                    <span className="w-8 shrink-0 font-mono text-xs text-muted-foreground">
-                      #{problem.problem_number}
-                    </span>
-                  )}
-                  <span className="flex-1 truncate text-sm font-medium">
-                    {problem.title}
-                  </span>
-                  <div className="flex shrink-0 items-center gap-1.5">
-                    {problem.difficulty && (
-                      <Badge variant="outline" className="text-xs">
-                        {problem.difficulty}
-                      </Badge>
-                    )}
-                    <Badge variant="secondary" className="text-xs">
-                      {problem.platform === "codeforces" ? "CF" : "LC"}
-                    </Badge>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
 
       {isAiLoading && (
         <div className="flex items-center gap-1.5 px-1">
