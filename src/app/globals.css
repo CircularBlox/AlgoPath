@@ -216,9 +216,10 @@
   }
 }
 
-/* KaTeX rendering — light gray background similar to hints */
+/* KaTeX rendering — matches hints inline code: light gray chip, dark text */
 .katex {
-  background-color: var(--color-muted);
+  background-color: oklch(0.8 0 0);
+  color: oklch(0.12 0 0);
   padding: 0.125rem 0.375rem;
   border-radius: 0.25rem;
 }
@@ -227,7 +228,8 @@
 .katex-display {
   margin: 0.75rem 0;
   overflow-x: auto;
-  background-color: var(--color-muted);
+  background-color: oklch(0.8 0 0);
+  color: oklch(0.12 0 0);
   padding: 0.75rem 1rem;
   border-radius: 0.375rem;
 }

@@ -23,7 +23,7 @@ export const CHANGELOG: ChangelogEntry[] = [
       },
       {
         type: "improve",
-        text: "Practice page UX — \"Continue where you left off\" now appears above the search controls for returning users, and the random problem button is renamed to \"Pick a Problem for Me\" with a dice icon",
+        text: 'Practice page UX — "Continue where you left off" now appears above the search controls for returning users, and the random problem button is renamed to "Pick a Problem for Me" with a dice icon',
       },
       {
         type: "improve",

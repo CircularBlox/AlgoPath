@@ -964,7 +964,9 @@ export function ProblemViewer({
             </div>
             <div className="flex items-center gap-3 mt-1">
               <div className="h-px flex-1 bg-border" />
-              <span className="text-xs text-muted-foreground">or start fresh</span>
+              <span className="text-xs text-muted-foreground">
+                or start fresh
+              </span>
               <div className="h-px flex-1 bg-border" />
             </div>
           </div>
@@ -1071,7 +1073,6 @@ export function ProblemViewer({
           </div>
         </div>
       )}
-
 
       {isAiLoading && (
         <div className="flex items-center gap-1.5 px-1">
