@@ -6,7 +6,6 @@ import { PostHogIdentify } from "~/components/posthog-identify";
 import { SettingsProvider } from "~/components/settings-provider";
 import { ThemeProvider } from "./theme-provider";
 import "./globals.css";
-import "katex/dist/katex.min.css";
 
 const inter = Inter({
   subsets: ["latin"],

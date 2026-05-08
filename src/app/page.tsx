@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
-import { getUser } from "~/lib/supabase/server";
 
 const recommendedProblems = [
   {
@@ -117,9 +116,7 @@ const features = [
   },
 ];
 
-export default async function Home() {
-  const user = await getUser();
-
+export default function Home() {
   return (
     <main className="flex flex-col">
       {/* ── Hero ──────────────────────────────────────────────── */}
@@ -148,21 +145,18 @@ export default async function Home() {
           </h1>
 
           <p className="max-w-md text-base text-muted-foreground leading-relaxed">
-          Practice curated coding problems tailored to you with guided hints, instant AI feedback, and 
-          personalized recommendations to help you prepare for interviews and competitive programming.
+            Practice curated coding problems tailored to you with guided hints,
+            instant AI feedback, and personalized recommendations to help you
+            prepare for interviews and competitive programming.
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-3">
             <Button asChild size="lg">
-              <Link href={user ? "/display-problem" : "/auth/login"}>
-                {user ? "Go to problems" : "Start for free"}
-              </Link>
+              <Link href="/auth/login">Start for free</Link>
             </Button>
-            {!user && (
-              <Button asChild variant="outline" size="lg">
-                <Link href="/auth/signup">See how it works</Link>
-              </Button>
-            )}
+            <Button asChild variant="outline" size="lg">
+              <Link href="/auth/signup">See how it works</Link>
+            </Button>
           </div>
         </div>
       </section>
@@ -224,9 +218,7 @@ export default async function Home() {
 
           <div className="mt-8 text-center">
             <Button asChild variant="outline">
-              <Link href={user ? "/display-problem" : "/auth/login"}>
-                Browse all problems
-              </Link>
+              <Link href="/auth/login">Browse all problems</Link>
             </Button>
           </div>
         </div>
@@ -339,9 +331,7 @@ export default async function Home() {
 
           <div className="mt-6 flex justify-center">
             <Button asChild size="sm" variant="outline">
-              <Link href={user ? "/display-problem" : "/auth/login"}>
-                Try it yourself
-              </Link>
+              <Link href="/auth/login">Try it yourself</Link>
             </Button>
           </div>
         </div>
@@ -512,9 +502,7 @@ export default async function Home() {
             instant feedback. Build real skills through deliberate practice.
           </p>
           <Button asChild size="lg" className="relative">
-            <Link href={user ? "/display-problem" : "/auth/login"}>
-              {user ? "Continue practicing" : "Start free today"}
-            </Link>
+            <Link href="/auth/login">Start free today</Link>
           </Button>
           <p className="relative text-xs text-muted-foreground">
             Already have an account?{" "}
