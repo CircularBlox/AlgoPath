@@ -8,13 +8,15 @@ const recommendedProblems = [
     difficulty: "Easy",
     platform: "LeetCode",
     status: "unsolved",
+    track: "Interview Prep",
   },
   {
     number: 2,
-    title: "Add Two Numbers",
+    title: "Div. 2 Problem B — Longest Path",
     difficulty: "Medium",
-    platform: "LeetCode",
+    platform: "Codeforces",
     status: "in-progress",
+    track: "Competitive",
   },
   {
     number: 3,
@@ -22,6 +24,7 @@ const recommendedProblems = [
     difficulty: "Medium",
     platform: "LeetCode",
     status: "unsolved",
+    track: "Interview Prep",
   },
 ];
 
@@ -29,7 +32,7 @@ const features = [
   {
     title: "Guided Hints",
     description:
-      "Three progressive hints per problem, each nudging your thinking without spoiling the solution.",
+      "Three progressive hints per problem. Works for interview prep and competitive programming — nudges your thinking without spoiling the solution.",
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -73,7 +76,7 @@ const features = [
   {
     title: "Curated Problems",
     description:
-      "Practice the right problems at the right difficulty. Recommended based on your skill level and goals.",
+      "LeetCode patterns for FAANG interviews. Codeforces rounds for contest prep. Recommended based on your skill level and focus.",
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -95,7 +98,7 @@ const features = [
   {
     title: "Track Progress",
     description:
-      "Watch your rating grow with every solve. See stats on hints used, problems completed, and skill improvement.",
+      "Watch your rating climb whether you're targeting a FAANG offer or a higher contest rank. Stats on every solve, hint used, and streak maintained.",
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -131,23 +134,32 @@ export default function Home() {
         />
 
         <div className="relative mx-auto flex max-w-3xl flex-col items-center gap-7 px-6 py-28 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-3 py-1 text-xs text-primary">
-            <span className="size-1.5 rounded-full bg-primary" />
-            For competitive programmers · Free · LeetCode &amp; Codeforces
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-3 py-1 text-xs text-primary">
+              <span className="size-1.5 rounded-full bg-primary" />
+              Interview Prep
+            </div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-3 py-1 text-xs text-primary">
+              <span className="size-1.5 rounded-full bg-primary" />
+              Competitive Programming
+            </div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-border bg-muted/40 px-3 py-1 text-xs text-muted-foreground">
+              Free · LeetCode &amp; Codeforces
+            </div>
           </div>
 
           <h1 className="text-5xl font-bold tracking-tight sm:text-6xl">
-            Progress faster through
+            Get unstuck. Build
             <br />
             <span className="text-primary text-glow">
-              guided problem solving.
+              real problem-solving skill.
             </span>
           </h1>
 
           <p className="max-w-md text-base text-muted-foreground leading-relaxed">
-            Practice curated coding problems tailored to you with guided hints,
-            instant AI feedback, and personalized recommendations to help you
-            prepare for interviews and competitive programming.
+            Whether you&apos;re grinding LeetCode for interviews or pushing
+            your Codeforces rating, AlgoPath gives you progressive hints and AI
+            feedback that teach — without giving away the answer.
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-3">
@@ -169,7 +181,7 @@ export default function Home() {
               Recommended for you
             </p>
             <h2 className="text-2xl font-semibold tracking-tight">
-              Practice problems tailored to your level
+              Interview prep and contest training, in one place
             </h2>
           </div>
 
@@ -200,6 +212,9 @@ export default function Home() {
                     </span>
                     <span className="text-xs text-muted-foreground">
                       {problem.platform}
+                    </span>
+                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-primary/8 text-primary/70">
+                      {problem.track}
                     </span>
                   </div>
                 </div>
@@ -498,8 +513,8 @@ export default function Home() {
             <span className="text-primary">in 30 seconds.</span>
           </h2>
           <p className="relative max-w-sm text-muted-foreground">
-            No setup. No paywalls. Just curated problems, guided hints, and
-            instant feedback. Build real skills through deliberate practice.
+            No setup. No paywalls. Interview prep or competitive programming —
+            pick a problem, get a hint, and actually learn.
           </p>
           <Button asChild size="lg" className="relative">
             <Link href="/auth/login">Start free today</Link>
