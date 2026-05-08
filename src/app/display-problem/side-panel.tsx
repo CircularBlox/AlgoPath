@@ -82,7 +82,6 @@ const TABS = [
 ] as const;
 
 export interface SidePanelProps {
-  problemNumber: number;
   // panel
   activeTab: "notes" | "code" | "ai" | null;
   setActiveTab: (tab: "notes" | "code" | "ai" | null) => void;
@@ -125,7 +124,6 @@ export interface SidePanelProps {
 }
 
 export function SidePanel({
-  problemNumber,
   activeTab,
   setActiveTab,
   panelWidth,
@@ -441,7 +439,9 @@ export function SidePanel({
                     }
                   }}
                   className="rounded px-2 py-0.5 text-[11px] font-medium bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                  title={codeFullscreen ? "Collapse editor" : "Expand to split view"}
+                  title={
+                    codeFullscreen ? "Collapse editor" : "Expand to split view"
+                  }
                 >
                   {codeFullscreen ? "↙ Collapse" : "↗ Expand"}
                 </button>

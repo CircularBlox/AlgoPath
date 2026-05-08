@@ -774,9 +774,7 @@ export function ProblemViewer({
           code: reviewCode,
           code_language: reviewLanguage,
           problem_number:
-            state.status === "loaded"
-              ? (state.problem.problem_number ?? 0)
-              : 0,
+            state.status === "loaded" ? (state.problem.problem_number ?? 0) : 0,
         }),
       });
       if (res.ok) {
@@ -1738,7 +1736,6 @@ export function ProblemViewer({
       {/* ── Fixed side tabs + slide-out panel ── */}
       {state.status === "loaded" && userId && (
         <SidePanel
-          problemNumber={state.problem.problem_number ?? 0}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           panelWidth={panelWidth}
@@ -1760,8 +1757,12 @@ export function ProblemViewer({
           quickContent={quickContent}
           setQuickContent={setQuickContent}
           quickSaving={quickSaving}
-          onLoadNotes={() => loadProblemNotes(state.problem.problem_number ?? 0)}
-          onSaveQuickNote={() => saveQuickNote(state.problem.problem_number ?? 0)}
+          onLoadNotes={() =>
+            loadProblemNotes(state.problem.problem_number ?? 0)
+          }
+          onSaveQuickNote={() =>
+            saveQuickNote(state.problem.problem_number ?? 0)
+          }
           chatMessages={chatMessages}
           setChatMessages={setChatMessages}
           chatLoading={chatLoading}
