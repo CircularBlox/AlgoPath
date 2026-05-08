@@ -1,4 +1,5 @@
 import "prismjs/themes/prism-okaidia.css";
+import "katex/dist/katex.min.css";
 import { generateCsrfToken } from "~/lib/csrf";
 import { createClient, getUser } from "~/lib/supabase/server";
 import { ProblemViewer } from "./problem-viewer";

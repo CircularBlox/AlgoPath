@@ -118,6 +118,60 @@ IMPORTANT - Update Changelog for any major updates or minor ones with proper con
 
 ---
 
+## Monetization — Planned (not yet implemented)
+
+Implement in phases. Do not add all at once. Philosophy: start features as paid, move to free later — never the other way.
+
+### Tiers
+
+**Free**
+- Core activity (viewing/saving problems) is always unlimited
+- 3 complete hint sessions/day — all 3 hints visible per session; daily reset at midnight UTC
+- When daily cap hit: Hints 2 & 3 blur (CSS blur + lock icon); quiet one-line CTA + "Resets tomorrow" — no modal, no countdown
+- Up to 3 notes created/day (unlimited reading)
+- Activity history: last 14 days
+- Streak tracking (no freeze)
+- No model selection, no solution analysis
+
+**Pro (~$8/mo or $65/yr)**
+- Unlimited hint sessions
+- Unlimited notes + full activity history
+- Model selection
+- Unlimited solution analysis
+- Streak freeze (1/month)
+- XP progression + export notes as markdown
+
+**Elite (~$16/mo or $130/yr)**
+- Everything in Pro
+- Priority generation (queue skipping)
+- Adaptive difficulty (user sets contest level; hints adapt depth/language)
+- Hint style: Socratic / Structured / Minimal
+- Hint history across attempts (compare past sessions side-by-side)
+- Insights dashboard (avg hints needed, weak topics, solve rate by difficulty)
+- Weekly email digest
+
+### Implementation Phases
+1. **Infra** — Stripe integration, `plan` field on profiles, webhook handler, `getUserPlan()` helper, static `/pricing` page
+2. **Hint gating** — daily session counter, blurred hint component, upgrade CTA
+3. **Notes & history gating** — daily note creation cap, 14-day activity cutoff for free
+4. **Feature locks** — model selection, solution analysis, streak freeze, export (visible but disabled for free)
+5. **Elite features** — adaptive difficulty, hint style, insights dashboard, weekly digest email
+
+---
+
+## Performance — Known Issues (as of 2026-05-07)
+
+PostHog web vitals (90th percentile LCP) shows poor scores across key pages:
+- `/` — 4.09s (Poor)
+- `/profile` — 4.27s (Poor)
+- `/display-problem` — 4.93s (Poor)
+- `/auth/setup-username` — 5.57s (Poor)
+- FCP/LCP on homepage: 8.67s
+
+**Likely causes to investigate:** blocking Supabase fetches before first paint, unoptimized images, large JS bundles, no streaming/Suspense on data-heavy pages.
+
+---
+
 ## Workflow Notes for Claude
 - Use this CLAUDE.md as **full project context**
 - Use it to generate features, API routes, UI components
