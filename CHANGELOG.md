@@ -5,6 +5,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) conventi
 
 ---
 
+## [1.0.2] - 2026-05-07
+
+### Added
+- **Admin problem CRUD API**: New admin-only endpoints for managing problems
+  - `POST /api/admin/problems` — create a new problem (title, url, platform, difficulty, tags, content)
+  - `GET /api/admin/problems` — list all problems paginated (`?page=&limit=`)
+  - `GET /api/admin/problems/[number]` — fetch a single problem including full HTML content
+  - `PATCH /api/admin/problems/[number]` — partial update any combination of fields (title, url, platform, difficulty, tags, content HTML)
+  - `DELETE /api/admin/problems/[number]` — permanently remove a problem
+  - All endpoints double-check admin status and use the service-role client; 409 on duplicate URL, 404 on missing problem
+
+---
+
 ## [1.0.1] - 2026-05-07
 
 ### Performance
