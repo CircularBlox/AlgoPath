@@ -79,9 +79,14 @@ function IssueRow({
       });
       const data = await res.json();
       if (!res.ok) {
+        const errMsg = (data as { error?: string }).error ?? "Refetch failed.";
+        const blocked = errMsg.includes("403");
         onChange({
-          refetchError: (data as { error?: string }).error ?? "Refetch failed.",
+          refetchError: blocked
+            ? "Codeforces blocked the request (403). Add newlines manually using the Edit HTML tab below."
+            : errMsg,
           refetching: false,
+          ...(blocked ? { activeTab: "edit" } : {}),
         });
         return;
       }

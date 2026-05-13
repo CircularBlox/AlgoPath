@@ -5,6 +5,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) conventi
 
 ---
 
+## [Unreleased]
+
+### Fixed
+- **KaTeX subscripts/superscripts invisible in dark mode**: The CSS selector scoping was broken — math inside problem statements was inheriting `color: oklch(0.12 0 0)` (near-black), making subscripts invisible on dark backgrounds. Fixed with a proper specificity-based override so problem-content math inherits the foreground color.
+- **Admin fixes**: Improved error messaging and UX for edge cases in admin tooling.
+
+---
+
 ## [1.0.6] - 2026-05-12
 
 ### Added
@@ -21,9 +29,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) conventi
 ## [1.0.4] - 2026-05-11
 
 ### Added
-- **Admin sample I/O fix tool** (`/admin/fix-io`): New admin page and API endpoints to detect and repair problems where Input/Output are merged into a single `<pre>` block (a known scraper artefact). Scans all problems, shows current vs. proposed HTML side-by-side, and allows per-row approve / edit / apply without re-scraping. Detection pattern: `<pre>` blocks containing `\nOutput\n`.
-  - `GET /api/admin/fix-io` — scans every problem, returns list of issues with proposed splits
-  - `POST /api/admin/fix-io` — accepts `{ fixes: [{ problem_number, content }] }`, applies using the service-role client
+- **Admin tooling**: Sample I/O fix tool to detect and repair scraper artefacts in problem content.
 
 ### Changed
 - **Difficulty matching overhauled** (`src/lib/difficulty.ts`): New `difficultyBuckets(rating)` helper returns a ±200 CF numeric rating window (in steps of 100) plus the matching LeetCode bucket (`Easy` / `Medium` / `Hard`). Previously all numeric CF difficulties were treated as "medium".
@@ -49,13 +55,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) conventi
 ## [1.0.2] - 2026-05-07
 
 ### Added
-- **Admin problem CRUD API**: New admin-only endpoints for managing problems
-  - `POST /api/admin/problems` — create a new problem (title, url, platform, difficulty, tags, content)
-  - `GET /api/admin/problems` — list all problems paginated (`?page=&limit=`)
-  - `GET /api/admin/problems/[number]` — fetch a single problem including full HTML content
-  - `PATCH /api/admin/problems/[number]` — partial update any combination of fields (title, url, platform, difficulty, tags, content HTML)
-  - `DELETE /api/admin/problems/[number]` — permanently remove a problem
-  - All endpoints double-check admin status and use the service-role client; 409 on duplicate URL, 404 on missing problem
+- **Admin tooling**: Problem management API for creating, reading, updating, and deleting problems.
 
 ---
 
