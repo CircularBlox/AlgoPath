@@ -11,6 +11,7 @@ type IOIssue = {
   platform: string;
   content: string;
   proposed_content: string;
+  issue_type: "merged-io" | "no-newlines";
 };
 
 type IssueState = {
@@ -83,6 +84,17 @@ function IssueRow({
           {issue.platform}
         </span>
 
+        <span
+          className={cn(
+            "rounded-full border px-2 py-0.5 text-xs font-medium",
+            issue.issue_type === "no-newlines"
+              ? "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400"
+              : "border-sky-500/40 bg-sky-500/10 text-sky-700 dark:text-sky-400",
+          )}
+        >
+          {issue.issue_type === "no-newlines" ? "no newlines" : "merged I/O"}
+        </span>
+
         {/* Approve toggle */}
         <button
           type="button"
@@ -147,6 +159,13 @@ function IssueRow({
       {/* Expanded content */}
       {expanded && (
         <div className="border-t border-border px-4 pb-4 pt-3">
+          {issue.issue_type === "no-newlines" && (
+            <div className="mb-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+              Newlines were stripped by the scraper. Auto-fix is not possible —
+              add them manually in the <strong>Edit HTML</strong> tab, then
+              approve.
+            </div>
+          )}
           {/* Tabs */}
           <div className="mb-3 flex gap-1 rounded-lg border border-border bg-muted/40 p-1 w-fit">
             {(["current", "proposed", "edit"] as const).map((tab) => (
@@ -318,13 +337,24 @@ export default function FixIOPage() {
           Fix Sample I/O
         </h1>
         <p className="text-sm text-muted-foreground">
-          Detects problems where the sample Input and Output blocks were merged
-          into a single{" "}
+          Detects two scraper issues:{" "}
+          <span className="text-sky-700 dark:text-sky-400 font-medium">
+            merged I/O
+          </span>{" "}
+          (Input and Output in a single{" "}
+          <code className="rounded bg-muted px-1 py-0.5 text-xs">
+            &lt;pre&gt;
+          </code>
+          , auto-fixable) and{" "}
+          <span className="text-amber-700 dark:text-amber-400 font-medium">
+            no newlines
+          </span>{" "}
+          (newlines stripped from{" "}
           <code className="rounded bg-muted px-1 py-0.5 text-xs">
             &lt;pre&gt;
           </code>{" "}
-          by the scraper. Review the proposed fix for each, optionally edit the
-          HTML, then approve and apply.
+          content, requires manual editing). Review each issue, edit HTML as
+          needed, then approve and apply.
         </p>
       </div>
 

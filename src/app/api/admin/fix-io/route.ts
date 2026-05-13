@@ -11,6 +11,7 @@ export type IOIssue = {
   platform: string;
   content: string;
   proposed_content: string;
+  issue_type: "merged-io" | "no-newlines";
 };
 
 /**
@@ -67,6 +68,22 @@ function detectAndPropose(content: string): string | null {
   return proposed !== normalized ? proposed : null;
 }
 
+/**
+ * Detects <pre> blocks whose content has no newlines but is longer than 15 characters.
+ * This indicates the scraper stripped newlines from multi-line sample I/O.
+ * Returns the content unchanged (proposed = current) since correct line breaks
+ * can't be inferred automatically — the admin must edit manually.
+ */
+function detectNoNewlinePre(content: string): boolean {
+  const normalized = content.replace(/\r\n/g, "\n");
+  const preRe = /<pre[^>]*>([\s\S]*?)<\/pre>/gi;
+  for (let m = preRe.exec(normalized); m !== null; m = preRe.exec(normalized)) {
+    const inner = m[1];
+    if (!inner.includes("\n") && inner.trim().length > 15) return true;
+  }
+  return false;
+}
+
 /** GET /api/admin/fix-io — scan all problems and return I/O issues with proposed fixes */
 export async function GET(_request: NextRequest) {
   const user = await getUser();
@@ -113,6 +130,17 @@ export async function GET(_request: NextRequest) {
           platform: p.platform ?? "codeforces",
           content: p.content,
           proposed_content: proposed,
+          issue_type: "merged-io",
+        });
+      } else if (detectNoNewlinePre(p.content)) {
+        issues.push({
+          problem_number: p.problem_number,
+          title: p.title,
+          url: p.url,
+          platform: p.platform ?? "codeforces",
+          content: p.content,
+          proposed_content: p.content,
+          issue_type: "no-newlines",
         });
       }
     }
