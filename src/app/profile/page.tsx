@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { difficultyBuckets, difficultyLabel } from "~/lib/difficulty";
 import { effectiveStreak, streakStatus } from "~/lib/streak";
 import { createClient, getUser } from "~/lib/supabase/server";
 import { levelFromXp, levelTitle, xpProgress } from "~/lib/xp";
@@ -31,25 +32,19 @@ type Problem = {
   platform: string;
 };
 
-function targetDifficulty(rating: number): string {
-  if (rating < 1250) return "Easy";
-  if (rating < 1500) return "Medium";
-  return "Hard";
-}
-
 async function getRecommendation(
   supabase: Awaited<ReturnType<typeof createClient>>,
   solved: number[],
   rating: number,
   focus: string | null = null,
 ): Promise<Problem | null> {
-  const target = targetDifficulty(rating);
+  const buckets = difficultyBuckets(rating);
   const notSolvedFilter = solved.length > 0 ? `(${solved.join(",")})` : null;
 
   let candidateQuery = supabase
     .from("problems")
     .select("id, problem_number, title, difficulty, tags, platform")
-    .eq("difficulty", target)
+    .in("difficulty", buckets)
     .limit(30);
   if (notSolvedFilter) {
     candidateQuery = candidateQuery.not(
@@ -69,6 +64,7 @@ async function getRecommendation(
     let fallbackQuery = supabase
       .from("problems")
       .select("id, problem_number, title, difficulty, tags, platform")
+      .in("difficulty", difficultyBuckets(rating))
       .limit(30);
     if (notSolvedFilter) {
       fallbackQuery = fallbackQuery.not(
@@ -429,9 +425,8 @@ export default async function ProfilePage() {
                 ))}
               </div>
               <p className="text-xs text-muted-foreground">
-                Based on your rating ({rating}) and recent practice — a{" "}
-                {targetDifficulty(rating).toLowerCase()} problem with fresh
-                topics for you.
+                Matched to your rating ({rating}) — a {difficultyLabel(rating)}{" "}
+                problem with fresh topics for you.
               </p>
               <Button asChild className="self-start" size="sm">
                 <Link href={`/display-problem?p=${recommended.problem_number}`}>

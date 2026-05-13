@@ -1,11 +1,12 @@
 import * as Sentry from "@sentry/nextjs";
 import { NextResponse } from "next/server";
+import { difficultyBuckets } from "~/lib/difficulty";
 import { createClient } from "~/lib/supabase/server";
 
 export async function GET() {
   const supabase = await createClient();
 
-  let difficulty: string | null = null;
+  let buckets: string[] | null = null;
   let excluded: number[] = [];
   let focus: string | null = null;
 
@@ -23,7 +24,7 @@ export async function GET() {
 
       if (profile) {
         const r = (profile.rating as number | null) ?? 1200;
-        difficulty = r < 1250 ? "Easy" : r < 1500 ? "Medium" : "Hard";
+        buckets = difficultyBuckets(r);
         excluded = (profile.solved_problems as number[] | null) ?? [];
         focus = (profile.focus as string | null) ?? null;
       }
@@ -36,7 +37,7 @@ export async function GET() {
 
   // Try to find a problem matching the user's difficulty, excluding already-solved
   let q = supabase.from("problems").select("*").limit(100);
-  if (difficulty) q = q.eq("difficulty", difficulty);
+  if (buckets) q = q.in("difficulty", buckets);
   if (solvedFilter) q = q.not("problem_number", "in", solvedFilter);
 
   const { data, error } = await q;

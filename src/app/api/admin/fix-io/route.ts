@@ -1,0 +1,142 @@
+import * as Sentry from "@sentry/nextjs";
+import { type NextRequest, NextResponse } from "next/server";
+import { isAdmin } from "~/lib/is-admin";
+import { createAdminClient } from "~/lib/supabase/admin";
+import { getUser } from "~/lib/supabase/server";
+
+export type IOIssue = {
+  problem_number: number;
+  title: string;
+  url: string;
+  platform: string;
+  content: string;
+  proposed_content: string;
+};
+
+/**
+ * Detects <pre> blocks where Input and Output are merged into one block.
+ * Fixes by splitting at the Output boundary and inserting a proper Output header.
+ *
+ * Example broken pattern:
+ *   <pre>4\n1 1\nOutput\nYES\nNO</pre>
+ * Fixed:
+ *   <pre>4\n1 1</pre>\n<p><strong>Output</strong></p>\n<pre>YES\nNO</pre>
+ */
+function detectAndPropose(content: string): string | null {
+  if (!content.includes("\nOutput\n") && !content.includes("\nOutput\r\n")) {
+    return null;
+  }
+
+  const proposed = content.replace(
+    /<pre>([\s\S]*?)\r?\nOutput\r?\n([\s\S]*?)<\/pre>/gi,
+    (_match, inputPart: string, outputPart: string) => {
+      const cleanedInput = inputPart.replace(/^Input\r?\n/i, "").trimEnd();
+      const cleanedOutput = outputPart.trimStart();
+      return `<pre>${cleanedInput}</pre>\n<p><strong>Output</strong></p>\n<pre>${cleanedOutput}</pre>`;
+    },
+  );
+
+  return proposed !== content ? proposed : null;
+}
+
+/** GET /api/admin/fix-io — scan all problems and return I/O issues with proposed fixes */
+export async function GET(_request: NextRequest) {
+  const user = await getUser();
+  if (!isAdmin(user?.email)) {
+    return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+  }
+
+  const supabase = createAdminClient();
+
+  const issues: IOIssue[] = [];
+  let totalScanned = 0;
+  let from = 0;
+  const PAGE_SIZE = 100;
+
+  while (true) {
+    const { data, error } = await supabase
+      .from("problems")
+      .select("problem_number, title, url, platform, content")
+      .not("content", "is", null)
+      .order("problem_number")
+      .range(from, from + PAGE_SIZE - 1);
+
+    if (error) {
+      Sentry.captureException(error, {
+        tags: { route: "admin/fix-io", method: "GET" },
+      });
+      return NextResponse.json(
+        { error: "Failed to fetch problems.", detail: error.message },
+        { status: 500 },
+      );
+    }
+
+    if (!data || data.length === 0) break;
+
+    for (const p of data) {
+      if (!p.content) continue;
+      totalScanned++;
+      const proposed = detectAndPropose(p.content);
+      if (proposed) {
+        issues.push({
+          problem_number: p.problem_number,
+          title: p.title,
+          url: p.url,
+          platform: p.platform ?? "codeforces",
+          content: p.content,
+          proposed_content: proposed,
+        });
+      }
+    }
+
+    if (data.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
+  }
+
+  return NextResponse.json({ issues, total_scanned: totalScanned });
+}
+
+/** POST /api/admin/fix-io — apply a list of approved content fixes */
+export async function POST(request: NextRequest) {
+  const user = await getUser();
+  if (!isAdmin(user?.email)) {
+    return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+  }
+
+  let body: { fixes: Array<{ problem_number: number; content: string }> };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
+  }
+
+  if (!Array.isArray(body.fixes) || body.fixes.length === 0) {
+    return NextResponse.json(
+      { error: "fixes must be a non-empty array." },
+      { status: 400 },
+    );
+  }
+
+  const supabase = createAdminClient();
+  const applied: number[] = [];
+  const errors: Array<{ problem_number: number; error: string }> = [];
+
+  for (const fix of body.fixes) {
+    const { error } = await supabase
+      .from("problems")
+      .update({ content: fix.content })
+      .eq("problem_number", fix.problem_number);
+
+    if (error) {
+      errors.push({ problem_number: fix.problem_number, error: error.message });
+    } else {
+      applied.push(fix.problem_number);
+    }
+  }
+
+  return NextResponse.json({
+    applied: applied.length,
+    applied_numbers: applied,
+    errors,
+  });
+}

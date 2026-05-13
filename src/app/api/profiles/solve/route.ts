@@ -1,6 +1,7 @@
 import * as Sentry from "@sentry/nextjs";
 import { type NextRequest, NextResponse } from "next/server";
 import { CSRF_HEADER, validateCsrfToken } from "~/lib/csrf";
+import { difficultyBuckets } from "~/lib/difficulty";
 import { getPostHogClient } from "~/lib/posthog-server";
 import { createClient } from "~/lib/supabase/server";
 import { calcXpGain, levelFromXp } from "~/lib/xp";
@@ -15,12 +16,21 @@ function calcRatingGain(
   hintsViewed: number,
   solvedCount: number,
 ): number {
-  const diffMult =
-    difficulty?.toLowerCase() === "easy"
-      ? 0.4
-      : difficulty?.toLowerCase() === "hard"
-        ? 1.6
-        : 0.8;
+  let diffMult: number;
+  const d = (difficulty ?? "").toLowerCase();
+  if (d === "easy") {
+    diffMult = 0.4;
+  } else if (d === "hard") {
+    diffMult = 1.6;
+  } else {
+    const numRating = Number(difficulty);
+    if (!Number.isNaN(numRating) && numRating > 0) {
+      // Scale: 800→0.4, 1600→0.8, 2400→1.2, 3000→1.5 — clamped 0.2–2.0
+      diffMult = Math.max(0.2, Math.min(2.0, numRating / 2000));
+    } else {
+      diffMult = 0.8; // "Medium" or unknown
+    }
+  }
   const K = kFactor(solvedCount);
   // Each hint costs 15% of the gain, floored at 20%
   const mult = Math.max(0.2, 1 - Math.max(0, hintsViewed) * 0.15);
@@ -145,8 +155,7 @@ export async function POST(request: NextRequest) {
   const newSolved = [...solved, problem_number];
 
   // Pick a new recommendation (stored so the profile page doesn't re-query on every load)
-  const target =
-    new_rating < 1250 ? "Easy" : new_rating < 1500 ? "Medium" : "Hard";
+  const buckets = difficultyBuckets(new_rating);
   const solvedFilter = newSolved.length > 0 ? `(${newSolved.join(",")})` : null;
   const focus = (profile.focus as string | null) ?? null;
 
@@ -155,7 +164,7 @@ export async function POST(request: NextRequest) {
     let q = supabase
       .from("problems")
       .select("problem_number")
-      .eq("difficulty", target)
+      .in("difficulty", buckets)
       .limit(30);
     if (solvedFilter) q = q.not("problem_number", "in", solvedFilter);
     if (focus === "interviews") q = q.eq("platform", "LeetCode");
@@ -167,7 +176,7 @@ export async function POST(request: NextRequest) {
       recommended_problem_number =
         pool[Math.floor(Math.random() * pool.length)]?.problem_number ?? null;
     } else {
-      // Fallback: any unsolved problem regardless of difficulty
+      // Fallback: any unsolved problem at any difficulty
       let fb = supabase.from("problems").select("problem_number").limit(30);
       if (solvedFilter) fb = fb.not("problem_number", "in", solvedFilter);
       if (focus === "interviews") fb = fb.eq("platform", "LeetCode");
@@ -192,9 +201,7 @@ export async function POST(request: NextRequest) {
       level: new_level,
       streak,
       last_solved_date,
-      ...(recommended_problem_number !== null && {
-        recommended_problem_number,
-      }),
+      recommended_problem_number, // always write — clears stale value even when null
     })
     .eq("id", user.id);
 
