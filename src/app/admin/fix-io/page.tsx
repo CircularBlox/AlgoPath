@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "~/components/ui/button";
+import { processHtmlLatex } from "~/lib/latex";
 import { cn } from "~/lib/utils";
 
 type IOIssue = {
@@ -19,6 +20,9 @@ type IssueState = {
   expanded: boolean;
   activeTab: "current" | "proposed" | "edit";
   editedContent: string;
+  applied: boolean;
+  refetching: boolean;
+  refetchError: string | null;
 };
 
 function HtmlPreview({
@@ -28,6 +32,7 @@ function HtmlPreview({
   html: string;
   className?: string;
 }) {
+  const processed = useMemo(() => processHtmlLatex(html), [html]);
   return (
     <div
       className={cn(
@@ -35,7 +40,7 @@ function HtmlPreview({
         className,
       )}
       // biome-ignore lint/security/noDangerouslySetInnerHtml: admin-only page, content from our own DB
-      dangerouslySetInnerHTML={{ __html: html }}
+      dangerouslySetInnerHTML={{ __html: processed }}
     />
   );
 }
@@ -44,12 +49,70 @@ function IssueRow({
   issue,
   state,
   onChange,
+  onDeny,
 }: {
   issue: IOIssue;
   state: IssueState;
   onChange: (next: Partial<IssueState>) => void;
+  onDeny: () => void;
 }) {
-  const { expanded, approved, activeTab, editedContent } = state;
+  const {
+    expanded,
+    approved,
+    activeTab,
+    editedContent,
+    applied,
+    refetching,
+    refetchError,
+  } = state;
+
+  async function handleRefetch() {
+    onChange({ refetching: true, refetchError: null });
+    try {
+      const res = await fetch("/api/admin/refetch-problem", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          url: issue.url,
+          current_content: issue.content,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        onChange({
+          refetchError: (data as { error?: string }).error ?? "Refetch failed.",
+          refetching: false,
+        });
+        return;
+      }
+      onChange({
+        editedContent: (data as { proposed_content: string }).proposed_content,
+        activeTab: "proposed",
+        refetching: false,
+      });
+    } catch (err) {
+      onChange({
+        refetchError: err instanceof Error ? err.message : "An error occurred.",
+        refetching: false,
+      });
+    }
+  }
+
+  if (applied) {
+    return (
+      <div className="flex items-center gap-4 rounded-xl border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 opacity-60">
+        <span className="w-10 font-mono text-xs text-muted-foreground">
+          #{issue.problem_number}
+        </span>
+        <span className="flex-1 truncate text-sm font-medium text-muted-foreground">
+          {issue.title}
+        </span>
+        <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
+          ✓ Applied
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -61,8 +124,8 @@ function IssueRow({
       )}
     >
       {/* Row header */}
-      <div className="flex items-center gap-4 px-4 py-3">
-        <span className="w-10 font-mono text-xs text-muted-foreground">
+      <div className="flex items-center gap-3 px-4 py-3">
+        <span className="w-10 shrink-0 font-mono text-xs text-muted-foreground">
           #{issue.problem_number}
         </span>
 
@@ -80,13 +143,13 @@ function IssueRow({
           </a>
         </div>
 
-        <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-xs text-muted-foreground capitalize">
+        <span className="shrink-0 rounded-full border border-border bg-muted px-2 py-0.5 text-xs text-muted-foreground capitalize">
           {issue.platform}
         </span>
 
         <span
           className={cn(
-            "rounded-full border px-2 py-0.5 text-xs font-medium",
+            "shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium",
             issue.issue_type === "no-newlines"
               ? "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400"
               : "border-sky-500/40 bg-sky-500/10 text-sky-700 dark:text-sky-400",
@@ -100,7 +163,7 @@ function IssueRow({
           type="button"
           onClick={() => onChange({ approved: !approved })}
           className={cn(
-            "flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+            "shrink-0 flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
             approved
               ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
               : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground",
@@ -129,11 +192,20 @@ function IssueRow({
           )}
         </button>
 
+        {/* Deny button */}
+        <button
+          type="button"
+          onClick={onDeny}
+          className="shrink-0 rounded-full border border-border px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:border-destructive/40 hover:text-destructive"
+        >
+          Deny
+        </button>
+
         {/* Expand toggle */}
         <button
           type="button"
           onClick={() => onChange({ expanded: !expanded })}
-          className="rounded p-1 text-muted-foreground hover:text-foreground transition-colors"
+          className="shrink-0 rounded p-1 text-muted-foreground hover:text-foreground transition-colors"
           aria-label={expanded ? "Collapse" : "Expand"}
         >
           <svg
@@ -160,12 +232,31 @@ function IssueRow({
       {expanded && (
         <div className="border-t border-border px-4 pb-4 pt-3">
           {issue.issue_type === "no-newlines" && (
-            <div className="mb-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
-              Newlines were stripped by the scraper. Auto-fix is not possible —
-              add them manually in the <strong>Edit HTML</strong> tab, then
-              approve.
+            <div className="mb-3 flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2">
+              <p className="flex-1 text-xs text-amber-700 dark:text-amber-400">
+                Newlines were stripped by the scraper. Use{" "}
+                <strong>Fetch from CF</strong> to pull correct content, or add
+                newlines manually in the <strong>Edit HTML</strong> tab.
+              </p>
+              {issue.platform === "codeforces" && (
+                <button
+                  type="button"
+                  onClick={handleRefetch}
+                  disabled={refetching}
+                  className="shrink-0 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-500/20 disabled:opacity-50 dark:text-amber-400"
+                >
+                  {refetching ? "Fetching…" : "Fetch from CF"}
+                </button>
+              )}
             </div>
           )}
+
+          {refetchError && (
+            <div className="mb-3 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+              {refetchError}
+            </div>
+          )}
+
           {/* Tabs */}
           <div className="mb-3 flex gap-1 rounded-lg border border-border bg-muted/40 p-1 w-fit">
             {(["current", "proposed", "edit"] as const).map((tab) => (
@@ -237,6 +328,12 @@ export default function FixIOPage() {
     }));
   }
 
+  function handleDeny(problemNumber: number) {
+    setIssues(
+      (prev) => prev?.filter((i) => i.problem_number !== problemNumber) ?? null,
+    );
+  }
+
   async function handleScan() {
     setScanning(true);
     setScanError(null);
@@ -265,6 +362,9 @@ export default function FixIOPage() {
           expanded: false,
           activeTab: "proposed",
           editedContent: issue.proposed_content,
+          applied: false,
+          refetching: false,
+          refetchError: null,
         };
       }
       setStates(initialStates);
@@ -310,14 +410,9 @@ export default function FixIOPage() {
       };
       setApplyResult({ applied: typed.applied, errors: typed.errors });
 
-      // Remove successfully applied issues from the list
-      if (typed.applied > 0) {
-        setIssues(
-          (prev) =>
-            prev?.filter(
-              (i) => !typed.applied_numbers.includes(i.problem_number),
-            ) ?? null,
-        );
+      // Mark applied issues as done (keep in list so admin can see what was applied)
+      for (const num of typed.applied_numbers) {
+        updateState(num, { applied: true, approved: false });
       }
     } catch (err) {
       setApplyError(err instanceof Error ? err.message : "An error occurred.");
@@ -326,8 +421,13 @@ export default function FixIOPage() {
     }
   }
 
-  const approvedCount =
-    issues?.filter((i) => states[i.problem_number]?.approved).length ?? 0;
+  const visibleIssues =
+    issues?.filter((i) => !states[i.problem_number]?.applied) ?? [];
+  const approvedCount = visibleIssues.filter(
+    (i) => states[i.problem_number]?.approved,
+  ).length;
+  const appliedCount =
+    issues?.filter((i) => states[i.problem_number]?.applied).length ?? 0;
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-16">
@@ -353,8 +453,8 @@ export default function FixIOPage() {
           <code className="rounded bg-muted px-1 py-0.5 text-xs">
             &lt;pre&gt;
           </code>{" "}
-          content, requires manual editing). Review each issue, edit HTML as
-          needed, then approve and apply.
+          content — use Fetch from CF or edit manually). Previews render LaTeX
+          as it appears to users.
         </p>
       </div>
 
@@ -407,6 +507,12 @@ export default function FixIOPage() {
                 >
                   {issues.length} issue{issues.length !== 1 ? "s" : ""} found
                 </span>
+                {appliedCount > 0 && (
+                  <span className="text-emerald-600 dark:text-emerald-400">
+                    {" · "}
+                    {appliedCount} applied
+                  </span>
+                )}
               </>
             )}
           </span>
@@ -462,7 +568,7 @@ export default function FixIOPage() {
                 onClick={() => {
                   setStates((prev) => {
                     const next = { ...prev };
-                    for (const issue of issues) {
+                    for (const issue of visibleIssues) {
                       next[issue.problem_number] = {
                         ...next[issue.problem_number],
                         approved: true,
@@ -481,7 +587,7 @@ export default function FixIOPage() {
                 onClick={() => {
                   setStates((prev) => {
                     const next = { ...prev };
-                    for (const issue of issues) {
+                    for (const issue of visibleIssues) {
                       next[issue.problem_number] = {
                         ...next[issue.problem_number],
                         approved: false,
@@ -540,6 +646,7 @@ export default function FixIOPage() {
                 issue={issue}
                 state={states[issue.problem_number]}
                 onChange={(next) => updateState(issue.problem_number, next)}
+                onDeny={() => handleDeny(issue.problem_number)}
               />
             ))}
           </div>
