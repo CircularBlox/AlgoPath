@@ -10,6 +10,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) conventi
 ### Fixed
 - **KaTeX subscripts/superscripts invisible in dark mode**: The CSS selector scoping was broken — math inside problem statements was inheriting `color: oklch(0.12 0 0)` (near-black), making subscripts invisible on dark backgrounds. Fixed with a proper specificity-based override so problem-content math inherits the foreground color.
 - **Admin fixes**: Improved error messaging and UX for edge cases in admin tooling.
+- **RLS enforcement on problem reports**: The problem report submission route was using the service-role client, bypassing row-level security. Switched to the session client so all DB access goes through RLS as intended.
 
 ---
 
