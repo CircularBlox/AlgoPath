@@ -35,7 +35,9 @@ export async function GET(_request: NextRequest, { params }: Params) {
 
   const { data, error } = await supabase
     .from("problems")
-    .select("id, problem_number, title, url, platform, difficulty, tags, content")
+    .select(
+      "id, problem_number, title, url, platform, difficulty, tags, content",
+    )
     .eq("problem_number", problemNumber)
     .single();
 
@@ -183,7 +185,9 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     .from("problems")
     .update(patch)
     .eq("problem_number", problemNumber)
-    .select("id, problem_number, title, url, platform, difficulty, tags, content")
+    .select(
+      "id, problem_number, title, url, platform, difficulty, tags, content",
+    )
     .single();
 
   if (error) {

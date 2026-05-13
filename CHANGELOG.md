@@ -5,16 +5,57 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) conventi
 
 ---
 
+## [Unreleased]
+
+### Fixed
+- **KaTeX subscripts/superscripts invisible in dark mode**: The CSS selector scoping was broken — math inside problem statements was inheriting `color: oklch(0.12 0 0)` (near-black), making subscripts invisible on dark backgrounds. Fixed with a proper specificity-based override so problem-content math inherits the foreground color.
+- **Admin fixes**: Improved error messaging and UX for edge cases in admin tooling.
+
+---
+
+## [1.0.6] - 2026-05-12
+
+### Added
+- **Post-solve "Try this next" card** (`problem-viewer.tsx`, `GET /api/problems/[number]/next`): After marking a problem done, an inline card appears showing a targeted next problem (same tag, one step harder). Two actions: "Practice this →" loads it immediately; "Pick something else" calls the random endpoint. Replaces the previous 1.5s auto-random-load entirely. Falls back to "Pick a problem" button if no candidate can be found. The next-problem fetch fires immediately on solve so the card is ready before the user looks for it.
+  - New `GET /api/problems/[number]/next`: query logic — same-tag overlap + difficulty +100–300; falls back to any problem at target difficulty; final fallback to any unsolved problem.
+- **Editorial link in solution panel** (`problem-viewer.tsx`): When `problems.editorial_url` is populated, a "Read editorial ↗" link appears in the solution panel footer after the code and explanation.
+  - New migration `20260512100000_add_editorial_url_to_problems.sql`: adds nullable `editorial_url text` column to the `problems` table.
+
+### Changed
+- **`"Pick a Problem for Me"` respects filter bar platform** (`problem-viewer.tsx`, `GET /api/problems/random`): `fetchRandom()` now passes `?platform=` when the filter bar has CF or LC selected. Random route accepts optional `platform` query param that bypasses the focus-based bias.
+
+---
+
+## [1.0.4] - 2026-05-11
+
+### Added
+- **Admin tooling**: Sample I/O fix tool to detect and repair scraper artefacts in problem content.
+
+### Changed
+- **Difficulty matching overhauled** (`src/lib/difficulty.ts`): New `difficultyBuckets(rating)` helper returns a ±200 CF numeric rating window (in steps of 100) plus the matching LeetCode bucket (`Easy` / `Medium` / `Hard`). Previously all numeric CF difficulties were treated as "medium".
+  - Applied to: `/api/problems/random`, `/api/profiles/solve` post-solve recommendation, and profile page recommendation display
+  - `calcRatingGain()` now scales XP by numeric CF difficulty (e.g. a 2000-rated problem gives 2× the XP of an 800-rated one)
+- **Stale recommendation fixed** (`/api/profiles/solve`): `recommended_problem_number` is now always written on solve (previously only written when a candidate was found, leaving a permanently stale cache when the pool came back empty)
+- **Landing page demo replaced** (`src/app/page.tsx`): Two Sum → Coin Change (DP, Medium / CF ~1400). Hints demo updated with DP-flavored progressive hints; code review section shows a `coinChange` Python solution; problem strip now shows CF 1400 / CF 1600 / LC Medium instead of easy array problems
+
+---
+
+## [1.0.3] - 2026-05-07
+
+### Changed
+- **Landing page — dual audience messaging**: Updated hero headline, badge pills, feature descriptions, and CTA copy to explicitly target both interview prep (LeetCode/FAANG) and competitive programming (Codeforces/contests). Recommended problems section now shows a Codeforces example alongside LeetCode. Each problem row displays a track label (Interview Prep / Competitive).
+- **ProblemViewer refactor**: Split the 2,445-line `problem-viewer.tsx` into four focused modules, reducing the main file to ~1,780 lines:
+  - `types.ts` — all shared TypeScript types (`Problem`, `Solution`, `Hints`, `ViewerState`, `ChatMessage`, etc.)
+  - `formatting.tsx` — `FormattedText` component and `formatInline` utility
+  - `side-panel.tsx` — the fixed tab buttons and slide-out Notes / Code Editor / AI Review panel (~360 lines, self-contained)
+  - `saveCodeAsNote` handler promoted from an inline IIFE function to a proper component-level handler
+
+---
+
 ## [1.0.2] - 2026-05-07
 
 ### Added
-- **Admin problem CRUD API**: New admin-only endpoints for managing problems
-  - `POST /api/admin/problems` — create a new problem (title, url, platform, difficulty, tags, content)
-  - `GET /api/admin/problems` — list all problems paginated (`?page=&limit=`)
-  - `GET /api/admin/problems/[number]` — fetch a single problem including full HTML content
-  - `PATCH /api/admin/problems/[number]` — partial update any combination of fields (title, url, platform, difficulty, tags, content HTML)
-  - `DELETE /api/admin/problems/[number]` — permanently remove a problem
-  - All endpoints double-check admin status and use the service-role client; 409 on duplicate URL, 404 on missing problem
+- **Admin tooling**: Problem management API for creating, reading, updating, and deleting problems.
 
 ---
 

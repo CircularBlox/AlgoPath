@@ -5,6 +5,7 @@ import { Navbar } from "~/components/navbar";
 import { PostHogIdentify } from "~/components/posthog-identify";
 import { SettingsProvider } from "~/components/settings-provider";
 import { ThemeProvider } from "./theme-provider";
+import "katex/dist/katex.min.css";
 import "./globals.css";
 
 const inter = Inter({
