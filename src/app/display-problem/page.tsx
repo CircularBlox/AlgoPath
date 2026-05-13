@@ -3,17 +3,7 @@ import "katex/dist/katex.min.css";
 import { generateCsrfToken } from "~/lib/csrf";
 import { createClient, getUser } from "~/lib/supabase/server";
 import { ProblemViewer } from "./problem-viewer";
-
-type Problem = {
-  id: string;
-  problem_number: number | null;
-  title: string;
-  url: string;
-  platform: string;
-  difficulty: string | null;
-  tags: string[];
-  content: string | null;
-};
+import type { Problem } from "./types";
 
 export default async function DisplayProblemPage({
   searchParams,
@@ -44,7 +34,7 @@ export default async function DisplayProblemPage({
     const { data } = await supabase
       .from("problems")
       .select(
-        "id, problem_number, title, url, platform, difficulty, tags, content",
+        "id, problem_number, title, url, platform, difficulty, tags, content, editorial_url",
       )
       .eq("problem_number", problemNumber)
       .single<Problem>();

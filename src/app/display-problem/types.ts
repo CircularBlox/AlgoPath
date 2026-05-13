@@ -7,6 +7,7 @@ export type Problem = {
   difficulty: string | null;
   tags: string[];
   content: string | null;
+  editorial_url: string | null;
 };
 
 export type SolutionCode = {

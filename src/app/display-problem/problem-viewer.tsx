@@ -183,6 +183,8 @@ export function ProblemViewer({
   const [filterDifficulty, setFilterDifficulty] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
   const tagFilterInputRef = useRef<HTMLInputElement>(null);
+  const [nextProblem, setNextProblem] = useState<Problem | null>(null);
+  const [nextProblemLoading, setNextProblemLoading] = useState(false);
 
   const [activeTab, setActiveTab] = useState<"notes" | "code" | "ai" | null>(
     null,
@@ -283,7 +285,13 @@ export function ProblemViewer({
     setState({ status: "loading" });
     resetPanels();
     try {
-      const res = await fetch("/api/problems/random");
+      const params = new URLSearchParams();
+      if (filterPlatform !== "all") params.set("platform", filterPlatform);
+      const url =
+        params.size > 0
+          ? `/api/problems/random?${params}`
+          : "/api/problems/random";
+      const res = await fetch(url);
       const data = await res.json();
       if (!res.ok) {
         setState({ status: "error", message: data.error ?? "Unknown error." });
@@ -393,6 +401,8 @@ export function ProblemViewer({
     setSkipWarningPending(null);
     setPanelWidth(420);
     setCodeFullscreen(false);
+    setNextProblem(null);
+    setNextProblemLoading(false);
   }
 
   async function handleReport(problemNumber: number) {
@@ -726,8 +736,15 @@ export function ProblemViewer({
           new_level: data.new_level,
           streak: data.streak,
         });
+        // Fire next-problem fetch immediately (replaces 1.5s auto-random)
+        setNextProblemLoading(true);
+        fetch(`/api/problems/${problem.problem_number}/next`)
+          .then(async (r) => {
+            if (r.ok) setNextProblem((await r.json()) as Problem);
+          })
+          .catch(() => {})
+          .finally(() => setNextProblemLoading(false));
       }
-      setTimeout(() => fetchRandom(), 1500);
     } catch {
       setMarkDoneState({
         status: "error",
@@ -1445,6 +1462,103 @@ export function ProblemViewer({
                 </div>
               )}
 
+              {/* Try this next card — replaces auto-load after solving */}
+              {markDoneState.status === "done" &&
+                (nextProblemLoading || nextProblem) && (
+                  <div className="flex flex-col gap-3 rounded-xl border border-border bg-card px-5 py-4">
+                    <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                      Try this next
+                    </p>
+                    {nextProblemLoading && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm text-muted-foreground">
+                          Finding a good next problem
+                        </span>
+                        <span className="flex gap-1">
+                          {[0, 1, 2].map((i) => (
+                            <span
+                              key={i}
+                              className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground"
+                              style={{ animationDelay: `${i * 150}ms` }}
+                            />
+                          ))}
+                        </span>
+                      </div>
+                    )}
+                    {nextProblem && !nextProblemLoading && (
+                      <>
+                        <div className="flex items-start justify-between gap-3">
+                          <span className="text-sm font-medium">
+                            {nextProblem.title}
+                          </span>
+                          <div className="flex shrink-0 items-center gap-1.5">
+                            {nextProblem.difficulty && (
+                              <Badge variant="outline" className="text-xs">
+                                {nextProblem.difficulty}
+                              </Badge>
+                            )}
+                            <Badge variant="secondary" className="text-xs">
+                              {nextProblem.platform === "codeforces"
+                                ? "CF"
+                                : "LC"}
+                            </Badge>
+                          </div>
+                        </div>
+                        {nextProblem.tags && nextProblem.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {nextProblem.tags.slice(0, 4).map((tag) => (
+                              <span
+                                key={tag}
+                                className="rounded-sm bg-muted px-1.5 py-0.5 text-xs text-muted-foreground"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2 pt-1">
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              selectProblem(nextProblem);
+                            }}
+                          >
+                            Practice this →
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setNextProblem(null);
+                              triggerWithSkipWarning(fetchRandom);
+                            }}
+                          >
+                            Pick something else
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+
+              {/* Fallback — if next-problem fetch fails entirely */}
+              {markDoneState.status === "done" &&
+                !nextProblemLoading &&
+                !nextProblem && (
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-muted-foreground">
+                      Ready for the next one?
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => triggerWithSkipWarning(fetchRandom)}
+                    >
+                      Pick a problem
+                    </Button>
+                  </div>
+                )}
+
               {/* Report form */}
               {userId &&
                 (reportState.status === "open" ||
@@ -1899,6 +2013,20 @@ export function ProblemViewer({
                       )}
 
                       {!solution.explanation && <div className="pb-1" />}
+
+                      {/* Editorial link */}
+                      {problem.editorial_url && (
+                        <div className="flex items-center gap-2 border-t border-border px-5 py-3">
+                          <Link
+                            href={problem.editorial_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                          >
+                            Read editorial ↗
+                          </Link>
+                        </div>
+                      )}
                     </div>
                   );
                 })()}

@@ -6,6 +6,116 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.6",
+    date: "2026-05-12",
+    changes: [
+      {
+        type: "feat",
+        text: 'Post-solve: "Try this next" card — after marking a problem done, a targeted recommendation appears (same topic, one step harder) with Practice / Pick something else options. Replaces the previous 1.5s auto-load.',
+      },
+      {
+        type: "feat",
+        text: "Editorial link — solution panel now shows a direct link to the official editorial when one is available.",
+      },
+      {
+        type: "improve",
+        text: '"Pick a Problem for Me" now respects the platform filter — if CF or LC is selected in the filter bar, random picks stay on that platform.',
+      },
+    ],
+  },
+  {
+    version: "1.0.5",
+    date: "2026-05-12",
+    changes: [
+      {
+        type: "feat",
+        text: 'Intent screen — practice page now opens with "What do you want to practice today?" offering three fast paths: Decide for me, Practice a topic, or Browse problems.',
+      },
+      {
+        type: "feat",
+        text: "Filter bar — platform chips (CF / LC / All), tag input, and difficulty input now sit above the search box for quick browsing.",
+      },
+      {
+        type: "feat",
+        text: "Clickable tags — tags on problem cards and the loaded problem are now buttons; clicking one instantly searches problems with that tag.",
+      },
+      {
+        type: "improve",
+        text: "Guest access — the practice page is now viewable without an account. Hint 1 is free; hints 2 and 3 prompt sign-in. Mark as Done shows a sign-in CTA instead of being hidden.",
+      },
+      {
+        type: "improve",
+        text: 'Onboarding trim — steps 4–6 (goal, language, daily target) are now marked Optional with a "Start practicing →" shortcut that skips straight to the app.',
+      },
+    ],
+  },
+  {
+    version: "1.0.4",
+    date: "2026-05-11",
+    changes: [
+      {
+        type: "improve",
+        text: "Difficulty matching overhauled — random and recommended problems now use a ±200 Codeforces rating window instead of coarse Easy/Medium/Hard buckets, giving much better difficulty targeting.",
+      },
+      {
+        type: "fix",
+        text: "Recommended problem was going stale when no new candidates were found — it now always refreshes after each solve.",
+      },
+      {
+        type: "improve",
+        text: "Landing page demo updated to a dynamic programming problem (Coin Change) to better represent the app's competitive programming focus.",
+      },
+    ],
+  },
+  {
+    version: "1.0.3",
+    date: "2026-05-07",
+    changes: [
+      {
+        type: "improve",
+        text: "Landing page updated with dual-audience messaging for both interview prep and competitive programming; recommended problem strip shows CF and LC examples side by side.",
+      },
+      {
+        type: "improve",
+        text: "Practice page codebase refactored into focused modules (types, formatting, side-panel) — no user-facing changes, faster future development.",
+      },
+    ],
+  },
+  {
+    version: "1.0.2",
+    date: "2026-05-07",
+    changes: [
+      {
+        type: "feat",
+        text: "Admin problem management — full CRUD API for creating, editing, and removing problems from the database.",
+      },
+    ],
+  },
+  {
+    version: "1.0.1",
+    date: "2026-05-07",
+    changes: [
+      {
+        type: "improve",
+        text: "Performance — navbar streams independently so page content appears faster; KaTeX stylesheet scoped to the practice page only; homepage is now fully static.",
+      },
+    ],
+  },
+  {
+    version: "1.0.0",
+    date: "2026-05-06",
+    changes: [
+      {
+        type: "feat",
+        text: 'Official v1.0 release — streak break detection, PostHog analytics, "Continue where you left off" on the practice page, skip warning, and improved notes system.',
+      },
+      {
+        type: "improve",
+        text: "Complete problem viewer redesign with integrated code editor, collapsible sidebar panels, and improved navigation.",
+      },
+    ],
+  },
+  {
     version: "0.8.0",
     date: "2026-05-03",
     changes: [

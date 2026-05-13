@@ -1,9 +1,12 @@
 import * as Sentry from "@sentry/nextjs";
-import { NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { difficultyBuckets } from "~/lib/difficulty";
 import { createClient } from "~/lib/supabase/server";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const platformOverride =
+    request.nextUrl.searchParams.get("platform")?.trim().toLowerCase() ?? null;
+
   const supabase = await createClient();
 
   let buckets: string[] | null = null;
@@ -35,36 +38,44 @@ export async function GET() {
 
   const solvedFilter = excluded.length > 0 ? `(${excluded.join(",")})` : null;
 
-  // Try to find a problem matching the user's difficulty, excluding already-solved
   let q = supabase.from("problems").select("*").limit(100);
   if (buckets) q = q.in("difficulty", buckets);
   if (solvedFilter) q = q.not("problem_number", "in", solvedFilter);
+  // Explicit platform override from filter bar takes priority over focus bias
+  if (platformOverride) q = q.eq("platform", platformOverride);
 
   const { data, error } = await q;
 
   if (!error && data && data.length > 0) {
-    // Apply soft platform bias: 3:1 weighting toward preferred platform
     type Row = (typeof data)[number];
-    const isLC = (p: Row) =>
-      String(p.platform ?? "").toLowerCase() === "leetcode";
     let pool: Row[];
-    if (focus === "comp_programming") {
-      const cf = data.filter((p) => !isLC(p));
-      const lc = data.filter(isLC);
-      pool = cf.length > 0 ? [...cf, ...cf, ...cf, ...lc] : data;
-    } else if (focus === "interviews") {
-      const lc = data.filter(isLC);
-      const others = data.filter((p) => !isLC(p));
-      pool = lc.length > 0 ? [...lc, ...lc, ...lc, ...others] : data;
-    } else {
+
+    if (platformOverride) {
+      // Already filtered — no bias needed
       pool = data;
+    } else {
+      const isLC = (p: Row) =>
+        String(p.platform ?? "").toLowerCase() === "leetcode";
+      if (focus === "comp_programming") {
+        const cf = data.filter((p) => !isLC(p));
+        const lc = data.filter(isLC);
+        pool = cf.length > 0 ? [...cf, ...cf, ...cf, ...lc] : data;
+      } else if (focus === "interviews") {
+        const lc = data.filter(isLC);
+        const others = data.filter((p) => !isLC(p));
+        pool = lc.length > 0 ? [...lc, ...lc, ...lc, ...others] : data;
+      } else {
+        pool = data;
+      }
     }
+
     return NextResponse.json(pool[Math.floor(Math.random() * pool.length)]);
   }
 
   // Fallback: any unsolved problem, ignore difficulty
   let fb = supabase.from("problems").select("*").limit(50);
   if (solvedFilter) fb = fb.not("problem_number", "in", solvedFilter);
+  if (platformOverride) fb = fb.eq("platform", platformOverride);
   const { data: fallback } = await fb;
 
   if (fallback && fallback.length > 0) {
@@ -73,7 +84,7 @@ export async function GET() {
     );
   }
 
-  // Final fallback: truly random from all problems
+  // Final fallback: truly random from all (or platform-filtered) problems
   const { count, error: cErr } = await supabase
     .from("problems")
     .select("*", { count: "exact", head: true });
