@@ -168,27 +168,51 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  let html: string;
-  try {
-    const resp = await fetch(url, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        Accept: "text/html,application/xhtml+xml",
-      },
-      signal: AbortSignal.timeout(10000),
-    });
-    if (!resp.ok) {
-      return NextResponse.json(
-        { error: `Codeforces returned HTTP ${resp.status}.` },
-        { status: 502 },
-      );
+  let html: string | null = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const resp = await fetch(url, {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          Accept:
+            "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          "Accept-Language": "en-US,en;q=0.9",
+          Referer: "https://codeforces.com/problemset",
+        },
+        signal: AbortSignal.timeout(12000),
+      });
+      if (!resp.ok) {
+        if (attempt === 2) {
+          return NextResponse.json(
+            { error: `Codeforces returned HTTP ${resp.status}.` },
+            { status: 502 },
+          );
+        }
+        await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
+        continue;
+      }
+      const text = await resp.text();
+      if (!text.includes("problem-statement") && text.length < 5000) {
+        if (attempt === 2) break;
+        await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
+        continue;
+      }
+      html = text;
+      break;
+    } catch (err) {
+      if (attempt === 2) {
+        Sentry.captureException(err, {
+          tags: { route: "admin/refetch-problem" },
+        });
+      }
+      await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
     }
-    html = await resp.text();
-  } catch (err) {
-    Sentry.captureException(err, { tags: { route: "admin/refetch-problem" } });
+  }
+
+  if (!html) {
     return NextResponse.json(
-      { error: "Failed to fetch the problem page." },
+      { error: "Failed to fetch the problem page after 3 attempts." },
       { status: 502 },
     );
   }
