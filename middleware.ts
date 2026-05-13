@@ -7,7 +7,7 @@ const PUBLIC_PATHS = ["/", "/auth", "/display-problem", "/changelog"];
 // Auth pages that logged-in users shouldn't revisit
 const AUTH_ONLY_PATHS = ["/auth/login", "/auth/signup"];
 // Pages only the admin account can visit
-const ADMIN_PAGE_PATHS = ["/add-hints", "/add-solution"];
+const ADMIN_PAGE_PATHS = ["/add-hints", "/add-solution", "/admin"];
 // API routes only the admin account can call
 const ADMIN_API_PATHS = ["/api/admin"];
 

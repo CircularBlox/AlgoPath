@@ -14,29 +14,57 @@ export type IOIssue = {
 };
 
 /**
- * Detects <pre> blocks where Input and Output are merged into one block.
+ * Detects <pre> blocks where Input and Output samples are merged into one block.
  * Fixes by splitting at the Output boundary and inserting a proper Output header.
  *
- * Example broken pattern:
- *   <pre>4\n1 1\nOutput\nYES\nNO</pre>
- * Fixed:
- *   <pre>4\n1 1</pre>\n<p><strong>Output</strong></p>\n<pre>YES\nNO</pre>
+ * Handles multiple patterns:
+ *   - "\nOutput\n", "\r\nOutput\r\n", "\nOutput\r\n" — any CRLF combination
+ *   - "Output" with surrounding horizontal whitespace (spaces/tabs)
+ *   - "Output" at the very start of a <pre> block
+ *   - "Sample Output", "Expected Output" variants
+ *   - Case-insensitive match
  */
 function detectAndPropose(content: string): string | null {
-  if (!content.includes("\nOutput\n") && !content.includes("\nOutput\r\n")) {
-    return null;
-  }
+  // Normalize CRLF → LF for uniform matching
+  const normalized = content.replace(/\r\n/g, "\n");
 
-  const proposed = content.replace(
-    /<pre>([\s\S]*?)\r?\nOutput\r?\n([\s\S]*?)<\/pre>/gi,
-    (_match, inputPart: string, outputPart: string) => {
-      const cleanedInput = inputPart.replace(/^Input\r?\n/i, "").trimEnd();
-      const cleanedOutput = outputPart.trimStart();
-      return `<pre>${cleanedInput}</pre>\n<p><strong>Output</strong></p>\n<pre>${cleanedOutput}</pre>`;
+  // Broad check: does any <pre> block contain "output" on its own line?
+  // Covers: mid-block (\nOutput\n), at start (Output\n with no preceding \n),
+  // with whitespace (\n   Output   \n), and "sample output" variants.
+  const hasMerged =
+    /<pre[^>]*>[\s\S]*?\n[ \t]*(?:sample\s+|expected\s+)?output[ \t]*:?[ \t]*(?:\n|<)/i.test(
+      normalized,
+    ) ||
+    /<pre[^>]*>[ \t]*(?:sample\s+|expected\s+)?output[ \t]*:?[ \t]*\n/i.test(
+      normalized,
+    );
+
+  if (!hasMerged) return null;
+
+  const proposed = normalized.replace(
+    /<pre([^>]*)>([\s\S]*?)<\/pre>/gi,
+    (_match, attrs: string, inner: string) => {
+      // Strip optional leading "Input" header line
+      const stripped = inner.replace(
+        /^[ \t]*(?:sample\s+)?input[ \t]*:?[ \t]*\n/i,
+        "",
+      );
+
+      // Split at the Output boundary (anywhere in the block)
+      const outputRe =
+        /\n[ \t]*(?:sample\s+|expected\s+)?output[ \t]*:?[ \t]*\n/i;
+      const match = outputRe.exec(stripped);
+      if (!match) return `<pre${attrs}>${inner}</pre>`;
+
+      const inputPart = stripped.slice(0, match.index).trimEnd();
+      const outputPart = stripped
+        .slice(match.index + match[0].length)
+        .trimStart();
+      return `<pre${attrs}>${inputPart}</pre>\n<p><strong>Output</strong></p>\n<pre>${outputPart}</pre>`;
     },
   );
 
-  return proposed !== content ? proposed : null;
+  return proposed !== normalized ? proposed : null;
 }
 
 /** GET /api/admin/fix-io — scan all problems and return I/O issues with proposed fixes */
