@@ -176,6 +176,13 @@ export function ProblemViewer({
   const [searchQuery, setSearchQuery] = useState("");
   const [suggestQuery, setSuggestQuery] = useState("");
   const [isAiLoading, setIsAiLoading] = useState(false);
+  const [filterPlatform, setFilterPlatform] = useState<
+    "all" | "codeforces" | "leetcode"
+  >("all");
+  const [filterTag, setFilterTag] = useState("");
+  const [filterDifficulty, setFilterDifficulty] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const tagFilterInputRef = useRef<HTMLInputElement>(null);
 
   const [activeTab, setActiveTab] = useState<"notes" | "code" | "ai" | null>(
     null,
@@ -290,25 +297,55 @@ export function ProblemViewer({
 
   async function handleSearch() {
     const q = searchQuery.trim();
-    if (!q) return;
+    const tag = filterTag.trim();
+    if (!q && !tag && filterPlatform === "all" && !filterDifficulty.trim())
+      return;
     setState({ status: "loading" });
     resetPanels();
     try {
-      const res = await fetch(
-        `/api/problems/search?q=${encodeURIComponent(q)}`,
-      );
+      const params = new URLSearchParams();
+      if (q) params.set("q", q);
+      if (tag) params.set("tag", tag);
+      if (filterPlatform !== "all") params.set("platform", filterPlatform);
+      if (filterDifficulty.trim())
+        params.set("difficulty", filterDifficulty.trim());
+      const res = await fetch(`/api/problems/search?${params}`);
       const data = await res.json();
       if (!res.ok) {
         setState({ status: "error", message: data.error ?? "Unknown error." });
         return;
       }
       const problems: Problem[] = data;
-      const exact = problems.find(
-        (p) => p.title.toLowerCase() === q.toLowerCase(),
-      );
+      const exact = q
+        ? problems.find((p) => p.title.toLowerCase() === q.toLowerCase())
+        : null;
       if (exact) {
         setState({ status: "loaded", problem: exact, contentOpen: false });
       } else {
+        setState({ status: "results", problems, source: "search" });
+      }
+    } catch {
+      setState({ status: "error", message: "Failed to reach the server." });
+    }
+  }
+
+  async function handleTagClick(tag: string) {
+    setFilterTag(tag);
+    setSearchQuery("");
+    setState({ status: "loading" });
+    resetPanels();
+    try {
+      const params = new URLSearchParams({ tag });
+      if (filterPlatform !== "all") params.set("platform", filterPlatform);
+      const res = await fetch(`/api/problems/search?${params}`);
+      const data = await res.json();
+      if (!res.ok) {
+        setState({
+          status: "error",
+          message: data.error ?? "No problems found.",
+        });
+      } else {
+        const problems: Problem[] = data;
         setState({ status: "results", problems, source: "search" });
       }
     } catch {
@@ -852,6 +889,48 @@ export function ProblemViewer({
         </div>
       )}
 
+      {/* Intent screen — three paths for starting a session */}
+      {state.status === "idle" && (
+        <div className="flex flex-col gap-3">
+          <h2 className="text-base font-semibold">
+            What do you want to practice today?
+          </h2>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <button
+              type="button"
+              onClick={() => triggerWithSkipWarning(fetchRandom)}
+              disabled={isLoading}
+              className="flex flex-col gap-1.5 rounded-xl border border-border bg-card px-4 py-4 text-left transition-colors hover:border-foreground/30 hover:bg-muted/50 disabled:opacity-50"
+            >
+              <span className="text-sm font-semibold">Decide for me</span>
+              <span className="text-xs text-muted-foreground">
+                Pick a problem matched to your level instantly
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => tagFilterInputRef.current?.focus()}
+              className="flex flex-col gap-1.5 rounded-xl border border-border bg-card px-4 py-4 text-left transition-colors hover:border-foreground/30 hover:bg-muted/50"
+            >
+              <span className="text-sm font-semibold">Practice a topic</span>
+              <span className="text-xs text-muted-foreground">
+                Filter by tag — arrays, DP, graphs, and more
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => searchInputRef.current?.focus()}
+              className="flex flex-col gap-1.5 rounded-xl border border-border bg-card px-4 py-4 text-left transition-colors hover:border-foreground/30 hover:bg-muted/50"
+            >
+              <span className="text-sm font-semibold">Browse problems</span>
+              <span className="text-xs text-muted-foreground">
+                Search by title or use platform and difficulty filters
+              </span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Continue where you left off — shown first when returning */}
       {state.status === "idle" &&
         userId &&
@@ -900,10 +979,67 @@ export function ProblemViewer({
           </div>
         )}
 
+      {/* Filter bar */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-1">
+          {(
+            [
+              { v: "all" as const, label: "All" },
+              { v: "codeforces" as const, label: "CF" },
+              { v: "leetcode" as const, label: "LC" },
+            ] as const
+          ).map(({ v, label }) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setFilterPlatform(v)}
+              className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
+                filterPlatform === v
+                  ? "bg-foreground text-background"
+                  : "bg-muted text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <input
+          ref={tagFilterInputRef}
+          type="text"
+          placeholder="Tag…"
+          value={filterTag}
+          onChange={(e) => setFilterTag(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+          className="h-7 w-28 rounded-md border border-input bg-background px-2.5 text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+        />
+        <input
+          type="text"
+          placeholder="Difficulty…"
+          value={filterDifficulty}
+          onChange={(e) => setFilterDifficulty(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+          className="h-7 w-24 rounded-md border border-input bg-background px-2.5 text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+        />
+        {(filterTag || filterDifficulty || filterPlatform !== "all") && (
+          <button
+            type="button"
+            onClick={() => {
+              setFilterTag("");
+              setFilterDifficulty("");
+              setFilterPlatform("all");
+            }}
+            className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Clear filters
+          </button>
+        )}
+      </div>
+
       {/* Controls */}
       <div className="flex flex-col gap-3">
         <div className="flex gap-2">
           <Input
+            ref={searchInputRef}
             placeholder="Search by problem title…"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -913,7 +1049,13 @@ export function ProblemViewer({
           />
           <Button
             onClick={handleSearch}
-            disabled={isLoading || !searchQuery.trim()}
+            disabled={
+              isLoading ||
+              (!searchQuery.trim() &&
+                !filterTag.trim() &&
+                filterPlatform === "all" &&
+                !filterDifficulty.trim())
+            }
             variant="outline"
           >
             Search
@@ -1076,12 +1218,17 @@ export function ProblemViewer({
                   {visibleTags.length > 0 && (
                     <div className="flex flex-wrap items-center gap-1">
                       {visibleTags.map((tag) => (
-                        <span
+                        <button
                           key={tag}
-                          className="rounded-sm bg-muted px-1.5 py-0.5 text-xs text-muted-foreground"
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void handleTagClick(tag);
+                          }}
+                          className="rounded-sm bg-muted px-1.5 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
                         >
                           {tag}
-                        </span>
+                        </button>
                       ))}
                       {extraTags > 0 && (
                         <span className="text-xs text-muted-foreground">
@@ -1160,9 +1307,19 @@ export function ProblemViewer({
                         Tags
                       </span>
                       {problem.tags.map((tag) => (
-                        <Badge key={tag} variant="secondary">
-                          {tag}
-                        </Badge>
+                        <button
+                          key={tag}
+                          type="button"
+                          onClick={() => void handleTagClick(tag)}
+                          className="focus:outline-none focus:ring-2 focus:ring-ring rounded-full"
+                        >
+                          <Badge
+                            variant="secondary"
+                            className="pointer-events-none cursor-pointer hover:bg-primary/20 hover:text-primary transition-colors"
+                          >
+                            {tag}
+                          </Badge>
+                        </button>
                       ))}
                     </div>
                   )}
@@ -1208,7 +1365,7 @@ export function ProblemViewer({
                       Open Link
                     </Link>
                   </Button>
-                  {userId && (
+                  {userId ? (
                     <Button
                       className="ml-auto"
                       onClick={handleMarkDone}
@@ -1221,11 +1378,14 @@ export function ProblemViewer({
                     >
                       {markDoneLabel}
                     </Button>
+                  ) : (
+                    <Button className="ml-auto" variant="outline" asChild>
+                      <Link href="/auth/login">Sign in to track progress</Link>
+                    </Button>
                   )}
                   <Button
                     variant="ghost"
                     onClick={() => triggerWithSkipWarning(fetchRandom)}
-                    className={userId ? "" : "ml-auto"}
                   >
                     Skip
                   </Button>
@@ -1549,23 +1709,36 @@ export function ProblemViewer({
                               );
                             })}
                           </div>
-                          {canRevealMore && (
-                            <Button
-                              variant="outline"
-                              className="self-start"
-                              onClick={() => {
-                                const next = Math.min(hintsRevealed + 1, 3);
-                                setHintsRevealed(next);
-                                posthog.capture("hint_revealed", {
-                                  problem_number: problem.problem_number,
-                                  hint_number: next,
-                                  difficulty: problem.difficulty,
-                                });
-                              }}
-                            >
-                              Reveal Hint {hintsRevealed + 1}
-                            </Button>
-                          )}
+                          {canRevealMore &&
+                            (userId ? (
+                              <Button
+                                variant="outline"
+                                className="self-start"
+                                onClick={() => {
+                                  const next = Math.min(hintsRevealed + 1, 3);
+                                  setHintsRevealed(next);
+                                  posthog.capture("hint_revealed", {
+                                    problem_number: problem.problem_number,
+                                    hint_number: next,
+                                    difficulty: problem.difficulty,
+                                  });
+                                }}
+                              >
+                                Reveal Hint {hintsRevealed + 1}
+                              </Button>
+                            ) : (
+                              <div className="flex items-center gap-3 self-start rounded-md border border-border bg-muted/40 px-4 py-2.5">
+                                <span className="text-sm text-muted-foreground">
+                                  Sign in to reveal more hints
+                                </span>
+                                <Link
+                                  href="/auth/login"
+                                  className="text-sm font-medium underline underline-offset-2 transition-colors hover:text-primary"
+                                >
+                                  Sign in
+                                </Link>
+                              </div>
+                            ))}
                           {!canRevealMore && maxRevealable > 0 && (
                             <div className="flex flex-col gap-2">
                               <p className="text-xs text-muted-foreground">

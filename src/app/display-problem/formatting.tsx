@@ -2,8 +2,7 @@
 
 import { useMemo } from "react";
 
-export const CODE_CLS =
-  "rounded bg-[oklch(0.8_0_0)] px-1 font-mono text-xs";
+export const CODE_CLS = "rounded bg-[oklch(0.8_0_0)] px-1 font-mono text-xs";
 
 export function formatInline(s: string): string {
   return s

@@ -5,6 +5,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) conventi
 
 ---
 
+## [1.0.4] - 2026-05-11
+
+### Added
+- **Admin sample I/O fix tool** (`/admin/fix-io`): New admin page and API endpoints to detect and repair problems where Input/Output are merged into a single `<pre>` block (a known scraper artefact). Scans all problems, shows current vs. proposed HTML side-by-side, and allows per-row approve / edit / apply without re-scraping. Detection pattern: `<pre>` blocks containing `\nOutput\n`.
+  - `GET /api/admin/fix-io` — scans every problem, returns list of issues with proposed splits
+  - `POST /api/admin/fix-io` — accepts `{ fixes: [{ problem_number, content }] }`, applies using the service-role client
+
+### Changed
+- **Difficulty matching overhauled** (`src/lib/difficulty.ts`): New `difficultyBuckets(rating)` helper returns a ±200 CF numeric rating window (in steps of 100) plus the matching LeetCode bucket (`Easy` / `Medium` / `Hard`). Previously all numeric CF difficulties were treated as "medium".
+  - Applied to: `/api/problems/random`, `/api/profiles/solve` post-solve recommendation, and profile page recommendation display
+  - `calcRatingGain()` now scales XP by numeric CF difficulty (e.g. a 2000-rated problem gives 2× the XP of an 800-rated one)
+- **Stale recommendation fixed** (`/api/profiles/solve`): `recommended_problem_number` is now always written on solve (previously only written when a candidate was found, leaving a permanently stale cache when the pool came back empty)
+- **Landing page demo replaced** (`src/app/page.tsx`): Two Sum → Coin Change (DP, Medium / CF ~1400). Hints demo updated with DP-flavored progressive hints; code review section shows a `coinChange` Python solution; problem strip now shows CF 1400 / CF 1600 / LC Medium instead of easy array problems
+
+---
+
 ## [1.0.3] - 2026-05-07
 
 ### Changed

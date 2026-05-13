@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
       title: title.trim(),
       url: url.trim(),
       platform: (platform as string | undefined)?.toLowerCase() ?? "codeforces",
-      difficulty: difficulty as string | null ?? null,
+      difficulty: (difficulty as string | null) ?? null,
       tags: (tags as string[] | undefined) ?? [],
       content: (content as string | undefined) ?? null,
     })
@@ -125,17 +125,19 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const page = Math.max(1, Number(searchParams.get("page") ?? "1"));
-  const limit = Math.min(100, Math.max(1, Number(searchParams.get("limit") ?? "50")));
+  const limit = Math.min(
+    100,
+    Math.max(1, Number(searchParams.get("limit") ?? "50")),
+  );
   const from = (page - 1) * limit;
 
   const supabase = createAdminClient();
 
   const { data, error, count } = await supabase
     .from("problems")
-    .select(
-      "id, problem_number, title, url, platform, difficulty, tags",
-      { count: "exact" },
-    )
+    .select("id, problem_number, title, url, platform, difficulty, tags", {
+      count: "exact",
+    })
     .order("problem_number")
     .range(from, from + limit - 1);
 
