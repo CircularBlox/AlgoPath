@@ -16,29 +16,33 @@ export default async function DisplayProblemPage({
     generateCsrfToken(),
   ]);
 
-  let showFocusPrompt = false;
-  if (user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("focus, onboarding_completed")
-      .eq("id", user.id)
-      .maybeSingle();
-    showFocusPrompt = profile?.onboarding_completed === true && !profile?.focus;
-  }
-
-  let initialProblem: Problem | null = null;
   const problemNumber = p ? Number.parseInt(p, 10) : null;
+  const validProblemNumber =
+    problemNumber && !Number.isNaN(problemNumber) ? problemNumber : null;
 
-  if (problemNumber && !Number.isNaN(problemNumber)) {
-    const { data } = await supabase
-      .from("problems")
-      .select(
-        "id, problem_number, title, url, platform, difficulty, tags, content, editorial_url",
-      )
-      .eq("problem_number", problemNumber)
-      .single<Problem>();
-    initialProblem = data ?? null;
-  }
+  const [profileResult, problemResult] = await Promise.all([
+    user
+      ? supabase
+          .from("profiles")
+          .select("focus, onboarding_completed")
+          .eq("id", user.id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    validProblemNumber
+      ? supabase
+          .from("problems")
+          .select(
+            "id, problem_number, title, url, platform, difficulty, tags, content, editorial_url",
+          )
+          .eq("problem_number", validProblemNumber)
+          .single<Problem>()
+      : Promise.resolve({ data: null }),
+  ]);
+
+  const showFocusPrompt =
+    profileResult.data?.onboarding_completed === true &&
+    !profileResult.data?.focus;
+  const initialProblem: Problem | null = problemResult.data ?? null;
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-16">

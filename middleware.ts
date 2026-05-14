@@ -100,6 +100,20 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // If a signed-in user with a confirmed username lands on setup-username
+  // (back button, stale link, etc.) skip them straight to the right page.
+  if (user && pathname === "/auth/setup-username") {
+    const meta = user.user_metadata ?? {};
+    if (meta.username_confirmed) {
+      const url = request.nextUrl.clone();
+      url.pathname = meta.onboarding_completed
+        ? "/display-problem"
+        : "/onboarding";
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
+  }
+
   // API routes handle their own auth and return JSON — never redirect them
   if (pathname.startsWith("/api/")) {
     return response;

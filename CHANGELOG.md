@@ -7,9 +7,27 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) conventi
 
 ## [Unreleased]
 
+### Added
+- **Onboarding → direct to first problem** (`onboarding-form.tsx`): After completing (or skipping through) onboarding, the app fetches a personalized problem via `/api/problems/random` and redirects directly to it (`/display-problem?p=<number>`) instead of the blank practice screen.
+- **AI topic recommendation** (`GET /api/profiles/topic-recommendation`, `profile/topic-recommendation.tsx`): New "What to Focus On Next" section on the profile page. An AI coach (GPT-4o-mini via OpenRouter) analyzes the user's rating, focus, and tag history and recommends the single most valuable topic to practice next, with a short explanation. Result is cached per session. "Drill this →" button links directly into drill mode for that topic.
+- **Topic breakdown on profile** (`profile/page.tsx`): "Topics Practiced" section showing the user's top 8 tags by solve count with a proportional bar. Computed server-side from solved problem details — no extra DB query.
+- **Admin: difficulty null backfill** (`POST /api/admin/backfill-difficulty`): Fetches all CF problem ratings from the Codeforces API in one call and updates any problems in the DB with NULL difficulty. Supports `?dry_run=true` to preview without writing.
+- **LCP improvements**: Added `loading.tsx` skeleton screens for `/display-problem` and `/profile` routes so the shell renders immediately while data loads. Also parallelized the profile check and problem fetch in the display-problem page (was sequential, now a single `Promise.all`).
+- **Topic drill mode** (`problem-viewer.tsx`, `GET /api/problems/drill`): "Drill this tag" button appears in tag search results. Queues 5–8 unsolved problems for the tag sorted by ascending difficulty. Progress bar shows current position. After the last problem is solved, a summary card offers "Drill again" or "Pick something else." Skip button advances to the next drill problem instead of picking random. URL updates to `?drill=<tag>` so the session is resumable. Works from the intent screen card "Practice a topic" → tag search → drill.
+- **Streak-at-risk daily email** (`GET /api/cron/streak-nudge`, Vercel Cron): One email per day at 8 AM UTC to users whose streak is > 2 and who haven't solved today. Auto-enabled for all users. Requires `RESEND_API_KEY` and `RESEND_FROM` env vars (Resend email service). Skips silently if API key is not set.
+- **Email notification setting** (`/profile`, `PATCH /api/profiles/settings`): Toggle in Profile → Notifications section to enable/disable the streak reminder email. Auto-enabled on account creation.
+- **Vercel Cron config** (`vercel.json`): Cron job wired to `/api/cron/streak-nudge` at `0 8 * * *` (8 AM UTC daily).
+
+### Changed
+- **Hints are now the primary CTA on the problem viewer** (`problem-viewer.tsx`): "Get Hints" button is always visible and uses the primary style, replacing the outline button that was hidden behind a "viewed problem" gate. "Open Problem" is now secondary. After 45 seconds on a problem without opening hints, a gentle inline banner appears: "Stuck? Get your first hint →" — dismisses automatically when hints are opened.
+- **Auth fast path — zero DB round-trips for returning users** (`auth/callback/route.ts`, `middleware.ts`, `setup-username/page.tsx`, `api/onboarding/route.ts`): Username confirmation and onboarding completion are now mirrored to Supabase auth `user_metadata` on write. The auth callback checks metadata first (from the JWT, no DB query) and falls back to the profiles table for users who predate this change. Returning users who hit `/auth/setup-username` via back-button or stale link are redirected immediately by middleware without loading the page.
+- **Username availability index** (`supabase/migrations/20260514050021_idx_profiles_username_lower.sql`): Added `lower(username)` functional index so case-insensitive availability checks are a fast index scan instead of a full table scan.
+- **Tag normalization and display names** (`src/lib/tags.ts`): Tags now display with proper casing throughout the app (e.g. "Dynamic Programming", "BFS", "DSU / Union Find"). Abbreviations and full names are treated as equivalent — "dp" and "dynamic programming" resolve to the same tag. Applied to: drill queue queries, AI topic-recommendation prompt and response, profile "Topics Practiced" section, and the topic-recommendation component.
+
 ### Fixed
 - **KaTeX subscripts/superscripts invisible in dark mode**: The CSS selector scoping was broken — math inside problem statements was inheriting `color: oklch(0.12 0 0)` (near-black), making subscripts invisible on dark backgrounds. Fixed with a proper specificity-based override so problem-content math inherits the foreground color.
 - **Admin fixes**: Improved error messaging and UX for edge cases in admin tooling.
+- **RLS enforcement on problem reports**: The problem report submission route was using the service-role client, bypassing row-level security. Switched to the session client so all DB access goes through RLS as intended.
 
 ---
 

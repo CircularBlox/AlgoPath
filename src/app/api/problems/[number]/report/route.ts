@@ -2,8 +2,7 @@ import * as Sentry from "@sentry/nextjs";
 import { type NextRequest, NextResponse } from "next/server";
 import { CSRF_HEADER, validateCsrfToken } from "~/lib/csrf";
 import { isAdmin } from "~/lib/is-admin";
-import { createAdminClient } from "~/lib/supabase/admin";
-import { getUser } from "~/lib/supabase/server";
+import { createClient, getUser } from "~/lib/supabase/server";
 
 export async function POST(
   req: NextRequest,
@@ -79,7 +78,7 @@ export async function POST(
     );
   }
 
-  const supabase = createAdminClient();
+  const supabase = await createClient();
   const admin = isAdmin(user.email);
 
   if (!admin) {

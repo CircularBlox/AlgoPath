@@ -19,6 +19,16 @@ export default function SetupUsernamePage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Fast redirect: if user_metadata already has username_confirmed (from a
+  // previous sign-up), skip this page entirely without a DB query.
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user?.user_metadata?.username_confirmed) {
+        router.replace("/display-problem");
+      }
+    });
+  }, [router]);
+
   function sanitize(value: string) {
     return value.replace(/[^a-zA-Z0-9_]/g, "");
   }
@@ -83,12 +93,20 @@ export default function SetupUsernamePage() {
       skill_level: "intermediate",
     });
 
-    setLoading(false);
     if (updateError) {
+      setLoading(false);
       setError(updateError.message);
-    } else {
-      router.push("/display-problem");
+      return;
     }
+
+    // Write to auth user_metadata so future logins skip this page without
+    // a DB query (fast path in auth/callback and this page's mount check).
+    await supabase.auth.updateUser({
+      data: { username_confirmed: true },
+    });
+
+    setLoading(false);
+    router.push("/onboarding");
   }
 
   return (
