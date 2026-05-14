@@ -158,7 +158,17 @@ export function OnboardingForm({ csrfToken }: { csrfToken: string }) {
       preferred_languages: langs,
       daily_goal: dailyGoal,
     });
-    router.push("/display-problem");
+    let dest = "/display-problem";
+    try {
+      const res = await fetch("/api/problems/random");
+      if (res.ok) {
+        const problem = await res.json();
+        if (problem.problem_number) {
+          dest = `/display-problem?p=${problem.problem_number}`;
+        }
+      }
+    } catch {}
+    router.push(dest);
   }
 
   function advance() {

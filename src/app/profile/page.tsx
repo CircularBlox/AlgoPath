@@ -9,6 +9,7 @@ import { effectiveStreak, streakStatus } from "~/lib/streak";
 import { createClient, getUser } from "~/lib/supabase/server";
 import { levelFromXp, levelTitle, xpProgress } from "~/lib/xp";
 import { SkillLevelEditor } from "./skill-level-editor";
+import { TopicRecommendation } from "./topic-recommendation";
 
 type Profile = {
   username: string;
@@ -212,6 +213,18 @@ export default async function ProfilePage() {
     .reverse()
     .map((n) => solvedProblemDetails.find((p) => p.problem_number === n))
     .filter((p): p is Problem => p != null);
+
+  // Aggregate tag frequencies from all solved problems
+  const tagCounts: Record<string, number> = {};
+  for (const p of solvedProblemDetails) {
+    for (const tag of p.tags ?? []) {
+      tagCounts[tag] = (tagCounts[tag] ?? 0) + 1;
+    }
+  }
+  const topTags = Object.entries(tagCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8);
+  const maxTagCount = topTags[0]?.[1] ?? 1;
 
   const statItems = [
     {
@@ -446,6 +459,39 @@ export default async function ProfilePage() {
           </div>
         )}
       </section>
+
+      {/* ── What to focus on next ─────────────────────────────── */}
+      <section>
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+          What to Focus On Next
+        </h2>
+        <TopicRecommendation />
+      </section>
+
+      {/* ── Topic Breakdown ───────────────────────────────────── */}
+      {topTags.length > 0 && (
+        <section>
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            Topics Practiced
+          </h2>
+          <div className="overflow-hidden rounded-xl border border-border divide-y divide-border">
+            {topTags.map(([tag, count]) => (
+              <div key={tag} className="flex items-center gap-3 px-4 py-2.5">
+                <span className="text-sm w-40 shrink-0 truncate">{tag}</span>
+                <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-foreground/60 transition-all"
+                    style={{ width: `${(count / maxTagCount) * 100}%` }}
+                  />
+                </div>
+                <span className="text-xs text-muted-foreground tabular-nums w-14 text-right shrink-0">
+                  {count} solved
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* ── Settings ───────────────────────────────────────────── */}
       <section>
