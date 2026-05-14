@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { EmailNudgeToggle } from "~/components/email-nudge-toggle";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { EmailNudgeToggle } from "~/components/email-nudge-toggle";
 import { difficultyBuckets, difficultyLabel } from "~/lib/difficulty";
 import { effectiveStreak, streakStatus } from "~/lib/streak";
 import { createClient, getUser } from "~/lib/supabase/server";

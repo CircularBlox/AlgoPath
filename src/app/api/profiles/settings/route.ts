@@ -31,7 +31,10 @@ export async function PATCH(request: NextRequest) {
   }
 
   if (Object.keys(updates).length === 0) {
-    return NextResponse.json({ error: "No valid fields to update." }, { status: 400 });
+    return NextResponse.json(
+      { error: "No valid fields to update." },
+      { status: 400 },
+    );
   }
 
   const supabase = await createClient();
@@ -41,7 +44,10 @@ export async function PATCH(request: NextRequest) {
     .eq("id", user.id);
 
   if (error) {
-    return NextResponse.json({ error: "Failed to save settings." }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to save settings." },
+      { status: 500 },
+    );
   }
 
   return NextResponse.json({ ok: true });

@@ -53,11 +53,14 @@ export async function GET(request: NextRequest) {
   }
 
   const unsolved = data.filter(
-    (p) => p.problem_number == null || !solved.includes(p.problem_number as number),
+    (p) =>
+      p.problem_number == null || !solved.includes(p.problem_number as number),
   );
 
   const sorted = unsolved.sort(
-    (a, b) => difficultyOrder(a.difficulty as string | null) - difficultyOrder(b.difficulty as string | null),
+    (a, b) =>
+      difficultyOrder(a.difficulty as string | null) -
+      difficultyOrder(b.difficulty as string | null),
   );
 
   const queue = sorted.slice(0, 8);

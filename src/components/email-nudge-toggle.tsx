@@ -28,7 +28,8 @@ export function EmailNudgeToggle({ initial }: { initial: boolean }) {
       <div className="flex flex-col gap-0.5">
         <span className="text-sm font-medium">Streak reminder emails</span>
         <span className="text-xs text-muted-foreground">
-          One email per day when your streak is at risk and you haven't solved yet.
+          One email per day when your streak is at risk and you haven't solved
+          yet.
         </span>
       </div>
       <button
