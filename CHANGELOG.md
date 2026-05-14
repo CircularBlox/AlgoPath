@@ -18,6 +18,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) conventi
 - **Email notification setting** (`/profile`, `PATCH /api/profiles/settings`): Toggle in Profile → Notifications section to enable/disable the streak reminder email. Auto-enabled on account creation.
 - **Vercel Cron config** (`vercel.json`): Cron job wired to `/api/cron/streak-nudge` at `0 8 * * *` (8 AM UTC daily).
 
+### Changed
+- **Tag normalization and display names** (`src/lib/tags.ts`): Tags now display with proper casing throughout the app (e.g. "Dynamic Programming", "BFS", "DSU / Union Find"). Abbreviations and full names are treated as equivalent — "dp" and "dynamic programming" resolve to the same tag. Applied to: drill queue queries, AI topic-recommendation prompt and response, profile "Topics Practiced" section, and the topic-recommendation component.
+
 ### Fixed
 - **KaTeX subscripts/superscripts invisible in dark mode**: The CSS selector scoping was broken — math inside problem statements was inheriting `color: oklch(0.12 0 0)` (near-black), making subscripts invisible on dark backgrounds. Fixed with a proper specificity-based override so problem-content math inherits the foreground color.
 - **Admin fixes**: Improved error messaging and UX for edge cases in admin tooling.
