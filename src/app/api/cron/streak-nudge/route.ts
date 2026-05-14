@@ -1,7 +1,7 @@
-import { Resend } from "resend";
 import { type NextRequest, NextResponse } from "next/server";
-import { createAdminClient } from "~/lib/supabase/admin";
+import { Resend } from "resend";
 import { env } from "~/env";
+import { createAdminClient } from "~/lib/supabase/admin";
 
 function yesterdayUtc(): string {
   const d = new Date();
@@ -20,7 +20,10 @@ export async function GET(request: NextRequest) {
   }
 
   if (!env.RESEND_API_KEY) {
-    return NextResponse.json({ skipped: true, reason: "RESEND_API_KEY not configured." });
+    return NextResponse.json({
+      skipped: true,
+      reason: "RESEND_API_KEY not configured.",
+    });
   }
 
   const yesterday = yesterdayUtc();
@@ -42,7 +45,9 @@ export async function GET(request: NextRequest) {
   let sent = 0;
 
   for (const profile of profiles) {
-    const { data: authUser } = await adminClient.auth.admin.getUserById(profile.id as string);
+    const { data: authUser } = await adminClient.auth.admin.getUserById(
+      profile.id as string,
+    );
     const email = authUser?.user?.email;
     if (!email) continue;
 

@@ -141,13 +141,13 @@ export function ProblemViewer({
   }, [userId]);
 
   // Auto-start drill from URL ?drill= param
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally mount-only — initialProblem is a stable server prop, startDrill must not be a dep here
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const drillTag = params.get("drill");
     if (drillTag && !initialProblem) {
       void startDrill(drillTag);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const [hintRatings, setHintRatings] = useState<
@@ -810,7 +810,10 @@ export function ProblemViewer({
           if (nextIndex < drillQueue.queue.length) {
             setNextProblem(drillQueue.queue[nextIndex]);
           } else {
-            setDrillComplete({ tag: drillQueue.tag, total: drillQueue.queue.length });
+            setDrillComplete({
+              tag: drillQueue.tag,
+              total: drillQueue.queue.length,
+            });
             setDrillQueue(null);
           }
           setNextProblemLoading(false);
@@ -1279,25 +1282,37 @@ export function ProblemViewer({
               {state.problems.length} result
               {state.problems.length !== 1 ? "s" : ""} — click to open
             </p>
-            {state.source === "search" && filterTag && state.problems.length >= 2 && (
-              <button
-                type="button"
-                disabled={drillLoading}
-                onClick={() => void startDrill(filterTag)}
-                className="flex items-center gap-1.5 rounded-full bg-foreground px-3 py-1 text-xs font-medium text-background transition-opacity hover:opacity-80 disabled:opacity-50 shrink-0"
-              >
-                {drillLoading ? (
-                  "Loading…"
-                ) : (
-                  <>
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <polygon points="5 3 19 12 5 21 5 3" />
-                    </svg>
-                    Drill this tag
-                  </>
-                )}
-              </button>
-            )}
+            {state.source === "search" &&
+              filterTag &&
+              state.problems.length >= 2 && (
+                <button
+                  type="button"
+                  disabled={drillLoading}
+                  onClick={() => void startDrill(filterTag)}
+                  className="flex items-center gap-1.5 rounded-full bg-foreground px-3 py-1 text-xs font-medium text-background transition-opacity hover:opacity-80 disabled:opacity-50 shrink-0"
+                >
+                  {drillLoading ? (
+                    "Loading…"
+                  ) : (
+                    <>
+                      <svg
+                        width="10"
+                        height="10"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
+                      >
+                        <polygon points="5 3 19 12 5 21 5 3" />
+                      </svg>
+                      Drill this tag
+                    </>
+                  )}
+                </button>
+              )}
           </div>
           <div className="overflow-hidden rounded-lg border border-border divide-y divide-border">
             {state.problems.map((problem) => {
@@ -1366,7 +1381,10 @@ export function ProblemViewer({
       {drillQueue && state.status === "loaded" && (
         <div className="flex items-center gap-3 rounded-lg border border-primary/20 bg-primary/5 px-4 py-2.5">
           <span className="text-xs text-muted-foreground shrink-0">
-            Drill — <span className="font-medium text-foreground">{drillQueue.tag}</span>
+            Drill —{" "}
+            <span className="font-medium text-foreground">
+              {drillQueue.tag}
+            </span>
           </span>
           <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
             <div
@@ -1661,7 +1679,9 @@ export function ProblemViewer({
                               selectProblem(nextProblem);
                             }}
                           >
-                            {drillQueue ? "Continue drill →" : "Practice this →"}
+                            {drillQueue
+                              ? "Continue drill →"
+                              : "Practice this →"}
                           </Button>
                           <Button
                             size="sm"
