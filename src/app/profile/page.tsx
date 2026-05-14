@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { EmailNudgeToggle } from "~/components/email-nudge-toggle";
 import { difficultyBuckets, difficultyLabel } from "~/lib/difficulty";
 import { effectiveStreak, streakStatus } from "~/lib/streak";
 import { createClient, getUser } from "~/lib/supabase/server";
@@ -21,6 +22,7 @@ type Profile = {
   created_at: string;
   recommended_problem_number: number | null;
   focus: string | null;
+  email_streak_nudge: boolean;
 };
 
 type Problem = {
@@ -157,7 +159,7 @@ export default async function ProfilePage() {
   const { data: profile } = await supabase
     .from("profiles")
     .select(
-      "username, rating, xp, level, skill_level, solved_problems, streak, last_solved_date, created_at, recommended_problem_number, focus",
+      "username, rating, xp, level, skill_level, solved_problems, streak, last_solved_date, created_at, recommended_problem_number, focus, email_streak_nudge",
     )
     .eq("id", user.id)
     .single<Profile>();
@@ -186,6 +188,7 @@ export default async function ProfilePage() {
 
   const cachedRecNumber = profile?.recommended_problem_number ?? null;
   const focus = profile?.focus ?? null;
+  const emailStreakNudge = profile?.email_streak_nudge ?? true;
 
   const [recommended, solvedProblemDetails] = await Promise.all([
     cachedRecNumber
@@ -442,6 +445,16 @@ export default async function ProfilePage() {
             </p>
           </div>
         )}
+      </section>
+
+      {/* ── Settings ───────────────────────────────────────────── */}
+      <section>
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+          Notifications
+        </h2>
+        <div className="rounded-xl border border-border px-5 py-4">
+          <EmailNudgeToggle initial={emailStreakNudge} />
+        </div>
       </section>
 
       {/* ── Solved Problems ────────────────────────────────────── */}

@@ -7,6 +7,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) conventi
 
 ## [Unreleased]
 
+### Added
+- **Topic drill mode** (`problem-viewer.tsx`, `GET /api/problems/drill`): "Drill this tag" button appears in tag search results. Queues 5–8 unsolved problems for the tag sorted by ascending difficulty. Progress bar shows current position. After the last problem is solved, a summary card offers "Drill again" or "Pick something else." Skip button advances to the next drill problem instead of picking random. URL updates to `?drill=<tag>` so the session is resumable. Works from the intent screen card "Practice a topic" → tag search → drill.
+- **Streak-at-risk daily email** (`GET /api/cron/streak-nudge`, Vercel Cron): One email per day at 8 AM UTC to users whose streak is > 2 and who haven't solved today. Auto-enabled for all users. Requires `RESEND_API_KEY` and `RESEND_FROM` env vars (Resend email service). Skips silently if API key is not set.
+- **Email notification setting** (`/profile`, `PATCH /api/profiles/settings`): Toggle in Profile → Notifications section to enable/disable the streak reminder email. Auto-enabled on account creation.
+- **Vercel Cron config** (`vercel.json`): Cron job wired to `/api/cron/streak-nudge` at `0 8 * * *` (8 AM UTC daily).
+
 ### Fixed
 - **KaTeX subscripts/superscripts invisible in dark mode**: The CSS selector scoping was broken — math inside problem statements was inheriting `color: oklch(0.12 0 0)` (near-black), making subscripts invisible on dark backgrounds. Fixed with a proper specificity-based override so problem-content math inherits the foreground color.
 - **Admin fixes**: Improved error messaging and UX for edge cases in admin tooling.

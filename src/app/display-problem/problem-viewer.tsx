@@ -140,6 +140,16 @@ export function ProblemViewer({
       .catch(() => {});
   }, [userId]);
 
+  // Auto-start drill from URL ?drill= param
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const drillTag = params.get("drill");
+    if (drillTag && !initialProblem) {
+      void startDrill(drillTag);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const [hintRatings, setHintRatings] = useState<
     Record<1 | 2 | 3, "up" | "down" | null>
   >({ 1: null, 2: null, 3: null });
@@ -185,6 +195,16 @@ export function ProblemViewer({
   const tagFilterInputRef = useRef<HTMLInputElement>(null);
   const [nextProblem, setNextProblem] = useState<Problem | null>(null);
   const [nextProblemLoading, setNextProblemLoading] = useState(false);
+  const [drillQueue, setDrillQueue] = useState<{
+    tag: string;
+    queue: Problem[];
+    index: number;
+  } | null>(null);
+  const [drillLoading, setDrillLoading] = useState(false);
+  const [drillComplete, setDrillComplete] = useState<{
+    tag: string;
+    total: number;
+  } | null>(null);
 
   const [activeTab, setActiveTab] = useState<"notes" | "code" | "ai" | null>(
     null,
@@ -284,6 +304,8 @@ export function ProblemViewer({
   async function fetchRandom() {
     setState({ status: "loading" });
     resetPanels();
+    setDrillQueue(null);
+    setDrillComplete(null);
     try {
       const params = new URLSearchParams();
       if (filterPlatform !== "all") params.set("platform", filterPlatform);
@@ -403,6 +425,53 @@ export function ProblemViewer({
     setCodeFullscreen(false);
     setNextProblem(null);
     setNextProblemLoading(false);
+  }
+
+  async function startDrill(tag: string) {
+    setDrillLoading(true);
+    setDrillComplete(null);
+    try {
+      const params = new URLSearchParams({ tag });
+      if (filterPlatform !== "all") params.set("platform", filterPlatform);
+      const res = await fetch(`/api/problems/drill?${params}`);
+      const data = await res.json();
+      if (!res.ok || !data.queue?.length) {
+        setState({
+          status: "error",
+          message: data.error ?? "Could not build a drill queue for this tag.",
+        });
+        return;
+      }
+      const queue: Problem[] = data.queue;
+      setDrillQueue({ tag, queue, index: 0 });
+      selectProblem(queue[0]);
+      const url = new URL(window.location.href);
+      url.searchParams.set("drill", tag);
+      window.history.pushState({}, "", url.toString());
+    } finally {
+      setDrillLoading(false);
+    }
+  }
+
+  function advanceDrill() {
+    if (!drillQueue) return;
+    const nextIndex = drillQueue.index + 1;
+    if (nextIndex < drillQueue.queue.length) {
+      setDrillQueue({ ...drillQueue, index: nextIndex });
+      selectProblem(drillQueue.queue[nextIndex]);
+    } else {
+      exitDrill();
+      setState({ status: "idle" });
+      resetPanels();
+    }
+  }
+
+  function exitDrill() {
+    setDrillQueue(null);
+    setDrillComplete(null);
+    const url = new URL(window.location.href);
+    url.searchParams.delete("drill");
+    window.history.pushState({}, "", url.toString());
   }
 
   async function handleReport(problemNumber: number) {
@@ -736,14 +805,25 @@ export function ProblemViewer({
           new_level: data.new_level,
           streak: data.streak,
         });
-        // Fire next-problem fetch immediately (replaces 1.5s auto-random)
-        setNextProblemLoading(true);
-        fetch(`/api/problems/${problem.problem_number}/next`)
-          .then(async (r) => {
-            if (r.ok) setNextProblem((await r.json()) as Problem);
-          })
-          .catch(() => {})
-          .finally(() => setNextProblemLoading(false));
+        if (drillQueue) {
+          const nextIndex = drillQueue.index + 1;
+          if (nextIndex < drillQueue.queue.length) {
+            setNextProblem(drillQueue.queue[nextIndex]);
+          } else {
+            setDrillComplete({ tag: drillQueue.tag, total: drillQueue.queue.length });
+            setDrillQueue(null);
+          }
+          setNextProblemLoading(false);
+        } else {
+          // Fire next-problem fetch immediately (replaces 1.5s auto-random)
+          setNextProblemLoading(true);
+          fetch(`/api/problems/${problem.problem_number}/next`)
+            .then(async (r) => {
+              if (r.ok) setNextProblem((await r.json()) as Problem);
+            })
+            .catch(() => {})
+            .finally(() => setNextProblemLoading(false));
+        }
       }
     } catch {
       setMarkDoneState({
@@ -1193,11 +1273,32 @@ export function ProblemViewer({
               </p>
             </div>
           )}
-          <p className="text-xs text-muted-foreground">
-            {state.source === "ai" ? "AI suggested " : ""}
-            {state.problems.length} result
-            {state.problems.length !== 1 ? "s" : ""} — click to open
-          </p>
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-xs text-muted-foreground">
+              {state.source === "ai" ? "AI suggested " : ""}
+              {state.problems.length} result
+              {state.problems.length !== 1 ? "s" : ""} — click to open
+            </p>
+            {state.source === "search" && filterTag && state.problems.length >= 2 && (
+              <button
+                type="button"
+                disabled={drillLoading}
+                onClick={() => void startDrill(filterTag)}
+                className="flex items-center gap-1.5 rounded-full bg-foreground px-3 py-1 text-xs font-medium text-background transition-opacity hover:opacity-80 disabled:opacity-50 shrink-0"
+              >
+                {drillLoading ? (
+                  "Loading…"
+                ) : (
+                  <>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <polygon points="5 3 19 12 5 21 5 3" />
+                    </svg>
+                    Drill this tag
+                  </>
+                )}
+              </button>
+            )}
+          </div>
           <div className="overflow-hidden rounded-lg border border-border divide-y divide-border">
             {state.problems.map((problem) => {
               const visibleTags = problem.tags?.slice(0, 3) ?? [];
@@ -1258,6 +1359,33 @@ export function ProblemViewer({
               );
             })}
           </div>
+        </div>
+      )}
+
+      {/* Drill progress banner */}
+      {drillQueue && state.status === "loaded" && (
+        <div className="flex items-center gap-3 rounded-lg border border-primary/20 bg-primary/5 px-4 py-2.5">
+          <span className="text-xs text-muted-foreground shrink-0">
+            Drill — <span className="font-medium text-foreground">{drillQueue.tag}</span>
+          </span>
+          <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
+            <div
+              className="h-full bg-foreground rounded-full transition-all duration-300"
+              style={{
+                width: `${((drillQueue.index + 1) / drillQueue.queue.length) * 100}%`,
+              }}
+            />
+          </div>
+          <span className="text-xs font-medium shrink-0 tabular-nums">
+            {drillQueue.index + 1} / {drillQueue.queue.length}
+          </span>
+          <button
+            type="button"
+            onClick={exitDrill}
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors shrink-0"
+          >
+            Exit
+          </button>
         </div>
       )}
 
@@ -1402,9 +1530,13 @@ export function ProblemViewer({
                   )}
                   <Button
                     variant="ghost"
-                    onClick={() => triggerWithSkipWarning(fetchRandom)}
+                    onClick={() =>
+                      triggerWithSkipWarning(
+                        drillQueue ? advanceDrill : fetchRandom,
+                      )
+                    }
                   >
-                    Skip
+                    {drillQueue ? "Skip →" : "Skip"}
                   </Button>
                   {userId && (
                     <div className="ml-auto flex items-center gap-1">
@@ -1520,20 +1652,29 @@ export function ProblemViewer({
                           <Button
                             size="sm"
                             onClick={() => {
+                              if (drillQueue) {
+                                setDrillQueue({
+                                  ...drillQueue,
+                                  index: drillQueue.index + 1,
+                                });
+                              }
                               selectProblem(nextProblem);
                             }}
                           >
-                            Practice this →
+                            {drillQueue ? "Continue drill →" : "Practice this →"}
                           </Button>
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={() => {
                               setNextProblem(null);
+                              if (drillQueue) {
+                                exitDrill();
+                              }
                               triggerWithSkipWarning(fetchRandom);
                             }}
                           >
-                            Pick something else
+                            {drillQueue ? "Exit drill" : "Pick something else"}
                           </Button>
                         </div>
                       </>
@@ -1541,10 +1682,48 @@ export function ProblemViewer({
                   </div>
                 )}
 
+              {/* Drill complete summary */}
+              {drillComplete && !nextProblem && (
+                <div className="flex flex-col gap-3 rounded-xl border border-border bg-card px-5 py-4">
+                  <div className="flex flex-col gap-0.5">
+                    <p className="text-sm font-semibold">Drill complete</p>
+                    <p className="text-xs text-muted-foreground">
+                      You worked through {drillComplete.total} problems on{" "}
+                      <span className="font-medium text-foreground">
+                        {drillComplete.tag}
+                      </span>
+                      . Great session.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setDrillComplete(null);
+                        void startDrill(drillComplete.tag);
+                      }}
+                    >
+                      Drill again
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setDrillComplete(null);
+                        fetchRandom();
+                      }}
+                    >
+                      Pick something else
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               {/* Fallback — if next-problem fetch fails entirely */}
               {markDoneState.status === "done" &&
                 !nextProblemLoading &&
-                !nextProblem && (
+                !nextProblem &&
+                !drillComplete && (
                   <div className="flex items-center gap-3">
                     <span className="text-sm text-muted-foreground">
                       Ready for the next one?
