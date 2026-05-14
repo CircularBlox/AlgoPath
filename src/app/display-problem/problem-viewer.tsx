@@ -107,6 +107,24 @@ export function ProblemViewer({
     });
   }, [loadedProblemNumber, loadedProblemPlatform, loadedProblemDifficulty]);
 
+  // After 45s on a problem without opening hints, show a gentle nudge.
+  // Dismissed the moment hints are opened or the problem changes.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: loadedProblemNumber resets the timer when the problem changes even when state.status stays "loaded"
+  useEffect(() => {
+    if (hintNudgeTimer.current) clearTimeout(hintNudgeTimer.current);
+    setShowHintNudge(false);
+    if (
+      state.status !== "loaded" ||
+      hintsState.status === "open" ||
+      hintsState.status === "closed"
+    )
+      return;
+    hintNudgeTimer.current = setTimeout(() => setShowHintNudge(true), 45000);
+    return () => {
+      if (hintNudgeTimer.current) clearTimeout(hintNudgeTimer.current);
+    };
+  }, [state.status, hintsState.status, loadedProblemNumber]);
+
   // Load solve timestamp whenever a problem is loaded
   useEffect(() => {
     if (!loadedProblemNumber || !userId) return;
@@ -173,7 +191,6 @@ export function ProblemViewer({
   const [chatInput, setChatInput] = useState("");
   const [reviewCode, setReviewCode] = useState("");
   const [reviewLanguage, setReviewLanguage] = useState("C++");
-  const [problemViewed, setProblemViewed] = useState(false);
   const chatBottomRef = useRef<HTMLDivElement>(null);
   const [panelWidth, setPanelWidth] = useState(420);
   const [codeFullscreen, setCodeFullscreen] = useState(false);
@@ -205,6 +222,8 @@ export function ProblemViewer({
     tag: string;
     total: number;
   } | null>(null);
+  const [showHintNudge, setShowHintNudge] = useState(false);
+  const hintNudgeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [activeTab, setActiveTab] = useState<"notes" | "code" | "ai" | null>(
     null,
@@ -410,7 +429,6 @@ export function ProblemViewer({
     setChatInput("");
     setReviewCode("");
     setReviewLanguage("C++");
-    setProblemViewed(false);
     setActiveTab(null);
     setProblemNotes([]);
     setNotesLoaded(false);
@@ -425,6 +443,8 @@ export function ProblemViewer({
     setCodeFullscreen(false);
     setNextProblem(null);
     setNextProblemLoading(false);
+    setShowHintNudge(false);
+    if (hintNudgeTimer.current) clearTimeout(hintNudgeTimer.current);
   }
 
   async function startDrill(tag: string) {
@@ -1491,30 +1511,51 @@ export function ProblemViewer({
                   </div>
                 </CardContent>
 
+                {/* Hint nudge — appears after 45s of inactivity */}
+                {showHintNudge && !hintsOpen && (
+                  <div className="mx-6 mb-2 flex items-center justify-between gap-3 rounded-lg border border-primary/20 bg-primary/5 px-4 py-2.5">
+                    <p className="text-sm text-foreground">
+                      Stuck? Step-by-step hints can unblock you without giving
+                      away the answer.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowHintNudge(false);
+                        toggleHints(problem.problem_number ?? 0);
+                      }}
+                      className="shrink-0 rounded-full bg-foreground px-3 py-1 text-xs font-medium text-background hover:opacity-80 transition-opacity"
+                    >
+                      Get Hint 1 →
+                    </button>
+                  </div>
+                )}
+
                 <CardFooter className="flex-wrap gap-2">
                   {problem.content && (
                     <Button
+                      variant="outline"
                       onClick={() => {
                         setState({ ...state, contentOpen: !contentOpen });
-                        setProblemViewed(true);
                       }}
                     >
                       {contentOpen ? "Hide Problem" : "Open Problem"}
                     </Button>
                   )}
-                  {problemViewed && (
-                    <Button
-                      variant="outline"
-                      onClick={() => toggleHints(problem.problem_number ?? 0)}
-                      disabled={hintsLoading}
-                    >
-                      {hintsLoading
-                        ? "Loading…"
-                        : hintsOpen
-                          ? "Hide Hints"
-                          : "Show Hints"}
-                    </Button>
-                  )}
+                  <Button
+                    variant={hintsOpen ? "outline" : "default"}
+                    onClick={() => {
+                      setShowHintNudge(false);
+                      toggleHints(problem.problem_number ?? 0);
+                    }}
+                    disabled={hintsLoading}
+                  >
+                    {hintsLoading
+                      ? "Loading…"
+                      : hintsOpen
+                        ? "Hide Hints"
+                        : "Get Hints"}
+                  </Button>
                   <Button
                     variant={problem.content ? "outline" : "default"}
                     asChild
@@ -1523,7 +1564,7 @@ export function ProblemViewer({
                       href={problem.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      onClick={() => setProblemViewed(true)}
+                      onClick={() => {}}
                     >
                       Open Link
                     </Link>

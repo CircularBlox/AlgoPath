@@ -26,18 +26,27 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/auth/reset-password`);
   }
 
+  // Fast path: user_metadata is stored in the JWT — zero extra DB round-trip
+  // for returning users who already confirmed their username.
+  const meta = data.user.user_metadata ?? {};
+  if (meta.username_confirmed) {
+    if (!meta.onboarding_completed) {
+      return NextResponse.redirect(`${origin}/onboarding`);
+    }
+    return NextResponse.redirect(`${origin}/display-problem`);
+  }
+
+  // Fallback DB check for new users or those who predate metadata storage.
   const { data: profile } = await supabase
     .from("profiles")
     .select("onboarding_completed")
     .eq("id", data.user.id)
     .maybeSingle();
 
-  // No profile → first time OAuth user needs a username
   if (!profile) {
     return NextResponse.redirect(`${origin}/auth/setup-username`);
   }
 
-  // Not onboarded yet
   if (!profile.onboarding_completed) {
     return NextResponse.redirect(`${origin}/onboarding`);
   }

@@ -80,7 +80,7 @@ const ALIAS_TO_DB: Record<string, string> = {
   "network flow": "flows",
   mathematics: "math",
   "bit ops": "bit manipulation",
-  "bitwise": "bit manipulation",
+  bitwise: "bit manipulation",
   "priority queue": "heap",
 };
 

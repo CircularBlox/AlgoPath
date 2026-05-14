@@ -19,6 +19,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) conventi
 - **Vercel Cron config** (`vercel.json`): Cron job wired to `/api/cron/streak-nudge` at `0 8 * * *` (8 AM UTC daily).
 
 ### Changed
+- **Hints are now the primary CTA on the problem viewer** (`problem-viewer.tsx`): "Get Hints" button is always visible and uses the primary style, replacing the outline button that was hidden behind a "viewed problem" gate. "Open Problem" is now secondary. After 45 seconds on a problem without opening hints, a gentle inline banner appears: "Stuck? Get your first hint →" — dismisses automatically when hints are opened.
+- **Auth fast path — zero DB round-trips for returning users** (`auth/callback/route.ts`, `middleware.ts`, `setup-username/page.tsx`, `api/onboarding/route.ts`): Username confirmation and onboarding completion are now mirrored to Supabase auth `user_metadata` on write. The auth callback checks metadata first (from the JWT, no DB query) and falls back to the profiles table for users who predate this change. Returning users who hit `/auth/setup-username` via back-button or stale link are redirected immediately by middleware without loading the page.
+- **Username availability index** (`supabase/migrations/20260514050021_idx_profiles_username_lower.sql`): Added `lower(username)` functional index so case-insensitive availability checks are a fast index scan instead of a full table scan.
 - **Tag normalization and display names** (`src/lib/tags.ts`): Tags now display with proper casing throughout the app (e.g. "Dynamic Programming", "BFS", "DSU / Union Find"). Abbreviations and full names are treated as equivalent — "dp" and "dynamic programming" resolve to the same tag. Applied to: drill queue queries, AI topic-recommendation prompt and response, profile "Topics Practiced" section, and the topic-recommendation component.
 
 ### Fixed

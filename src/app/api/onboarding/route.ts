@@ -96,5 +96,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Mirror to auth user_metadata so the auth/callback fast path can skip the
+  // DB profile lookup on subsequent logins.
+  await supabase.auth.updateUser({ data: { onboarding_completed: true } });
+
   return NextResponse.json({ ok: true });
 }
