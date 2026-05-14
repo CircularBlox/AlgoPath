@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createClient, getUser } from "~/lib/supabase/server";
+import { normalizeToDbTag } from "~/lib/tags";
 
 function difficultyOrder(d: string | null): number {
   if (!d) return 9999;
@@ -25,10 +26,12 @@ export async function GET(request: NextRequest) {
   const supabase = await createClient();
   const user = await getUser();
 
+  const dbTag = normalizeToDbTag(tag);
+
   let q = supabase
     .from("problems")
     .select("*")
-    .contains("tags", [tag])
+    .contains("tags", [dbTag])
     .limit(50);
 
   if (platform) q = q.eq("platform", platform);
@@ -72,5 +75,5 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  return NextResponse.json({ tag, queue });
+  return NextResponse.json({ tag: dbTag, queue });
 }

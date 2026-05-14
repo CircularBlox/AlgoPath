@@ -2,6 +2,7 @@ import * as Sentry from "@sentry/nextjs";
 import { NextResponse } from "next/server";
 import { env } from "~/env";
 import { createClient, getUser } from "~/lib/supabase/server";
+import { displayTag, normalizeToDbTag } from "~/lib/tags";
 
 type Problem = { tags: string[]; difficulty: string | null };
 
@@ -44,7 +45,7 @@ export async function GET() {
   const topTags = Object.entries(tagFreq)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 15)
-    .map(([tag, count]) => `${tag} (${count} solved)`);
+    .map(([tag, count]) => `${displayTag(tag)} (${count} solved)`);
 
   const focusLabel =
     focus === "interviews"
@@ -92,7 +93,8 @@ export async function GET() {
       throw new Error("Malformed AI response");
     }
 
-    return NextResponse.json({ tag: parsed.tag, reason: parsed.reason });
+    const dbTag = normalizeToDbTag(parsed.tag);
+    return NextResponse.json({ tag: dbTag, reason: parsed.reason });
   } catch (err) {
     Sentry.captureException(err, {
       tags: { route: "profiles/topic-recommendation" },

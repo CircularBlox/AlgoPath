@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { displayTag } from "~/lib/tags";
 
 type Rec = { tag: string; reason: string };
 
@@ -47,7 +48,7 @@ export function TopicRecommendation() {
   return (
     <div className="rounded-xl border border-border px-5 py-4 flex flex-col gap-2.5">
       <div className="flex items-center justify-between gap-3">
-        <span className="text-sm font-semibold">{rec.tag}</span>
+        <span className="text-sm font-semibold">{displayTag(rec.tag)}</span>
         <Link
           href={`/display-problem?drill=${encodeURIComponent(rec.tag)}`}
           className="rounded-full bg-foreground px-3 py-1 text-xs font-medium text-background hover:opacity-80 transition-opacity shrink-0"

@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { difficultyBuckets, difficultyLabel } from "~/lib/difficulty";
 import { effectiveStreak, streakStatus } from "~/lib/streak";
 import { createClient, getUser } from "~/lib/supabase/server";
+import { displayTag } from "~/lib/tags";
 import { levelFromXp, levelTitle, xpProgress } from "~/lib/xp";
 import { SkillLevelEditor } from "./skill-level-editor";
 import { TopicRecommendation } from "./topic-recommendation";
@@ -477,7 +478,9 @@ export default async function ProfilePage() {
           <div className="overflow-hidden rounded-xl border border-border divide-y divide-border">
             {topTags.map(([tag, count]) => (
               <div key={tag} className="flex items-center gap-3 px-4 py-2.5">
-                <span className="text-sm w-40 shrink-0 truncate">{tag}</span>
+                <span className="text-sm w-40 shrink-0 truncate">
+                  {displayTag(tag)}
+                </span>
                 <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
                   <div
                     className="h-full rounded-full bg-foreground/60 transition-all"
