@@ -1,3 +1,4 @@
+import "katex/dist/katex.min.css";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getAuthContext } from "~/lib/is-admin";

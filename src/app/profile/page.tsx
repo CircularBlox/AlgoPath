@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { EmailNudgeToggle } from "~/components/email-nudge-toggle";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -152,6 +153,86 @@ function ChevronRightIcon() {
   );
 }
 
+async function RecommendedProblem({
+  cachedRecNumber,
+  solvedProblems,
+  rating,
+  focus,
+}: {
+  cachedRecNumber: number | null;
+  solvedProblems: number[];
+  rating: number;
+  focus: string | null;
+}) {
+  const supabase = await createClient();
+  const recommended = cachedRecNumber
+    ? await supabase
+        .from("problems")
+        .select("id, problem_number, title, difficulty, tags, platform")
+        .eq("problem_number", cachedRecNumber)
+        .single<Problem>()
+        .then(({ data }) => data)
+    : await getRecommendation(supabase, solvedProblems, rating, focus);
+
+  if (!recommended) {
+    return (
+      <div className="flex items-center justify-center rounded-lg border border-dashed border-border py-10">
+        <p className="text-sm text-muted-foreground">
+          No recommendations available yet.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <Card className="border-l-[3px] border-l-foreground/20">
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex flex-col gap-1">
+            <CardTitle className="text-base leading-snug">
+              {recommended.title}
+            </CardTitle>
+            {recommended.problem_number != null && (
+              <span className="text-xs text-muted-foreground">
+                Problem #{recommended.problem_number}
+              </span>
+            )}
+          </div>
+          <Badge variant="secondary" className="shrink-0 text-xs">
+            {recommended.platform === "codeforces" ? "Codeforces" : "LeetCode"}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3 pb-4">
+        <div className="flex flex-wrap items-center gap-2">
+          {recommended.difficulty && (
+            <Badge variant="outline" className="text-xs">
+              {recommended.difficulty}
+            </Badge>
+          )}
+          {(recommended.tags ?? []).slice(0, 4).map((tag) => (
+            <span
+              key={tag}
+              className="rounded-sm bg-muted px-1.5 py-0.5 text-xs text-muted-foreground"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Matched to your rating ({rating}) — a {difficultyLabel(rating)}{" "}
+          problem with fresh topics for you.
+        </p>
+        <Button asChild className="self-start" size="sm">
+          <Link href={`/display-problem?p=${recommended.problem_number}`}>
+            Practice this problem
+          </Link>
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default async function ProfilePage() {
   const [user, supabase] = await Promise.all([getUser(), createClient()]);
 
@@ -204,23 +285,13 @@ export default async function ProfilePage() {
   const focus = profile?.focus ?? null;
   const emailStreakNudge = profile?.email_streak_nudge ?? true;
 
-  const [recommended, solvedProblemDetails] = await Promise.all([
-    cachedRecNumber
-      ? supabase
-          .from("problems")
-          .select("id, problem_number, title, difficulty, tags, platform")
-          .eq("problem_number", cachedRecNumber)
-          .single<Problem>()
-          .then(({ data }) => data)
-      : getRecommendation(supabase, solvedProblems, rating, focus),
-    solvedProblems.length > 0
-      ? supabase
-          .from("problems")
-          .select("id, problem_number, title, difficulty, tags, platform")
-          .in("problem_number", solvedProblems)
-          .then(({ data }) => (data as Problem[] | null) ?? [])
-      : Promise.resolve([] as Problem[]),
-  ]);
+  const solvedProblemDetails = await (solvedProblems.length > 0
+    ? supabase
+        .from("problems")
+        .select("id, problem_number, title, difficulty, tags, platform")
+        .in("problem_number", solvedProblems)
+        .then(({ data }) => (data as Problem[] | null) ?? [])
+    : Promise.resolve([] as Problem[]));
 
   const solvedOrdered = [...solvedProblems]
     .reverse()
@@ -436,61 +507,16 @@ export default async function ProfilePage() {
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
           Recommended for You
         </h2>
-        {recommended ? (
-          <Card className="border-l-[3px] border-l-foreground/20">
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex flex-col gap-1">
-                  <CardTitle className="text-base leading-snug">
-                    {recommended.title}
-                  </CardTitle>
-                  {recommended.problem_number != null && (
-                    <span className="text-xs text-muted-foreground">
-                      Problem #{recommended.problem_number}
-                    </span>
-                  )}
-                </div>
-                <Badge variant="secondary" className="shrink-0 text-xs">
-                  {recommended.platform === "codeforces"
-                    ? "Codeforces"
-                    : "LeetCode"}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-3 pb-4">
-              <div className="flex flex-wrap items-center gap-2">
-                {recommended.difficulty && (
-                  <Badge variant="outline" className="text-xs">
-                    {recommended.difficulty}
-                  </Badge>
-                )}
-                {(recommended.tags ?? []).slice(0, 4).map((tag) => (
-                  <span
-                    key={tag}
-                    className="rounded-sm bg-muted px-1.5 py-0.5 text-xs text-muted-foreground"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Matched to your rating ({rating}) — a {difficultyLabel(rating)}{" "}
-                problem with fresh topics for you.
-              </p>
-              <Button asChild className="self-start" size="sm">
-                <Link href={`/display-problem?p=${recommended.problem_number}`}>
-                  Practice this problem
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="flex items-center justify-center rounded-lg border border-dashed border-border py-10">
-            <p className="text-sm text-muted-foreground">
-              No recommendations available yet.
-            </p>
-          </div>
-        )}
+        <Suspense
+          fallback={<div className="h-40 animate-pulse rounded-xl bg-muted" />}
+        >
+          <RecommendedProblem
+            cachedRecNumber={cachedRecNumber}
+            solvedProblems={solvedProblems}
+            rating={rating}
+            focus={focus}
+          />
+        </Suspense>
       </section>
 
       {/* ── What to focus on next ─────────────────────────────── */}
