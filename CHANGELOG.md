@@ -35,9 +35,6 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) conventi
 - **Admin fixes**: Improved error messaging and UX for edge cases in admin tooling.
 - **RLS enforcement on problem reports**: The problem report submission route was using the service-role client, bypassing row-level security. Switched to the session client so all DB access goes through RLS as intended.
 
-### Design
-- **Landing page redesign** (`page.tsx`, `globals.css`): Applied Emil Kowalski–inspired aesthetic — clean hero with plain text hierarchy (no pill badges, no decorative dot grid or glow overlays), problem list as a `divide-y` bordered list, hint cards defined by border alone (no background fill), AI review cards with clean label typography, features grid using `gap-px bg-border` cell-separator pattern. Removed alternating section backgrounds throughout. Secondary CTAs converted to plain text links.
-
 ---
 
 ## [1.0.6] - 2026-05-12
