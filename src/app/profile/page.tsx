@@ -10,6 +10,7 @@ import { createClient, getUser } from "~/lib/supabase/server";
 import { displayTag } from "~/lib/tags";
 import { levelFromXp, levelTitle, xpProgress } from "~/lib/xp";
 import { SkillLevelEditor } from "./skill-level-editor";
+import { TopicRadar } from "./topic-radar";
 import { TopicRecommendation } from "./topic-recommendation";
 
 type Profile = {
@@ -188,6 +189,17 @@ export default async function ProfilePage() {
 
   const initial = username[0]?.toUpperCase() ?? "U";
 
+  const rankColor: Record<string, string> = {
+    Apprentice: "#d97706",
+    Solver: "#10b981",
+    Coder: "#3b82f6",
+    Expert: "#8b5cf6",
+    Master: "#eab308",
+    Grandmaster: "#f97316",
+    Legendary: "#ef4444",
+  };
+  const dotColor = rankColor[title] ?? "#6b7280";
+
   const cachedRecNumber = profile?.recommended_problem_number ?? null;
   const focus = profile?.focus ?? null;
   const emailStreakNudge = profile?.email_streak_nudge ?? true;
@@ -268,10 +280,30 @@ export default async function ProfilePage() {
               <h1 className="text-2xl font-bold tracking-tight leading-none">
                 {username}
               </h1>
-              <span className="inline-flex items-center gap-1 rounded-full border border-border bg-muted px-2.5 py-0.5 text-xs font-semibold text-foreground">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted px-2.5 py-0.5 text-xs font-semibold text-foreground">
+                <span
+                  style={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: "50%",
+                    backgroundColor: dotColor,
+                    display: "inline-block",
+                    flexShrink: 0,
+                  }}
+                />
                 Lv.{level} · {title}
               </span>
             </div>
+            {topTags.length > 0 && (
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-muted-foreground">
+                  Top skill:
+                </span>
+                <span className="rounded-sm bg-muted px-1.5 py-0.5 text-xs font-medium text-foreground">
+                  {displayTag(topTags[0][0])}
+                </span>
+              </div>
+            )}
             {joinedDate && (
               <p className="text-sm text-muted-foreground">
                 Joined {joinedDate}
@@ -289,7 +321,7 @@ export default async function ProfilePage() {
                   {progress.percent}%
                 </span>
               </div>
-              <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+              <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
                 <div
                   className="h-full rounded-full bg-foreground transition-all duration-500"
                   style={{ width: `${progress.percent}%` }}
@@ -468,6 +500,18 @@ export default async function ProfilePage() {
         </h2>
         <TopicRecommendation />
       </section>
+
+      {/* ── Skill Web ─────────────────────────────────────────── */}
+      {topTags.length >= 3 && (
+        <section>
+          <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            Skill Web
+          </h2>
+          <div className="overflow-hidden rounded-xl border border-border p-4">
+            <TopicRadar tags={topTags} maxCount={maxTagCount} />
+          </div>
+        </section>
+      )}
 
       {/* ── Topic Breakdown ───────────────────────────────────── */}
       {topTags.length > 0 && (
