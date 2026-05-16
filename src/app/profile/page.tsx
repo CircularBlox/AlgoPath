@@ -528,24 +528,17 @@ export default async function ProfilePage() {
       </section>
 
       {/* ── Skill Web ─────────────────────────────────────────── */}
-      {topTags.length >= 3 && (
+      {topTags.length > 0 && (
         <section>
           <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
             Skill Web
           </h2>
-          <div className="overflow-hidden rounded-xl border border-border p-4">
-            <TopicRadar tags={topTags} maxCount={maxTagCount} />
-          </div>
-        </section>
-      )}
-
-      {/* ── Topic Breakdown ───────────────────────────────────── */}
-      {topTags.length > 0 && (
-        <section>
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            Topics Practiced
-          </h2>
           <div className="overflow-hidden rounded-xl border border-border divide-y divide-border">
+            {topTags.length >= 3 && (
+              <div className="p-4">
+                <TopicRadar tags={topTags} maxCount={maxTagCount} />
+              </div>
+            )}
             {topTags.map(([tag, count]) => (
               <div key={tag} className="flex items-center gap-3 px-4 py-2.5">
                 <span className="text-sm w-40 shrink-0 truncate">
