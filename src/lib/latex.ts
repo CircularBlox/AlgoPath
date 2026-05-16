@@ -34,19 +34,18 @@ export function processHtmlLatex(html: string): string {
     (_, math) => renderMath(math.trim(), true),
   );
 
-  // 2. Math accidentally stored in <code> tags
+  // 2. Math stored in <code> tags — CF scraper stores LaTeX inside <code> without dollar wrappers.
+  // First handle the explicit $...$ case, then detect LaTeX by presence of \command or subscript braces.
   out = out.replace(/<code>\$([^$<>]{1,500})\$<\/code>/g, (_, math) =>
     renderMath(math, false),
   );
-  out = out.replace(
-    /<code>((?:\\[a-zA-Z]+|[^<>{}]{0,20}){1,20})<\/code>/g,
-    (full, inner) => {
-      if (/\\[a-zA-Z]/.test(inner)) {
-        return renderMath(inner.trim(), false);
-      }
-      return full;
-    },
-  );
+  out = out.replace(/<code>([^<]{1,500})<\/code>/g, (full, inner) => {
+    // Render if it contains a LaTeX command (\word) or a braced subscript/superscript (_{, ^{)
+    if (/\\[a-zA-Z]|[_^]\{/.test(inner)) {
+      return renderMath(inner.trim(), false);
+    }
+    return full;
+  });
 
   // 3. Standalone \(...\) inline math
   out = out.replace(/\\\(([^<>\n]{0,1000})\\\)/g, (_, math) =>

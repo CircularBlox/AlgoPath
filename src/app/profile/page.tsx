@@ -1,12 +1,18 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
+import { EmailNudgeToggle } from "~/components/email-nudge-toggle";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { difficultyBuckets, difficultyLabel } from "~/lib/difficulty";
 import { effectiveStreak, streakStatus } from "~/lib/streak";
 import { createClient, getUser } from "~/lib/supabase/server";
+import { displayTag } from "~/lib/tags";
 import { levelFromXp, levelTitle, xpProgress } from "~/lib/xp";
 import { SkillLevelEditor } from "./skill-level-editor";
+import { TopicRadar } from "./topic-radar";
+import { TopicRecommendation } from "./topic-recommendation";
 
 type Profile = {
   username: string;
@@ -20,6 +26,7 @@ type Profile = {
   created_at: string;
   recommended_problem_number: number | null;
   focus: string | null;
+  email_streak_nudge: boolean;
 };
 
 type Problem = {
@@ -31,25 +38,19 @@ type Problem = {
   platform: string;
 };
 
-function targetDifficulty(rating: number): string {
-  if (rating < 1250) return "Easy";
-  if (rating < 1500) return "Medium";
-  return "Hard";
-}
-
 async function getRecommendation(
   supabase: Awaited<ReturnType<typeof createClient>>,
   solved: number[],
   rating: number,
   focus: string | null = null,
 ): Promise<Problem | null> {
-  const target = targetDifficulty(rating);
+  const buckets = difficultyBuckets(rating);
   const notSolvedFilter = solved.length > 0 ? `(${solved.join(",")})` : null;
 
   let candidateQuery = supabase
     .from("problems")
     .select("id, problem_number, title, difficulty, tags, platform")
-    .eq("difficulty", target)
+    .in("difficulty", buckets)
     .limit(30);
   if (notSolvedFilter) {
     candidateQuery = candidateQuery.not(
@@ -69,6 +70,7 @@ async function getRecommendation(
     let fallbackQuery = supabase
       .from("problems")
       .select("id, problem_number, title, difficulty, tags, platform")
+      .in("difficulty", difficultyBuckets(rating))
       .limit(30);
     if (notSolvedFilter) {
       fallbackQuery = fallbackQuery.not(
@@ -151,6 +153,86 @@ function ChevronRightIcon() {
   );
 }
 
+async function RecommendedProblem({
+  cachedRecNumber,
+  solvedProblems,
+  rating,
+  focus,
+}: {
+  cachedRecNumber: number | null;
+  solvedProblems: number[];
+  rating: number;
+  focus: string | null;
+}) {
+  const supabase = await createClient();
+  const recommended = cachedRecNumber
+    ? await supabase
+        .from("problems")
+        .select("id, problem_number, title, difficulty, tags, platform")
+        .eq("problem_number", cachedRecNumber)
+        .single<Problem>()
+        .then(({ data }) => data)
+    : await getRecommendation(supabase, solvedProblems, rating, focus);
+
+  if (!recommended) {
+    return (
+      <div className="flex items-center justify-center rounded-lg border border-dashed border-border py-10">
+        <p className="text-sm text-muted-foreground">
+          No recommendations available yet.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <Card className="border-l-[3px] border-l-foreground/20">
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex flex-col gap-1">
+            <CardTitle className="text-base leading-snug">
+              {recommended.title}
+            </CardTitle>
+            {recommended.problem_number != null && (
+              <span className="text-xs text-muted-foreground">
+                Problem #{recommended.problem_number}
+              </span>
+            )}
+          </div>
+          <Badge variant="secondary" className="shrink-0 text-xs">
+            {recommended.platform === "codeforces" ? "Codeforces" : "LeetCode"}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3 pb-4">
+        <div className="flex flex-wrap items-center gap-2">
+          {recommended.difficulty && (
+            <Badge variant="outline" className="text-xs">
+              {recommended.difficulty}
+            </Badge>
+          )}
+          {(recommended.tags ?? []).slice(0, 4).map((tag) => (
+            <span
+              key={tag}
+              className="rounded-sm bg-muted px-1.5 py-0.5 text-xs text-muted-foreground"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Matched to your rating ({rating}) — a {difficultyLabel(rating)}{" "}
+          problem with fresh topics for you.
+        </p>
+        <Button asChild className="self-start" size="sm">
+          <Link href={`/display-problem?p=${recommended.problem_number}`}>
+            Practice this problem
+          </Link>
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default async function ProfilePage() {
   const [user, supabase] = await Promise.all([getUser(), createClient()]);
 
@@ -161,7 +243,7 @@ export default async function ProfilePage() {
   const { data: profile } = await supabase
     .from("profiles")
     .select(
-      "username, rating, xp, level, skill_level, solved_problems, streak, last_solved_date, created_at, recommended_problem_number, focus",
+      "username, rating, xp, level, skill_level, solved_problems, streak, last_solved_date, created_at, recommended_problem_number, focus, email_streak_nudge",
     )
     .eq("id", user.id)
     .single<Profile>();
@@ -188,31 +270,45 @@ export default async function ProfilePage() {
 
   const initial = username[0]?.toUpperCase() ?? "U";
 
+  const rankColor: Record<string, string> = {
+    Apprentice: "#d97706",
+    Solver: "#10b981",
+    Coder: "#3b82f6",
+    Expert: "#8b5cf6",
+    Master: "#eab308",
+    Grandmaster: "#f97316",
+    Legendary: "#ef4444",
+  };
+  const dotColor = rankColor[title] ?? "#6b7280";
+
   const cachedRecNumber = profile?.recommended_problem_number ?? null;
   const focus = profile?.focus ?? null;
+  const emailStreakNudge = profile?.email_streak_nudge ?? true;
 
-  const [recommended, solvedProblemDetails] = await Promise.all([
-    cachedRecNumber
-      ? supabase
-          .from("problems")
-          .select("id, problem_number, title, difficulty, tags, platform")
-          .eq("problem_number", cachedRecNumber)
-          .single<Problem>()
-          .then(({ data }) => data)
-      : getRecommendation(supabase, solvedProblems, rating, focus),
-    solvedProblems.length > 0
-      ? supabase
-          .from("problems")
-          .select("id, problem_number, title, difficulty, tags, platform")
-          .in("problem_number", solvedProblems)
-          .then(({ data }) => (data as Problem[] | null) ?? [])
-      : Promise.resolve([] as Problem[]),
-  ]);
+  const solvedProblemDetails = await (solvedProblems.length > 0
+    ? supabase
+        .from("problems")
+        .select("id, problem_number, title, difficulty, tags, platform")
+        .in("problem_number", solvedProblems)
+        .then(({ data }) => (data as Problem[] | null) ?? [])
+    : Promise.resolve([] as Problem[]));
 
   const solvedOrdered = [...solvedProblems]
     .reverse()
     .map((n) => solvedProblemDetails.find((p) => p.problem_number === n))
     .filter((p): p is Problem => p != null);
+
+  // Aggregate tag frequencies from all solved problems
+  const tagCounts: Record<string, number> = {};
+  for (const p of solvedProblemDetails) {
+    for (const tag of p.tags ?? []) {
+      tagCounts[tag] = (tagCounts[tag] ?? 0) + 1;
+    }
+  }
+  const topTags = Object.entries(tagCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8);
+  const maxTagCount = topTags[0]?.[1] ?? 1;
 
   const statItems = [
     {
@@ -255,10 +351,30 @@ export default async function ProfilePage() {
               <h1 className="text-2xl font-bold tracking-tight leading-none">
                 {username}
               </h1>
-              <span className="inline-flex items-center gap-1 rounded-full border border-border bg-muted px-2.5 py-0.5 text-xs font-semibold text-foreground">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted px-2.5 py-0.5 text-xs font-semibold text-foreground">
+                <span
+                  style={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: "50%",
+                    backgroundColor: dotColor,
+                    display: "inline-block",
+                    flexShrink: 0,
+                  }}
+                />
                 Lv.{level} · {title}
               </span>
             </div>
+            {topTags.length > 0 && (
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-muted-foreground">
+                  Top skill:
+                </span>
+                <span className="rounded-sm bg-muted px-1.5 py-0.5 text-xs font-medium text-foreground">
+                  {displayTag(topTags[0][0])}
+                </span>
+              </div>
+            )}
             {joinedDate && (
               <p className="text-sm text-muted-foreground">
                 Joined {joinedDate}
@@ -276,7 +392,7 @@ export default async function ProfilePage() {
                   {progress.percent}%
                 </span>
               </div>
-              <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+              <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
                 <div
                   className="h-full rounded-full bg-foreground transition-all duration-500"
                   style={{ width: `${progress.percent}%` }}
@@ -391,62 +507,66 @@ export default async function ProfilePage() {
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
           Recommended for You
         </h2>
-        {recommended ? (
-          <Card className="border-l-[3px] border-l-foreground/20">
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex flex-col gap-1">
-                  <CardTitle className="text-base leading-snug">
-                    {recommended.title}
-                  </CardTitle>
-                  {recommended.problem_number != null && (
-                    <span className="text-xs text-muted-foreground">
-                      Problem #{recommended.problem_number}
-                    </span>
-                  )}
+        <Suspense
+          fallback={<div className="h-40 animate-pulse rounded-xl bg-muted" />}
+        >
+          <RecommendedProblem
+            cachedRecNumber={cachedRecNumber}
+            solvedProblems={solvedProblems}
+            rating={rating}
+            focus={focus}
+          />
+        </Suspense>
+      </section>
+
+      {/* ── What to focus on next ─────────────────────────────── */}
+      <section>
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+          What to Focus On Next
+        </h2>
+        <TopicRecommendation />
+      </section>
+
+      {/* ── Skill Web ─────────────────────────────────────────── */}
+      {topTags.length > 0 && (
+        <section>
+          <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            Skill Web
+          </h2>
+          <div className="overflow-hidden rounded-xl border border-border divide-y divide-border">
+            {topTags.length >= 3 && (
+              <div className="p-4">
+                <TopicRadar tags={topTags} maxCount={maxTagCount} />
+              </div>
+            )}
+            {topTags.map(([tag, count]) => (
+              <div key={tag} className="flex items-center gap-3 px-4 py-2.5">
+                <span className="text-sm w-40 shrink-0 truncate">
+                  {displayTag(tag)}
+                </span>
+                <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-foreground/60 transition-all"
+                    style={{ width: `${(count / maxTagCount) * 100}%` }}
+                  />
                 </div>
-                <Badge variant="secondary" className="shrink-0 text-xs">
-                  {recommended.platform === "codeforces"
-                    ? "Codeforces"
-                    : "LeetCode"}
-                </Badge>
+                <span className="text-xs text-muted-foreground tabular-nums w-14 text-right shrink-0">
+                  {count} solved
+                </span>
               </div>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-3 pb-4">
-              <div className="flex flex-wrap items-center gap-2">
-                {recommended.difficulty && (
-                  <Badge variant="outline" className="text-xs">
-                    {recommended.difficulty}
-                  </Badge>
-                )}
-                {(recommended.tags ?? []).slice(0, 4).map((tag) => (
-                  <span
-                    key={tag}
-                    className="rounded-sm bg-muted px-1.5 py-0.5 text-xs text-muted-foreground"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Based on your rating ({rating}) and recent practice — a{" "}
-                {targetDifficulty(rating).toLowerCase()} problem with fresh
-                topics for you.
-              </p>
-              <Button asChild className="self-start" size="sm">
-                <Link href={`/display-problem?p=${recommended.problem_number}`}>
-                  Practice this problem
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="flex items-center justify-center rounded-lg border border-dashed border-border py-10">
-            <p className="text-sm text-muted-foreground">
-              No recommendations available yet.
-            </p>
+            ))}
           </div>
-        )}
+        </section>
+      )}
+
+      {/* ── Settings ───────────────────────────────────────────── */}
+      <section>
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+          Notifications
+        </h2>
+        <div className="rounded-xl border border-border px-5 py-4">
+          <EmailNudgeToggle initial={emailStreakNudge} />
+        </div>
       </section>
 
       {/* ── Solved Problems ────────────────────────────────────── */}

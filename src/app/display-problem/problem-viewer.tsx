@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import posthog from "posthog-js";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
@@ -16,6 +16,20 @@ import { Input } from "~/components/ui/input";
 import { processHtmlLatex } from "~/lib/latex";
 import { highlight, languages } from "~/lib/prism-setup";
 import { timeAgo } from "~/lib/time";
+import { FormattedText } from "./formatting";
+import { SidePanel } from "./side-panel";
+import type {
+  ChatMessage,
+  Hints,
+  MarkDoneState,
+  NoteItem,
+  PanelState,
+  Problem,
+  ReportState,
+  Solution,
+  SolveTimestamp,
+  ViewerState,
+} from "./types";
 
 const LANG_GRAMMARS: Record<string, Prism.Grammar> = {
   "C++": languages.cpp,
@@ -26,121 +40,6 @@ const LANG_GRAMMARS: Record<string, Prism.Grammar> = {
 
 const MIN_PANEL_W = 300;
 const MAX_PANEL_W = 900;
-
-const CODE_CLS = "rounded bg-[oklch(0.8_0_0)] px-1 font-mono text-xs";
-
-function formatInline(s: string): string {
-  return s
-    .replace(/\$\s*([^$]+?)\s*\$/g, `<code class="${CODE_CLS}">$1</code>`)
-    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
-    .replace(/`([^`]+)`/g, `<code class="${CODE_CLS}">$1</code>`);
-}
-
-function FormattedText({ text }: { text: string }) {
-  const html = useMemo(() => {
-    const parts: string[] = [];
-    let inList = false;
-    for (const raw of text.split("\n")) {
-      const line = raw.trim();
-      if (!line) {
-        if (inList) {
-          parts.push("</ul>");
-          inList = false;
-        }
-        continue;
-      }
-      if (/^[*-] /.test(line)) {
-        if (!inList) {
-          parts.push('<ul class="list-disc list-inside space-y-0.5 my-1">');
-          inList = true;
-        }
-        parts.push(`<li>${formatInline(line.slice(2))}</li>`);
-      } else {
-        if (inList) {
-          parts.push("</ul>");
-          inList = false;
-        }
-        parts.push(`<p class="mb-1">${formatInline(line)}</p>`);
-      }
-    }
-    if (inList) parts.push("</ul>");
-    return parts.join("");
-  }, [text]);
-
-  // biome-ignore lint/security/noDangerouslySetInnerHtml: admin-authored DB content
-  return <div dangerouslySetInnerHTML={{ __html: html }} />;
-}
-
-type Problem = {
-  id: string;
-  problem_number: number | null;
-  title: string;
-  url: string;
-  platform: string;
-  difficulty: string | null;
-  tags: string[];
-  content: string | null;
-};
-
-type SolutionCode = {
-  id: string;
-  solution_id: string;
-  problem_number: number;
-  language: string;
-  code: string | null;
-};
-
-type Solution = {
-  id: string | null;
-  problem_name: string;
-  problem_number: number;
-  explanation: string | null;
-  solution_codes: SolutionCode[];
-};
-
-type Hints = {
-  id: string | null;
-  problem_name: string;
-  problem_number: number;
-  hint_1: string | null;
-  hint_2: string | null;
-  hint_3: string | null;
-};
-
-type State =
-  | { status: "idle" }
-  | { status: "loading" }
-  | { status: "error"; message: string }
-  | {
-      status: "results";
-      problems: Problem[];
-      source: "search" | "ai";
-      reasoning?: string;
-    }
-  | { status: "loaded"; problem: Problem; contentOpen: boolean };
-
-type MarkDoneState =
-  | { status: "idle" }
-  | { status: "loading" }
-  | { status: "done"; xpGain: number; newLevel: number }
-  | { status: "already_solved" }
-  | { status: "error"; message: string };
-
-type ReportState =
-  | { status: "idle" }
-  | { status: "open" }
-  | { status: "loading" }
-  | { status: "success" }
-  | { status: "error"; message: string };
-
-type ChatMessage = { id: string; role: "user" | "assistant"; content: string };
-
-type PanelState<T> =
-  | { status: "idle" }
-  | { status: "loading" }
-  | { status: "error"; message: string }
-  | { status: "open"; data: T }
-  | { status: "closed"; data: T };
 
 export function ProblemViewer({
   userId,
@@ -153,7 +52,7 @@ export function ProblemViewer({
   csrfToken: string;
   showFocusPrompt?: boolean;
 }) {
-  const [state, setState] = useState<State>(
+  const [state, setState] = useState<ViewerState>(
     initialProblem
       ? { status: "loaded", problem: initialProblem, contentOpen: false }
       : { status: "idle" },
@@ -208,6 +107,24 @@ export function ProblemViewer({
     });
   }, [loadedProblemNumber, loadedProblemPlatform, loadedProblemDifficulty]);
 
+  // After 45s on a problem without opening hints, show a gentle nudge.
+  // Dismissed the moment hints are opened or the problem changes.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: loadedProblemNumber resets the timer when the problem changes even when state.status stays "loaded"
+  useEffect(() => {
+    if (hintNudgeTimer.current) clearTimeout(hintNudgeTimer.current);
+    setShowHintNudge(false);
+    if (
+      state.status !== "loaded" ||
+      hintsState.status === "open" ||
+      hintsState.status === "closed"
+    )
+      return;
+    hintNudgeTimer.current = setTimeout(() => setShowHintNudge(true), 45000);
+    return () => {
+      if (hintNudgeTimer.current) clearTimeout(hintNudgeTimer.current);
+    };
+  }, [state.status, hintsState.status, loadedProblemNumber]);
+
   // Load solve timestamp whenever a problem is loaded
   useEffect(() => {
     if (!loadedProblemNumber || !userId) return;
@@ -241,6 +158,16 @@ export function ProblemViewer({
       .catch(() => {});
   }, [userId]);
 
+  // Auto-start drill from URL ?drill= param
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally mount-only — initialProblem is a stable server prop, startDrill must not be a dep here
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const drillTag = params.get("drill");
+    if (drillTag && !initialProblem) {
+      void startDrill(drillTag);
+    }
+  }, []);
+
   const [hintRatings, setHintRatings] = useState<
     Record<1 | 2 | 3, "up" | "down" | null>
   >({ 1: null, 2: null, 3: null });
@@ -264,7 +191,6 @@ export function ProblemViewer({
   const [chatInput, setChatInput] = useState("");
   const [reviewCode, setReviewCode] = useState("");
   const [reviewLanguage, setReviewLanguage] = useState("C++");
-  const [problemViewed, setProblemViewed] = useState(false);
   const chatBottomRef = useRef<HTMLDivElement>(null);
   const [panelWidth, setPanelWidth] = useState(420);
   const [codeFullscreen, setCodeFullscreen] = useState(false);
@@ -277,6 +203,27 @@ export function ProblemViewer({
   const [searchQuery, setSearchQuery] = useState("");
   const [suggestQuery, setSuggestQuery] = useState("");
   const [isAiLoading, setIsAiLoading] = useState(false);
+  const [filterPlatform, setFilterPlatform] = useState<
+    "all" | "codeforces" | "leetcode"
+  >("all");
+  const [filterTag, setFilterTag] = useState("");
+  const [filterDifficulty, setFilterDifficulty] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const tagFilterInputRef = useRef<HTMLInputElement>(null);
+  const [nextProblem, setNextProblem] = useState<Problem | null>(null);
+  const [nextProblemLoading, setNextProblemLoading] = useState(false);
+  const [drillQueue, setDrillQueue] = useState<{
+    tag: string;
+    queue: Problem[];
+    index: number;
+  } | null>(null);
+  const [drillLoading, setDrillLoading] = useState(false);
+  const [drillComplete, setDrillComplete] = useState<{
+    tag: string;
+    total: number;
+  } | null>(null);
+  const [showHintNudge, setShowHintNudge] = useState(false);
+  const hintNudgeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [activeTab, setActiveTab] = useState<"notes" | "code" | "ai" | null>(
     null,
@@ -300,11 +247,6 @@ export function ProblemViewer({
     "idle" | "saving" | "saved" | "error"
   >("idle");
 
-  type SolveTimestamp = {
-    solved_at: string;
-    xp_gained: number;
-    hints_used: number;
-  } | null;
   const [solveTimestamp, setSolveTimestamp] = useState<SolveTimestamp>(null);
 
   async function loadProblemNotes(problemNumber: number) {
@@ -381,8 +323,16 @@ export function ProblemViewer({
   async function fetchRandom() {
     setState({ status: "loading" });
     resetPanels();
+    setDrillQueue(null);
+    setDrillComplete(null);
     try {
-      const res = await fetch("/api/problems/random");
+      const params = new URLSearchParams();
+      if (filterPlatform !== "all") params.set("platform", filterPlatform);
+      const url =
+        params.size > 0
+          ? `/api/problems/random?${params}`
+          : "/api/problems/random";
+      const res = await fetch(url);
       const data = await res.json();
       if (!res.ok) {
         setState({ status: "error", message: data.error ?? "Unknown error." });
@@ -396,25 +346,55 @@ export function ProblemViewer({
 
   async function handleSearch() {
     const q = searchQuery.trim();
-    if (!q) return;
+    const tag = filterTag.trim();
+    if (!q && !tag && filterPlatform === "all" && !filterDifficulty.trim())
+      return;
     setState({ status: "loading" });
     resetPanels();
     try {
-      const res = await fetch(
-        `/api/problems/search?q=${encodeURIComponent(q)}`,
-      );
+      const params = new URLSearchParams();
+      if (q) params.set("q", q);
+      if (tag) params.set("tag", tag);
+      if (filterPlatform !== "all") params.set("platform", filterPlatform);
+      if (filterDifficulty.trim())
+        params.set("difficulty", filterDifficulty.trim());
+      const res = await fetch(`/api/problems/search?${params}`);
       const data = await res.json();
       if (!res.ok) {
         setState({ status: "error", message: data.error ?? "Unknown error." });
         return;
       }
       const problems: Problem[] = data;
-      const exact = problems.find(
-        (p) => p.title.toLowerCase() === q.toLowerCase(),
-      );
+      const exact = q
+        ? problems.find((p) => p.title.toLowerCase() === q.toLowerCase())
+        : null;
       if (exact) {
         setState({ status: "loaded", problem: exact, contentOpen: false });
       } else {
+        setState({ status: "results", problems, source: "search" });
+      }
+    } catch {
+      setState({ status: "error", message: "Failed to reach the server." });
+    }
+  }
+
+  async function handleTagClick(tag: string) {
+    setFilterTag(tag);
+    setSearchQuery("");
+    setState({ status: "loading" });
+    resetPanels();
+    try {
+      const params = new URLSearchParams({ tag });
+      if (filterPlatform !== "all") params.set("platform", filterPlatform);
+      const res = await fetch(`/api/problems/search?${params}`);
+      const data = await res.json();
+      if (!res.ok) {
+        setState({
+          status: "error",
+          message: data.error ?? "No problems found.",
+        });
+      } else {
+        const problems: Problem[] = data;
         setState({ status: "results", problems, source: "search" });
       }
     } catch {
@@ -449,7 +429,6 @@ export function ProblemViewer({
     setChatInput("");
     setReviewCode("");
     setReviewLanguage("C++");
-    setProblemViewed(false);
     setActiveTab(null);
     setProblemNotes([]);
     setNotesLoaded(false);
@@ -462,6 +441,57 @@ export function ProblemViewer({
     setSkipWarningPending(null);
     setPanelWidth(420);
     setCodeFullscreen(false);
+    setNextProblem(null);
+    setNextProblemLoading(false);
+    setShowHintNudge(false);
+    if (hintNudgeTimer.current) clearTimeout(hintNudgeTimer.current);
+  }
+
+  async function startDrill(tag: string) {
+    setDrillLoading(true);
+    setDrillComplete(null);
+    try {
+      const params = new URLSearchParams({ tag });
+      if (filterPlatform !== "all") params.set("platform", filterPlatform);
+      const res = await fetch(`/api/problems/drill?${params}`);
+      const data = await res.json();
+      if (!res.ok || !data.queue?.length) {
+        setState({
+          status: "error",
+          message: data.error ?? "Could not build a drill queue for this tag.",
+        });
+        return;
+      }
+      const queue: Problem[] = data.queue;
+      setDrillQueue({ tag, queue, index: 0 });
+      selectProblem(queue[0]);
+      const url = new URL(window.location.href);
+      url.searchParams.set("drill", tag);
+      window.history.pushState({}, "", url.toString());
+    } finally {
+      setDrillLoading(false);
+    }
+  }
+
+  function advanceDrill() {
+    if (!drillQueue) return;
+    const nextIndex = drillQueue.index + 1;
+    if (nextIndex < drillQueue.queue.length) {
+      setDrillQueue({ ...drillQueue, index: nextIndex });
+      selectProblem(drillQueue.queue[nextIndex]);
+    } else {
+      exitDrill();
+      setState({ status: "idle" });
+      resetPanels();
+    }
+  }
+
+  function exitDrill() {
+    setDrillQueue(null);
+    setDrillComplete(null);
+    const url = new URL(window.location.href);
+    url.searchParams.delete("drill");
+    window.history.pushState({}, "", url.toString());
   }
 
   async function handleReport(problemNumber: number) {
@@ -795,8 +825,29 @@ export function ProblemViewer({
           new_level: data.new_level,
           streak: data.streak,
         });
+        if (drillQueue) {
+          const nextIndex = drillQueue.index + 1;
+          if (nextIndex < drillQueue.queue.length) {
+            setNextProblem(drillQueue.queue[nextIndex]);
+          } else {
+            setDrillComplete({
+              tag: drillQueue.tag,
+              total: drillQueue.queue.length,
+            });
+            setDrillQueue(null);
+          }
+          setNextProblemLoading(false);
+        } else {
+          // Fire next-problem fetch immediately (replaces 1.5s auto-random)
+          setNextProblemLoading(true);
+          fetch(`/api/problems/${problem.problem_number}/next`)
+            .then(async (r) => {
+              if (r.ok) setNextProblem((await r.json()) as Problem);
+            })
+            .catch(() => {})
+            .finally(() => setNextProblemLoading(false));
+        }
       }
-      setTimeout(() => fetchRandom(), 1500);
     } catch {
       setMarkDoneState({
         status: "error",
@@ -864,6 +915,40 @@ export function ProblemViewer({
 
   const isLoading = state.status === "loading";
 
+  async function saveCodeAsNote() {
+    if (!reviewCode.trim()) return;
+    setEditorSaveStatus("saving");
+    try {
+      const res = await fetch("/api/notes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title:
+            state.status === "loaded"
+              ? `${state.problem.title} (${reviewLanguage})`
+              : "Untitled",
+          content: "",
+          code: reviewCode,
+          code_language: reviewLanguage,
+          problem_number:
+            state.status === "loaded" ? (state.problem.problem_number ?? 0) : 0,
+        }),
+      });
+      if (res.ok) {
+        setEditorSaveStatus("saved");
+        setTimeout(() => setEditorSaveStatus("idle"), 2000);
+        if (notesLoaded) {
+          const data = (await res.json()) as NoteItem;
+          setProblemNotes((prev) => [data, ...prev]);
+        }
+      } else {
+        setEditorSaveStatus("error");
+      }
+    } catch {
+      setEditorSaveStatus("error");
+    }
+  }
+
   async function saveFocus(value: string) {
     setFocusSaving(true);
     try {
@@ -924,6 +1009,48 @@ export function ProblemViewer({
         </div>
       )}
 
+      {/* Intent screen — three paths for starting a session */}
+      {state.status === "idle" && (
+        <div className="flex flex-col gap-3">
+          <h2 className="text-base font-semibold">
+            What do you want to practice today?
+          </h2>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <button
+              type="button"
+              onClick={() => triggerWithSkipWarning(fetchRandom)}
+              disabled={isLoading}
+              className="flex flex-col gap-1.5 rounded-xl border border-border bg-card px-4 py-4 text-left transition-colors hover:border-foreground/30 hover:bg-muted/50 disabled:opacity-50"
+            >
+              <span className="text-sm font-semibold">Decide for me</span>
+              <span className="text-xs text-muted-foreground">
+                Pick a problem matched to your level instantly
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => tagFilterInputRef.current?.focus()}
+              className="flex flex-col gap-1.5 rounded-xl border border-border bg-card px-4 py-4 text-left transition-colors hover:border-foreground/30 hover:bg-muted/50"
+            >
+              <span className="text-sm font-semibold">Practice a topic</span>
+              <span className="text-xs text-muted-foreground">
+                Filter by tag — arrays, DP, graphs, and more
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => searchInputRef.current?.focus()}
+              className="flex flex-col gap-1.5 rounded-xl border border-border bg-card px-4 py-4 text-left transition-colors hover:border-foreground/30 hover:bg-muted/50"
+            >
+              <span className="text-sm font-semibold">Browse problems</span>
+              <span className="text-xs text-muted-foreground">
+                Search by title or use platform and difficulty filters
+              </span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Continue where you left off — shown first when returning */}
       {state.status === "idle" &&
         userId &&
@@ -972,10 +1099,67 @@ export function ProblemViewer({
           </div>
         )}
 
+      {/* Filter bar */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-1">
+          {(
+            [
+              { v: "all" as const, label: "All" },
+              { v: "codeforces" as const, label: "CF" },
+              { v: "leetcode" as const, label: "LC" },
+            ] as const
+          ).map(({ v, label }) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setFilterPlatform(v)}
+              className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
+                filterPlatform === v
+                  ? "bg-foreground text-background"
+                  : "bg-muted text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <input
+          ref={tagFilterInputRef}
+          type="text"
+          placeholder="Tag…"
+          value={filterTag}
+          onChange={(e) => setFilterTag(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+          className="h-7 w-28 rounded-md border border-input bg-background px-2.5 text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+        />
+        <input
+          type="text"
+          placeholder="Difficulty…"
+          value={filterDifficulty}
+          onChange={(e) => setFilterDifficulty(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+          className="h-7 w-24 rounded-md border border-input bg-background px-2.5 text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+        />
+        {(filterTag || filterDifficulty || filterPlatform !== "all") && (
+          <button
+            type="button"
+            onClick={() => {
+              setFilterTag("");
+              setFilterDifficulty("");
+              setFilterPlatform("all");
+            }}
+            className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Clear filters
+          </button>
+        )}
+      </div>
+
       {/* Controls */}
       <div className="flex flex-col gap-3">
         <div className="flex gap-2">
           <Input
+            ref={searchInputRef}
             placeholder="Search by problem title…"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -985,7 +1169,13 @@ export function ProblemViewer({
           />
           <Button
             onClick={handleSearch}
-            disabled={isLoading || !searchQuery.trim()}
+            disabled={
+              isLoading ||
+              (!searchQuery.trim() &&
+                !filterTag.trim() &&
+                filterPlatform === "all" &&
+                !filterDifficulty.trim())
+            }
             variant="outline"
           >
             Search
@@ -1106,11 +1296,44 @@ export function ProblemViewer({
               </p>
             </div>
           )}
-          <p className="text-xs text-muted-foreground">
-            {state.source === "ai" ? "AI suggested " : ""}
-            {state.problems.length} result
-            {state.problems.length !== 1 ? "s" : ""} — click to open
-          </p>
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-xs text-muted-foreground">
+              {state.source === "ai" ? "AI suggested " : ""}
+              {state.problems.length} result
+              {state.problems.length !== 1 ? "s" : ""} — click to open
+            </p>
+            {state.source === "search" &&
+              filterTag &&
+              state.problems.length >= 2 && (
+                <button
+                  type="button"
+                  disabled={drillLoading}
+                  onClick={() => void startDrill(filterTag)}
+                  className="flex items-center gap-1.5 rounded-full bg-foreground px-3 py-1 text-xs font-medium text-background transition-opacity hover:opacity-80 disabled:opacity-50 shrink-0"
+                >
+                  {drillLoading ? (
+                    "Loading…"
+                  ) : (
+                    <>
+                      <svg
+                        width="10"
+                        height="10"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
+                      >
+                        <polygon points="5 3 19 12 5 21 5 3" />
+                      </svg>
+                      Drill this tag
+                    </>
+                  )}
+                </button>
+              )}
+          </div>
           <div className="overflow-hidden rounded-lg border border-border divide-y divide-border">
             {state.problems.map((problem) => {
               const visibleTags = problem.tags?.slice(0, 3) ?? [];
@@ -1148,12 +1371,17 @@ export function ProblemViewer({
                   {visibleTags.length > 0 && (
                     <div className="flex flex-wrap items-center gap-1">
                       {visibleTags.map((tag) => (
-                        <span
+                        <button
                           key={tag}
-                          className="rounded-sm bg-muted px-1.5 py-0.5 text-xs text-muted-foreground"
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void handleTagClick(tag);
+                          }}
+                          className="rounded-sm bg-muted px-1.5 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
                         >
                           {tag}
-                        </span>
+                        </button>
                       ))}
                       {extraTags > 0 && (
                         <span className="text-xs text-muted-foreground">
@@ -1166,6 +1394,36 @@ export function ProblemViewer({
               );
             })}
           </div>
+        </div>
+      )}
+
+      {/* Drill progress banner */}
+      {drillQueue && state.status === "loaded" && (
+        <div className="flex items-center gap-3 rounded-lg border border-primary/20 bg-primary/5 px-4 py-2.5">
+          <span className="text-xs text-muted-foreground shrink-0">
+            Drill —{" "}
+            <span className="font-medium text-foreground">
+              {drillQueue.tag}
+            </span>
+          </span>
+          <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
+            <div
+              className="h-full bg-foreground rounded-full transition-all duration-300"
+              style={{
+                width: `${((drillQueue.index + 1) / drillQueue.queue.length) * 100}%`,
+              }}
+            />
+          </div>
+          <span className="text-xs font-medium shrink-0 tabular-nums">
+            {drillQueue.index + 1} / {drillQueue.queue.length}
+          </span>
+          <button
+            type="button"
+            onClick={exitDrill}
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors shrink-0"
+          >
+            Exit
+          </button>
         </div>
       )}
 
@@ -1232,9 +1490,19 @@ export function ProblemViewer({
                         Tags
                       </span>
                       {problem.tags.map((tag) => (
-                        <Badge key={tag} variant="secondary">
-                          {tag}
-                        </Badge>
+                        <button
+                          key={tag}
+                          type="button"
+                          onClick={() => void handleTagClick(tag)}
+                          className="focus:outline-none focus:ring-2 focus:ring-ring rounded-full"
+                        >
+                          <Badge
+                            variant="secondary"
+                            className="pointer-events-none cursor-pointer hover:bg-primary/20 hover:text-primary transition-colors"
+                          >
+                            {tag}
+                          </Badge>
+                        </button>
                       ))}
                     </div>
                   )}
@@ -1243,30 +1511,51 @@ export function ProblemViewer({
                   </div>
                 </CardContent>
 
+                {/* Hint nudge — appears after 45s of inactivity */}
+                {showHintNudge && !hintsOpen && (
+                  <div className="mx-6 mb-2 flex items-center justify-between gap-3 rounded-lg border border-primary/20 bg-primary/5 px-4 py-2.5">
+                    <p className="text-sm text-foreground">
+                      Stuck? Step-by-step hints can unblock you without giving
+                      away the answer.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowHintNudge(false);
+                        toggleHints(problem.problem_number ?? 0);
+                      }}
+                      className="shrink-0 rounded-full bg-foreground px-3 py-1 text-xs font-medium text-background hover:opacity-80 transition-opacity"
+                    >
+                      Get Hint 1 →
+                    </button>
+                  </div>
+                )}
+
                 <CardFooter className="flex-wrap gap-2">
                   {problem.content && (
                     <Button
+                      variant="outline"
                       onClick={() => {
                         setState({ ...state, contentOpen: !contentOpen });
-                        setProblemViewed(true);
                       }}
                     >
                       {contentOpen ? "Hide Problem" : "Open Problem"}
                     </Button>
                   )}
-                  {problemViewed && (
-                    <Button
-                      variant="outline"
-                      onClick={() => toggleHints(problem.problem_number ?? 0)}
-                      disabled={hintsLoading}
-                    >
-                      {hintsLoading
-                        ? "Loading…"
-                        : hintsOpen
-                          ? "Hide Hints"
-                          : "Show Hints"}
-                    </Button>
-                  )}
+                  <Button
+                    variant={hintsOpen ? "outline" : "default"}
+                    onClick={() => {
+                      setShowHintNudge(false);
+                      toggleHints(problem.problem_number ?? 0);
+                    }}
+                    disabled={hintsLoading}
+                  >
+                    {hintsLoading
+                      ? "Loading…"
+                      : hintsOpen
+                        ? "Hide Hints"
+                        : "Get Hints"}
+                  </Button>
                   <Button
                     variant={problem.content ? "outline" : "default"}
                     asChild
@@ -1275,12 +1564,12 @@ export function ProblemViewer({
                       href={problem.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      onClick={() => setProblemViewed(true)}
+                      onClick={() => {}}
                     >
                       Open Link
                     </Link>
                   </Button>
-                  {userId && (
+                  {userId ? (
                     <Button
                       className="ml-auto"
                       onClick={handleMarkDone}
@@ -1293,13 +1582,20 @@ export function ProblemViewer({
                     >
                       {markDoneLabel}
                     </Button>
+                  ) : (
+                    <Button className="ml-auto" variant="outline" asChild>
+                      <Link href="/auth/login">Sign in to track progress</Link>
+                    </Button>
                   )}
                   <Button
                     variant="ghost"
-                    onClick={() => triggerWithSkipWarning(fetchRandom)}
-                    className={userId ? "" : "ml-auto"}
+                    onClick={() =>
+                      triggerWithSkipWarning(
+                        drillQueue ? advanceDrill : fetchRandom,
+                      )
+                    }
                   >
-                    Skip
+                    {drillQueue ? "Skip →" : "Skip"}
                   </Button>
                   {userId && (
                     <div className="ml-auto flex items-center gap-1">
@@ -1356,6 +1652,152 @@ export function ProblemViewer({
                   </span>
                 </div>
               )}
+
+              {/* Try this next card — replaces auto-load after solving */}
+              {markDoneState.status === "done" &&
+                (nextProblemLoading || nextProblem) && (
+                  <div className="flex flex-col gap-3 rounded-xl border border-border bg-card px-5 py-4">
+                    <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                      Try this next
+                    </p>
+                    {nextProblemLoading && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm text-muted-foreground">
+                          Finding a good next problem
+                        </span>
+                        <span className="flex gap-1">
+                          {[0, 1, 2].map((i) => (
+                            <span
+                              key={i}
+                              className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground"
+                              style={{ animationDelay: `${i * 150}ms` }}
+                            />
+                          ))}
+                        </span>
+                      </div>
+                    )}
+                    {nextProblem && !nextProblemLoading && (
+                      <>
+                        <div className="flex items-start justify-between gap-3">
+                          <span className="text-sm font-medium">
+                            {nextProblem.title}
+                          </span>
+                          <div className="flex shrink-0 items-center gap-1.5">
+                            {nextProblem.difficulty && (
+                              <Badge variant="outline" className="text-xs">
+                                {nextProblem.difficulty}
+                              </Badge>
+                            )}
+                            <Badge variant="secondary" className="text-xs">
+                              {nextProblem.platform === "codeforces"
+                                ? "CF"
+                                : "LC"}
+                            </Badge>
+                          </div>
+                        </div>
+                        {nextProblem.tags && nextProblem.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {nextProblem.tags.slice(0, 4).map((tag) => (
+                              <span
+                                key={tag}
+                                className="rounded-sm bg-muted px-1.5 py-0.5 text-xs text-muted-foreground"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2 pt-1">
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              if (drillQueue) {
+                                setDrillQueue({
+                                  ...drillQueue,
+                                  index: drillQueue.index + 1,
+                                });
+                              }
+                              selectProblem(nextProblem);
+                            }}
+                          >
+                            {drillQueue
+                              ? "Continue drill →"
+                              : "Practice this →"}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setNextProblem(null);
+                              if (drillQueue) {
+                                exitDrill();
+                              }
+                              triggerWithSkipWarning(fetchRandom);
+                            }}
+                          >
+                            {drillQueue ? "Exit drill" : "Pick something else"}
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+
+              {/* Drill complete summary */}
+              {drillComplete && !nextProblem && (
+                <div className="flex flex-col gap-3 rounded-xl border border-border bg-card px-5 py-4">
+                  <div className="flex flex-col gap-0.5">
+                    <p className="text-sm font-semibold">Drill complete</p>
+                    <p className="text-xs text-muted-foreground">
+                      You worked through {drillComplete.total} problems on{" "}
+                      <span className="font-medium text-foreground">
+                        {drillComplete.tag}
+                      </span>
+                      . Great session.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setDrillComplete(null);
+                        void startDrill(drillComplete.tag);
+                      }}
+                    >
+                      Drill again
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setDrillComplete(null);
+                        fetchRandom();
+                      }}
+                    >
+                      Pick something else
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Fallback — if next-problem fetch fails entirely */}
+              {markDoneState.status === "done" &&
+                !nextProblemLoading &&
+                !nextProblem &&
+                !drillComplete && (
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-muted-foreground">
+                      Ready for the next one?
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => triggerWithSkipWarning(fetchRandom)}
+                    >
+                      Pick a problem
+                    </Button>
+                  </div>
+                )}
 
               {/* Report form */}
               {userId &&
@@ -1621,23 +2063,36 @@ export function ProblemViewer({
                               );
                             })}
                           </div>
-                          {canRevealMore && (
-                            <Button
-                              variant="outline"
-                              className="self-start"
-                              onClick={() => {
-                                const next = Math.min(hintsRevealed + 1, 3);
-                                setHintsRevealed(next);
-                                posthog.capture("hint_revealed", {
-                                  problem_number: problem.problem_number,
-                                  hint_number: next,
-                                  difficulty: problem.difficulty,
-                                });
-                              }}
-                            >
-                              Reveal Hint {hintsRevealed + 1}
-                            </Button>
-                          )}
+                          {canRevealMore &&
+                            (userId ? (
+                              <Button
+                                variant="outline"
+                                className="self-start"
+                                onClick={() => {
+                                  const next = Math.min(hintsRevealed + 1, 3);
+                                  setHintsRevealed(next);
+                                  posthog.capture("hint_revealed", {
+                                    problem_number: problem.problem_number,
+                                    hint_number: next,
+                                    difficulty: problem.difficulty,
+                                  });
+                                }}
+                              >
+                                Reveal Hint {hintsRevealed + 1}
+                              </Button>
+                            ) : (
+                              <div className="flex items-center gap-3 self-start rounded-md border border-border bg-muted/40 px-4 py-2.5">
+                                <span className="text-sm text-muted-foreground">
+                                  Sign in to reveal more hints
+                                </span>
+                                <Link
+                                  href="/auth/login"
+                                  className="text-sm font-medium underline underline-offset-2 transition-colors hover:text-primary"
+                                >
+                                  Sign in
+                                </Link>
+                              </div>
+                            ))}
                           {!canRevealMore && maxRevealable > 0 && (
                             <div className="flex flex-col gap-2">
                               <p className="text-xs text-muted-foreground">
@@ -1798,6 +2253,20 @@ export function ProblemViewer({
                       )}
 
                       {!solution.explanation && <div className="pb-1" />}
+
+                      {/* Editorial link */}
+                      {problem.editorial_url && (
+                        <div className="flex items-center gap-2 border-t border-border px-5 py-3">
+                          <Link
+                            href={problem.editorial_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                          >
+                            Read editorial ↗
+                          </Link>
+                        </div>
+                      )}
                     </div>
                   );
                 })()}
@@ -1806,640 +2275,49 @@ export function ProblemViewer({
         })()}
 
       {/* ── Fixed side tabs + slide-out panel ── */}
-      {state.status === "loaded" &&
-        userId &&
-        (() => {
-          const problemNumber = state.problem.problem_number ?? 0;
-          const isOpen = activeTab !== null;
-          const editorFont =
-            '"JetBrains Mono","Fira Code","Fira Mono",ui-monospace,monospace';
-
-          async function saveCodeAsNote() {
-            if (!reviewCode.trim()) return;
-            setEditorSaveStatus("saving");
-            try {
-              const res = await fetch("/api/notes", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  title:
-                    state.status === "loaded"
-                      ? `${state.problem.title} (${reviewLanguage})`
-                      : "Untitled",
-                  content: "",
-                  code: reviewCode,
-                  code_language: reviewLanguage,
-                  problem_number: problemNumber,
-                }),
-              });
-              if (res.ok) {
-                setEditorSaveStatus("saved");
-                setTimeout(() => setEditorSaveStatus("idle"), 2000);
-                if (notesLoaded) {
-                  const data = (await res.json()) as {
-                    id: string;
-                    title: string;
-                    content: string;
-                    code: string;
-                    code_language: string;
-                    updated_at: string;
-                  };
-                  setProblemNotes((prev) => [data, ...prev]);
-                }
-              } else {
-                setEditorSaveStatus("error");
-              }
-            } catch {
-              setEditorSaveStatus("error");
-            }
+      {state.status === "loaded" && userId && (
+        <SidePanel
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          panelWidth={panelWidth}
+          setPanelWidth={setPanelWidth}
+          startDrag={startDrag}
+          reviewCode={reviewCode}
+          setReviewCode={setReviewCode}
+          reviewLanguage={reviewLanguage}
+          setReviewLanguage={setReviewLanguage}
+          codeFullscreen={codeFullscreen}
+          setCodeFullscreen={setCodeFullscreen}
+          editorSaveStatus={editorSaveStatus}
+          onSaveCodeAsNote={saveCodeAsNote}
+          problemNotes={problemNotes}
+          notesLoading={notesLoading}
+          notesLoaded={notesLoaded}
+          quickTitle={quickTitle}
+          setQuickTitle={setQuickTitle}
+          quickContent={quickContent}
+          setQuickContent={setQuickContent}
+          quickSaving={quickSaving}
+          onLoadNotes={() =>
+            loadProblemNotes(state.problem.problem_number ?? 0)
           }
-
-          function handleEditorKeyDown(
-            e: React.KeyboardEvent<HTMLTextAreaElement>,
-          ) {
-            if (e.key === "Tab") {
-              e.preventDefault();
-              const ta = e.currentTarget;
-              const start = ta.selectionStart;
-              const end = ta.selectionEnd;
-              const next = `${ta.value.substring(0, start)}  ${ta.value.substring(end)}`;
-              setReviewCode(next);
-              requestAnimationFrame(() => {
-                ta.selectionStart = ta.selectionEnd = start + 2;
-              });
-            } else if (e.key === "Enter") {
-              e.preventDefault();
-              const ta = e.currentTarget;
-              const start = ta.selectionStart;
-              const lineStart = ta.value.lastIndexOf("\n", start - 1) + 1;
-              const line = ta.value.substring(lineStart, start);
-              const indent = line.match(/^(\s*)/)?.[1] ?? "";
-              const next = `${ta.value.substring(0, start)}\n${indent}${ta.value.substring(ta.selectionEnd)}`;
-              setReviewCode(next);
-              requestAnimationFrame(() => {
-                ta.selectionStart = ta.selectionEnd = start + 1 + indent.length;
-              });
-            }
+          onSaveQuickNote={() =>
+            saveQuickNote(state.problem.problem_number ?? 0)
           }
-
-          const TABS = [
-            {
-              id: "notes" as const,
-              label: "Notes",
-              icon: (
-                <svg
-                  width="13"
-                  height="13"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                  <polyline points="14 2 14 8 20 8" />
-                  <line x1="16" y1="13" x2="8" y2="13" />
-                  <line x1="16" y1="17" x2="8" y2="17" />
-                </svg>
-              ),
-            },
-            {
-              id: "code" as const,
-              label: "Code",
-              icon: (
-                <svg
-                  width="13"
-                  height="13"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <polyline points="16 18 22 12 16 6" />
-                  <polyline points="8 6 2 12 8 18" />
-                </svg>
-              ),
-            },
-            {
-              id: "ai" as const,
-              label: "AI",
-              icon: (
-                <svg
-                  width="13"
-                  height="13"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                </svg>
-              ),
-            },
-          ];
-
-          return (
-            <>
-              {/* Tab buttons fixed to right edge — shift left when panel is open */}
-              <div
-                style={{
-                  position: "fixed",
-                  right: isOpen ? panelWidth : 0,
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  zIndex: 41,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 3,
-                  transition: "right 0.25s ease",
-                }}
-              >
-                {TABS.map(({ id, label, icon }) => (
-                  <button
-                    key={id}
-                    type="button"
-                    onClick={() => {
-                      if (activeTab === id) {
-                        setActiveTab(null);
-                      } else {
-                        setActiveTab(id);
-                        if (id === "notes" && !notesLoaded)
-                          loadProblemNotes(problemNumber);
-                      }
-                    }}
-                    className={`flex flex-col items-center gap-2 rounded-l-md border-2 border-r-0 px-3 py-4 text-xs font-semibold transition-colors shadow-md ${
-                      activeTab === id
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 hover:border-primary/60"
-                    }`}
-                  >
-                    <div className="scale-125">{icon}</div>
-                    <span
-                      style={{
-                        writingMode: "vertical-rl",
-                        transform: "rotate(180deg)",
-                        letterSpacing: "0.04em",
-                      }}
-                    >
-                      {label}
-                    </span>
-                  </button>
-                ))}
-              </div>
-
-              {/* Slide-out panel */}
-              <div
-                style={{
-                  position: "fixed",
-                  top: "3.5rem",
-                  right: 0,
-                  bottom: 0,
-                  width: panelWidth,
-                  transform: isOpen ? "translateX(0)" : "translateX(100%)",
-                  transition: "transform 0.25s ease",
-                  zIndex: 40,
-                  display: "flex",
-                  flexDirection: "column",
-                }}
-                className="border-l border-border bg-background shadow-2xl"
-              >
-                {/* Drag handle */}
-                <div
-                  aria-hidden="true"
-                  onMouseDown={startDrag}
-                  style={{
-                    position: "absolute",
-                    left: 0,
-                    top: 0,
-                    bottom: 0,
-                    width: 5,
-                    cursor: "col-resize",
-                    zIndex: 2,
-                  }}
-                  className="hover:bg-primary/30 transition-colors"
-                />
-                {/* Panel header: tab switcher + close */}
-                <div className="flex shrink-0 items-center gap-1 border-b border-border px-2 py-2">
-                  {TABS.map(({ id, label, icon }) => (
-                    <button
-                      key={id}
-                      type="button"
-                      onClick={() => {
-                        if (id === "notes" && !notesLoaded)
-                          loadProblemNotes(problemNumber);
-                        setActiveTab(id);
-                      }}
-                      className={`flex items-center gap-1.5 rounded px-2.5 py-1.5 text-xs font-medium transition-colors ${
-                        activeTab === id
-                          ? "bg-primary/10 text-primary"
-                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                      }`}
-                    >
-                      {icon}
-                      {id === "code"
-                        ? "Code Editor"
-                        : id === "ai"
-                          ? "AI Review"
-                          : label}
-                    </button>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab(null)}
-                    className="ml-auto rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                    aria-label="Close panel"
-                  >
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden="true"
-                    >
-                      <line x1="18" y1="6" x2="6" y2="18" />
-                      <line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
-                  </button>
-                </div>
-
-                {/* ── Notes panel ── */}
-                {activeTab === "notes" && (
-                  <div className="flex flex-1 flex-col overflow-hidden">
-                    <div className="flex flex-1 flex-col gap-2 overflow-y-auto p-3">
-                      {notesLoading && (
-                        <p className="text-sm text-muted-foreground">
-                          Loading…
-                        </p>
-                      )}
-                      {!notesLoading && problemNotes.length === 0 && (
-                        <p className="py-6 text-center text-xs text-muted-foreground">
-                          No notes for this problem yet.
-                        </p>
-                      )}
-                      {problemNotes.map((note) => (
-                        <div
-                          key={note.id}
-                          className="flex flex-col gap-1 rounded-lg border border-border bg-muted/30 px-3 py-2.5"
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <span className="text-sm font-medium leading-snug">
-                              {note.title}
-                            </span>
-                            <div className="flex shrink-0 items-center gap-1.5">
-                              {note.code && (
-                                <span className="rounded bg-muted px-1.5 py-px font-mono text-[10px] text-muted-foreground">
-                                  {note.code_language}
-                                </span>
-                              )}
-                              <span className="text-[10px] text-muted-foreground">
-                                {new Date(note.updated_at).toLocaleDateString()}
-                              </span>
-                            </div>
-                          </div>
-                          {note.content && (
-                            <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
-                              {note.content}
-                            </p>
-                          )}
-                          <a
-                            href="/notes"
-                            className="mt-0.5 self-start text-[11px] text-primary hover:underline"
-                          >
-                            Open in Notes ↗
-                          </a>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="flex shrink-0 flex-col gap-2 border-t border-border p-3">
-                      <p className="text-xs font-medium text-muted-foreground">
-                        New Note
-                      </p>
-                      <input
-                        type="text"
-                        value={quickTitle}
-                        onChange={(e) => setQuickTitle(e.target.value)}
-                        placeholder="Title…"
-                        maxLength={200}
-                        className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                      />
-                      <textarea
-                        value={quickContent}
-                        onChange={(e) => setQuickContent(e.target.value)}
-                        placeholder="Write a note…"
-                        rows={3}
-                        maxLength={10000}
-                        className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                      />
-                      <Button
-                        size="sm"
-                        className="self-start"
-                        onClick={() => saveQuickNote(problemNumber)}
-                        disabled={
-                          quickSaving ||
-                          (!quickTitle.trim() && !quickContent.trim())
-                        }
-                      >
-                        {quickSaving ? "Saving…" : "Save Note"}
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                {/* ── Code editor panel ── */}
-                {activeTab === "code" && (
-                  <div className="flex flex-1 flex-col overflow-hidden">
-                    <div className="flex shrink-0 flex-wrap items-center gap-1 border-b border-border bg-muted/10 px-3 py-2">
-                      {(["C++", "Python", "Java", "JavaScript"] as const).map(
-                        (lang) => (
-                          <button
-                            key={lang}
-                            type="button"
-                            onClick={() => setReviewLanguage(lang)}
-                            className={`rounded px-2.5 py-0.5 text-xs font-medium transition-colors ${
-                              reviewLanguage === lang
-                                ? "bg-primary text-primary-foreground"
-                                : "bg-muted text-muted-foreground hover:text-foreground"
-                            }`}
-                          >
-                            {lang}
-                          </button>
-                        ),
-                      )}
-                      <span className="ml-auto flex items-center gap-2">
-                        <span className="text-[11px] text-muted-foreground">
-                          {reviewCode.length}/50000
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (codeFullscreen) {
-                              setPanelWidth(420);
-                              setCodeFullscreen(false);
-                            } else {
-                              setPanelWidth(
-                                Math.min(
-                                  Math.max(
-                                    Math.floor(window.innerWidth * 0.62),
-                                    MIN_PANEL_W,
-                                  ),
-                                  MAX_PANEL_W,
-                                ),
-                              );
-                              setCodeFullscreen(true);
-                            }
-                          }}
-                          className="rounded px-2 py-0.5 text-[11px] font-medium bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                          title={
-                            codeFullscreen
-                              ? "Collapse editor"
-                              : "Expand to split view"
-                          }
-                        >
-                          {codeFullscreen ? "↙ Collapse" : "↗ Expand"}
-                        </button>
-                      </span>
-                    </div>
-                    {/* Prism overlay editor */}
-                    <div
-                      className="relative flex-1 overflow-hidden"
-                      style={{ background: "#1e1e2e" }}
-                    >
-                      <pre
-                        aria-hidden="true"
-                        style={{
-                          position: "absolute",
-                          inset: 0,
-                          margin: 0,
-                          padding: "0.75rem 1rem",
-                          fontFamily: editorFont,
-                          fontSize: 13,
-                          lineHeight: 1.6,
-                          whiteSpace: "pre-wrap",
-                          wordBreak: "break-all",
-                          overflowY: "auto",
-                          overflowX: "hidden",
-                          pointerEvents: "none",
-                          color: "#cdd6f4",
-                          background: "transparent",
-                          tabSize: 2,
-                        }}
-                        // biome-ignore lint/security/noDangerouslySetInnerHtml: Prism output is sanitised HTML
-                        dangerouslySetInnerHTML={{
-                          __html: `${highlight(
-                            reviewCode || " ",
-                            LANG_GRAMMARS[reviewLanguage] ?? languages.clike,
-                            reviewLanguage,
-                          )}\n`,
-                        }}
-                      />
-                      <textarea
-                        value={reviewCode}
-                        onChange={(e) => setReviewCode(e.target.value)}
-                        onKeyDown={handleEditorKeyDown}
-                        onScroll={(e) => {
-                          const pre = e.currentTarget
-                            .previousElementSibling as HTMLPreElement | null;
-                          if (pre) pre.scrollTop = e.currentTarget.scrollTop;
-                        }}
-                        placeholder={`Write or paste your ${reviewLanguage} code here…`}
-                        maxLength={50000}
-                        spellCheck={false}
-                        style={{
-                          position: "absolute",
-                          inset: 0,
-                          margin: 0,
-                          padding: "0.75rem 1rem",
-                          fontFamily: editorFont,
-                          fontSize: 13,
-                          lineHeight: 1.6,
-                          whiteSpace: "pre-wrap",
-                          wordBreak: "break-all",
-                          overflowY: "auto",
-                          overflowX: "hidden",
-                          resize: "none",
-                          background: "transparent",
-                          color: "transparent",
-                          caretColor: "#cdd6f4",
-                          outline: "none",
-                          tabSize: 2,
-                          zIndex: 1,
-                        }}
-                      />
-                    </div>
-                    <div className="flex shrink-0 items-center gap-2 border-t border-border px-3 py-2.5">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={
-                          !reviewCode.trim() || editorSaveStatus === "saving"
-                        }
-                        onClick={saveCodeAsNote}
-                      >
-                        {editorSaveStatus === "saving"
-                          ? "Saving…"
-                          : editorSaveStatus === "saved"
-                            ? "Saved ✓"
-                            : "Save as Note"}
-                      </Button>
-                      {editorSaveStatus === "error" && (
-                        <span className="text-xs text-destructive">
-                          Save failed
-                        </span>
-                      )}
-                      <span className="ml-auto text-[11px] text-muted-foreground">
-                        Tab · Enter auto-indents
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                {/* ── AI Review panel ── */}
-                {activeTab === "ai" && (
-                  <div className="flex flex-1 flex-col overflow-hidden">
-                    <div className="flex shrink-0 items-center justify-between border-b border-border bg-muted/10 px-4 py-2">
-                      <p className="text-xs text-muted-foreground">
-                        {chatReviewsLeft !== null
-                          ? `${chatReviewsLeft} request${chatReviewsLeft !== 1 ? "s" : ""} left today${chatMessagesLeft !== null ? ` · ${chatMessagesLeft} left in chat` : ""}.`
-                          : chatMessagesLeft !== null
-                            ? `${chatMessagesLeft} left in chat.`
-                            : "10 requests/day · 15s between messages."}
-                      </p>
-                      {chatMessages.length > 0 && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setChatMessages([]);
-                            setChatError(null);
-                            setChatReviewsLeft(null);
-                          }}
-                          className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-                        >
-                          Clear
-                        </button>
-                      )}
-                    </div>
-
-                    {reviewCode ? (
-                      <div className="flex shrink-0 items-center gap-2 border-b border-border bg-muted/5 px-4 py-2">
-                        <span className="rounded bg-muted px-1.5 py-px font-mono text-[10px] text-muted-foreground">
-                          {reviewLanguage}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {reviewCode.split("\n").length} lines
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setActiveTab("code")}
-                          className="ml-auto text-xs text-primary hover:underline"
-                        >
-                          Edit ↗
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="flex shrink-0 items-center gap-2 border-b border-border bg-muted/5 px-4 py-2.5">
-                        <span className="text-xs text-muted-foreground">
-                          No code yet —
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setActiveTab("code")}
-                          className="text-xs text-primary hover:underline"
-                        >
-                          open Code Editor ↗
-                        </button>
-                      </div>
-                    )}
-
-                    <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-3">
-                      {chatMessages.length === 0 &&
-                        !chatLoading &&
-                        !chatError && (
-                          <p className="py-6 text-center text-xs text-muted-foreground">
-                            Write your code in the Code Editor tab, then ask a
-                            question here.
-                          </p>
-                        )}
-
-                      {chatMessages.map((msg) => (
-                        <div
-                          key={msg.id}
-                          className={`flex flex-col gap-1 ${msg.role === "user" ? "items-end" : "items-start"}`}
-                        >
-                          <span className="text-[10px] font-medium text-muted-foreground">
-                            {msg.role === "user" ? "You" : "AI Mentor"}
-                          </span>
-                          <div
-                            className={`max-w-[92%] rounded-lg px-3 py-2.5 text-sm leading-relaxed whitespace-pre-wrap ${
-                              msg.role === "user"
-                                ? "bg-primary/10 text-foreground"
-                                : "bg-muted text-foreground"
-                            }`}
-                          >
-                            {msg.content}
-                          </div>
-                        </div>
-                      ))}
-
-                      {chatLoading && (
-                        <div className="flex flex-col items-start gap-1">
-                          <span className="text-[10px] font-medium text-muted-foreground">
-                            AI Mentor
-                          </span>
-                          <div className="rounded-lg bg-muted px-3 py-2.5 text-sm text-muted-foreground">
-                            Thinking…
-                          </div>
-                        </div>
-                      )}
-
-                      {chatError && (
-                        <p className="text-xs text-destructive">{chatError}</p>
-                      )}
-
-                      <div ref={chatBottomRef} />
-                    </div>
-
-                    <div className="flex shrink-0 gap-2 border-t border-border p-2.5">
-                      <input
-                        type="text"
-                        value={chatInput}
-                        onChange={(e) => setChatInput(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" && !e.shiftKey) {
-                            e.preventDefault();
-                            void handleChat(problemNumber);
-                          }
-                        }}
-                        placeholder="Ask about your code…"
-                        maxLength={2000}
-                        disabled={chatLoading}
-                        className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
-                      />
-                      <Button
-                        size="sm"
-                        disabled={chatLoading || !chatInput.trim()}
-                        onClick={() => void handleChat(problemNumber)}
-                      >
-                        Send
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </>
-          );
-        })()}
+          chatMessages={chatMessages}
+          setChatMessages={setChatMessages}
+          chatLoading={chatLoading}
+          chatError={chatError}
+          setChatError={setChatError}
+          chatInput={chatInput}
+          setChatInput={setChatInput}
+          chatReviewsLeft={chatReviewsLeft}
+          setChatReviewsLeft={setChatReviewsLeft}
+          chatMessagesLeft={chatMessagesLeft}
+          chatBottomRef={chatBottomRef}
+          onChat={() => void handleChat(state.problem.problem_number ?? 0)}
+        />
+      )}
     </div>
   );
 }

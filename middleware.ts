@@ -3,11 +3,11 @@ import { type NextRequest, NextResponse } from "next/server";
 import { ADMIN_EMAIL } from "~/lib/is-admin";
 import { createMiddlewareClient } from "~/lib/supabase/middleware";
 
-const PUBLIC_PATHS = ["/", "/auth"];
+const PUBLIC_PATHS = ["/", "/auth", "/display-problem", "/changelog"];
 // Auth pages that logged-in users shouldn't revisit
 const AUTH_ONLY_PATHS = ["/auth/login", "/auth/signup"];
 // Pages only the admin account can visit
-const ADMIN_PAGE_PATHS = ["/add-hints", "/add-solution"];
+const ADMIN_PAGE_PATHS = ["/add-hints", "/add-solution", "/admin"];
 // API routes only the admin account can call
 const ADMIN_API_PATHS = ["/api/admin"];
 
@@ -98,6 +98,20 @@ export async function middleware(request: NextRequest) {
     url.pathname = "/display-problem";
     url.search = "";
     return NextResponse.redirect(url);
+  }
+
+  // If a signed-in user with a confirmed username lands on setup-username
+  // (back button, stale link, etc.) skip them straight to the right page.
+  if (user && pathname === "/auth/setup-username") {
+    const meta = user.user_metadata ?? {};
+    if (meta.username_confirmed) {
+      const url = request.nextUrl.clone();
+      url.pathname = meta.onboarding_completed
+        ? "/display-problem"
+        : "/onboarding";
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
   }
 
   // API routes handle their own auth and return JSON — never redirect them

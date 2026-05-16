@@ -158,7 +158,17 @@ export function OnboardingForm({ csrfToken }: { csrfToken: string }) {
       preferred_languages: langs,
       daily_goal: dailyGoal,
     });
-    router.push("/display-problem");
+    let dest = "/display-problem";
+    try {
+      const res = await fetch("/api/problems/random");
+      if (res.ok) {
+        const problem = await res.json();
+        if (problem.problem_number) {
+          dest = `/display-problem?p=${problem.problem_number}`;
+        }
+      }
+    } catch {}
+    router.push(dest);
   }
 
   function advance() {
@@ -256,9 +266,9 @@ export function OnboardingForm({ csrfToken }: { csrfToken: string }) {
               {step === 1 && "What are you focusing on?"}
               {step === 2 && "What's your experience level?"}
               {step === 3 && "Estimate your starting rating"}
-              {step === 4 && "What brings you here?"}
-              {step === 5 && "Preferred languages?"}
-              {step === 6 && "Daily practice goal?"}
+              {step === 4 && "What brings you here? (Optional)"}
+              {step === 5 && "Preferred languages? (Optional)"}
+              {step === 6 && "Daily practice goal? (Optional)"}
             </h1>
             <p
               style={{
@@ -272,10 +282,12 @@ export function OnboardingForm({ csrfToken }: { csrfToken: string }) {
                 "We'll tailor problem difficulty to your background."}
               {step === 3 &&
                 "Sets your starting rating so you see appropriately-difficult problems from day one."}
-              {step === 4 && "Helps us recommend the right problem types."}
+              {step === 4 &&
+                "Helps us recommend the right problem types — skip if you're in a hurry."}
               {step === 5 &&
-                "Solutions will default to your preferred language."}
-              {step === 6 && "We'll remind you to keep your streak going."}
+                "Solutions will default to your preferred language — skip if unsure."}
+              {step === 6 &&
+                "We'll remind you to keep your streak going — skip if you prefer no reminders."}
             </p>
           </div>
 
@@ -419,46 +431,82 @@ export function OnboardingForm({ csrfToken }: { csrfToken: string }) {
           <div
             style={{
               padding: "1rem 1.75rem 1.5rem",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
               borderTop: "1px solid var(--color-border)",
             }}
           >
-            <button
-              type="button"
-              onClick={advance}
+            {/* "Start practicing" shortcut appears from step 4 onward */}
+            {step >= 4 && (
+              <button
+                type="button"
+                onClick={finish}
+                disabled={saving}
+                style={{
+                  display: "block",
+                  width: "100%",
+                  background: "var(--color-foreground)",
+                  color: "var(--color-background)",
+                  border: "none",
+                  borderRadius: "var(--radius-md)",
+                  padding: "0.65rem 1.4rem",
+                  fontSize: "0.875rem",
+                  fontWeight: 600,
+                  cursor: saving ? "not-allowed" : "pointer",
+                  opacity: saving ? 0.7 : 1,
+                  marginBottom: "0.75rem",
+                  textAlign: "center",
+                }}
+              >
+                {saving ? "Saving…" : "Start practicing →"}
+              </button>
+            )}
+            <div
               style={{
-                background: "none",
-                border: "none",
-                color: "var(--color-muted-foreground)",
-                fontSize: "0.875rem",
-                cursor: "pointer",
-                padding: "0.25rem 0",
-                textDecoration: "underline",
-                textUnderlineOffset: "3px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
               }}
             >
-              {isLast ? "Skip & finish" : "Skip this step"}
-            </button>
-            <button
-              type="button"
-              onClick={advance}
-              disabled={saving}
-              style={{
-                background: "var(--color-foreground)",
-                color: "var(--color-background)",
-                border: "none",
-                borderRadius: "var(--radius-md)",
-                padding: "0.6rem 1.4rem",
-                fontSize: "0.875rem",
-                fontWeight: 600,
-                cursor: saving ? "not-allowed" : "pointer",
-                opacity: saving ? 0.7 : 1,
-              }}
-            >
-              {saving ? "Saving…" : isLast ? "Get started" : "Continue"}
-            </button>
+              <button
+                type="button"
+                onClick={advance}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "var(--color-muted-foreground)",
+                  fontSize: "0.875rem",
+                  cursor: "pointer",
+                  padding: "0.25rem 0",
+                  textDecoration: "underline",
+                  textUnderlineOffset: "3px",
+                }}
+              >
+                {isLast ? "Skip & finish" : "Skip this step"}
+              </button>
+              <button
+                type="button"
+                onClick={advance}
+                disabled={saving}
+                style={{
+                  background:
+                    step >= 4
+                      ? "var(--color-muted)"
+                      : "var(--color-foreground)",
+                  color:
+                    step >= 4
+                      ? "var(--color-muted-foreground)"
+                      : "var(--color-background)",
+                  border: step >= 4 ? "1px solid var(--color-border)" : "none",
+                  borderRadius: "var(--radius-md)",
+                  padding: "0.6rem 1.4rem",
+                  fontSize: "0.875rem",
+                  fontWeight: 600,
+                  cursor: saving ? "not-allowed" : "pointer",
+                  opacity: saving ? 0.7 : 1,
+                }}
+              >
+                {saving ? "…" : isLast ? "Get started" : "Continue"}
+              </button>
+            </div>
           </div>
         </div>
 
