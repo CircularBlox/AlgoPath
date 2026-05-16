@@ -12,23 +12,33 @@ type ModelDef = {
 // Order within a task type = preference (first = most preferred).
 const MODELS: ModelDef[] = [
   {
-    id: "microsoft/mai-ds-r1:free",
-    label: "gpt-oss-20b",
-    taskTypes: ["fast", "balanced"],
-  },
-  {
-    id: "nvidia/nemotron-nano-3-4b-instruct:free",
-    label: "Nemotron 3 Nano 30B A3B",
+    id: "qwen/qwq-32b:free",
+    label: "QwQ-32B",
     taskTypes: ["balanced", "reasoning"],
   },
   {
-    id: "microsoft/mai-ds-r1:free",
-    label: "gpt-oss-120b",
-    taskTypes: ["reasoning"],
+    id: "deepseek/deepseek-r1:free",
+    label: "DeepSeek R1",
+    taskTypes: ["balanced", "reasoning"],
   },
   {
-    id: "liquid/lfm-2.5:free",
-    label: "LFM2.5-1.2B-Instruct",
+    id: "google/gemma-3-27b-it:free",
+    label: "Gemma 3 27B",
+    taskTypes: ["fast", "balanced"],
+  },
+  {
+    id: "meta-llama/llama-3.3-70b-instruct:free",
+    label: "Llama 3.3 70B",
+    taskTypes: ["balanced"],
+  },
+  {
+    id: "mistralai/mistral-small-3.1-24b-instruct:free",
+    label: "Mistral Small 3.1 24B",
+    taskTypes: ["fast", "balanced"],
+  },
+  {
+    id: "meta-llama/llama-3.1-8b-instruct:free",
+    label: "Llama 3.1 8B",
     taskTypes: ["fast"],
   },
 ];
@@ -62,7 +72,7 @@ export async function routedCompletion(
   req: CompletionRequest,
 ): Promise<CompletionResult> {
   const taskType = req.taskType ?? "balanced";
-  const timeout = req.timeoutMs ?? 30000;
+  const timeout = req.timeoutMs ?? 45000;
 
   const candidates = MODELS.filter((m) => m.taskTypes.includes(taskType));
   if (candidates.length === 0) {
