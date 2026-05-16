@@ -2,8 +2,11 @@ import * as Sentry from "@sentry/nextjs";
 import { type NextRequest, NextResponse } from "next/server";
 import { env } from "~/env";
 import { isAdmin } from "~/lib/is-admin";
+import { routedCompletion } from "~/lib/model-router";
 import { createAdminClient } from "~/lib/supabase/admin";
 import { createClient, getUser } from "~/lib/supabase/server";
+
+export const maxDuration = 60;
 
 function sse(data: object): Uint8Array {
   return new TextEncoder().encode(`data: ${JSON.stringify(data)}\n\n`);
@@ -48,39 +51,24 @@ Rules:
 - Never state what to do — only ask what the solver might notice or wonder about.
 - No labels, bullets, or headers inside the hint text.`;
 
-  let rawText = "";
-  try {
-    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://localhost:3000",
-        "X-Title": "CompetitiveProgrammingApp",
-      },
-      body: JSON.stringify({
-        model: "openrouter/free",
-        messages: [{ role: "user", content: prompt }],
-      }),
-      signal: AbortSignal.timeout(30000),
+  const result = await routedCompletion({
+    messages: [{ role: "user", content: prompt }],
+    taskType: "balanced",
+    apiKey,
+    timeoutMs: 30000,
+  });
+
+  if (!result.ok) {
+    Sentry.captureMessage(result.error, {
+      level: "error",
+      tags: { route: "generate-hints-bulk", step: "routed-completion" },
+      extra: { problem_number: problem.problem_number },
     });
+    return { ok: false, error: result.error };
+  }
 
-    rawText = await res.text();
-
-    if (!res.ok) {
-      const reason = `OpenRouter ${res.status}: ${rawText.slice(0, 120)}`;
-      Sentry.captureMessage(reason, {
-        level: "error",
-        tags: { route: "generate-hints-bulk", step: "openrouter" },
-        extra: { problem_number: problem.problem_number },
-      });
-      return { ok: false, error: reason };
-    }
-
-    const aiBody = JSON.parse(rawText) as {
-      choices: { message: { content: string } }[];
-    };
-    const aiText = aiBody.choices?.[0]?.message?.content ?? "";
+  try {
+    const aiText = result.content;
     const trimmed = aiText.slice(
       aiText.indexOf("{"),
       aiText.lastIndexOf("}") + 1,
@@ -90,7 +78,6 @@ Rules:
       hint_2?: string;
       hint_3?: string;
     };
-
     if (!hints.hint_1 || !hints.hint_2 || !hints.hint_3) {
       return { ok: false, error: "Incomplete hints in AI response" };
     }
@@ -100,18 +87,8 @@ Rules:
       hint_2: hints.hint_2,
       hint_3: hints.hint_3,
     };
-  } catch (err) {
-    Sentry.captureException(err, {
-      tags: { route: "generate-hints-bulk", step: "generate" },
-      extra: {
-        problem_number: problem.problem_number,
-        rawText: rawText.slice(0, 200),
-      },
-    });
-    return {
-      ok: false,
-      error: err instanceof Error ? err.message : "Unknown error",
-    };
+  } catch {
+    return { ok: false, error: "Failed to parse AI response as JSON" };
   }
 }
 
@@ -158,7 +135,15 @@ export async function GET(_request: NextRequest) {
       for (let i = 0; i < toProcess.length; i++) {
         const problem = toProcess[i];
 
-        const result = await generateHintsForProblem(problem, apiKey);
+        // Retry up to 2 times with backoff for transient failures
+        let result: HintResult = { ok: false, error: "Not attempted" };
+        for (let attempt = 0; attempt <= 2; attempt++) {
+          if (attempt > 0) {
+            await new Promise((r) => setTimeout(r, 4000 * attempt));
+          }
+          result = await generateHintsForProblem(problem, apiKey);
+          if (result.ok) break;
+        }
 
         if (result.ok) {
           const { error } = await adminSupabase.from("hints").insert({
@@ -215,7 +200,7 @@ export async function GET(_request: NextRequest) {
         }
 
         if (i < toProcess.length - 1) {
-          await new Promise((r) => setTimeout(r, 1200));
+          await new Promise((r) => setTimeout(r, 2000));
         }
       }
 
