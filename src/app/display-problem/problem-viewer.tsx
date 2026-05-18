@@ -253,6 +253,15 @@ export function ProblemViewer({
 
   const [solveTimestamp, setSolveTimestamp] = useState<SolveTimestamp>(null);
 
+  // Hint preferences (synced from hints API response, editable by Pro/Elite)
+  const [localHintStyle, setLocalHintStyle] = useState<string>("structured");
+  const [localAdaptive, setLocalAdaptive] = useState<boolean>(false);
+  const [localPreferredModel, setLocalPreferredModel] = useState<string | null>(
+    null,
+  );
+  const [prefsSaving, setPrefsSaving] = useState(false);
+  const [hintHistorySessions, setHintHistorySessions] = useState<string[]>([]);
+
   async function loadProblemNotes(problemNumber: number) {
     setNotesLoading(true);
     try {
@@ -453,6 +462,7 @@ export function ProblemViewer({
     setNextProblem(null);
     setNextProblemLoading(false);
     setShowHintNudge(false);
+    setHintHistorySessions([]);
     if (hintNudgeTimer.current) clearTimeout(hintNudgeTimer.current);
   }
 
@@ -667,6 +677,11 @@ export function ProblemViewer({
         });
       } else {
         setHintsState({ status: "open", data: hintsData });
+        // Sync hint preferences from response
+        if (hintsData.hint_style) setLocalHintStyle(hintsData.hint_style);
+        if (typeof hintsData.adaptive_difficulty === "boolean")
+          setLocalAdaptive(hintsData.adaptive_difficulty);
+        setLocalPreferredModel(hintsData.preferred_model ?? null);
         if (ratingsRes?.ok) {
           const ratingsData = await ratingsRes.json();
           setHintRatings({
@@ -674,6 +689,17 @@ export function ProblemViewer({
             2: ratingsData[2] ?? null,
             3: ratingsData[3] ?? null,
           });
+        }
+        // Fetch hint history for Elite
+        if (plan === "elite") {
+          fetch(`/api/problems/${problemNumber}/hint-history`)
+            .then(async (r) => {
+              if (r.ok) {
+                const d = (await r.json()) as { sessions: string[] };
+                setHintHistorySessions(d.sessions ?? []);
+              }
+            })
+            .catch(() => {});
         }
       }
     } catch {
@@ -975,6 +1001,59 @@ export function ProblemViewer({
     }
     setFocusBanner(false);
     setFocusSaving(false);
+  }
+
+  async function savePreference(patch: Record<string, unknown>) {
+    setPrefsSaving(true);
+    try {
+      await fetch("/api/profiles/preferences", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "x-csrf-token": csrfToken,
+        },
+        body: JSON.stringify(patch),
+      });
+    } catch {
+      // non-fatal
+    } finally {
+      setPrefsSaving(false);
+    }
+  }
+
+  function exportNotes() {
+    if (problemNotes.length === 0) return;
+    const problemTitle =
+      state.status === "loaded" ? state.problem.title : "Problem Notes";
+    const content = problemNotes
+      .map(
+        (n) =>
+          `# ${n.title}\n\n${n.content}${n.code ? `\n\n\`\`\`${n.code_language ?? ""}\n${n.code}\n\`\`\`` : ""}`,
+      )
+      .join("\n\n---\n\n");
+    const blob = new Blob([`# ${problemTitle}\n\n${content}`], {
+      type: "text/markdown",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${problemTitle.replace(/[^a-z0-9]/gi, "-").toLowerCase()}-notes.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function formatHintText(text: string, style: string): string {
+    if (style === "socratic") {
+      const base = text.replace(/\.\s*$/, "");
+      return `Think about this: ${base}. What approach does this suggest?`;
+    }
+    if (style === "minimal") {
+      const match = text.match(/^(.{1,180}[.!?])\s/);
+      return match
+        ? match[1]
+        : text.slice(0, 180).trimEnd() + (text.length > 180 ? "…" : "");
+    }
+    return text;
   }
 
   return (
@@ -2044,7 +2123,110 @@ export function ProblemViewer({
                       ref={hintsPanelRef}
                       className="flex flex-col gap-4 rounded-xl border border-border bg-card px-6 py-5 text-card-foreground shadow-sm"
                     >
-                      <h3 className="font-semibold">Hints</h3>
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <h3 className="font-semibold">Hints</h3>
+                        <div className="flex items-center gap-2">
+                          {/* Model selector — Pro+ */}
+                          {(plan === "pro" || plan === "elite") && (
+                            <select
+                              value={localPreferredModel ?? ""}
+                              disabled={prefsSaving}
+                              onChange={async (e) => {
+                                const v = e.target.value || null;
+                                setLocalPreferredModel(v);
+                                await savePreference({
+                                  preferred_hint_model: v,
+                                });
+                              }}
+                              className="rounded border border-border bg-background px-2 py-0.5 text-xs text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                              title="Preferred model for future hint generation"
+                            >
+                              <option value="">Default model</option>
+                              <option value="qwen/qwq-32b:free">QwQ-32B</option>
+                              <option value="deepseek/deepseek-r1:free">
+                                DeepSeek R1
+                              </option>
+                              <option value="google/gemma-3-27b-it:free">
+                                Gemma 3 27B
+                              </option>
+                              <option value="meta-llama/llama-3.3-70b-instruct:free">
+                                Llama 3.3 70B
+                              </option>
+                              <option value="mistralai/mistral-small-3.1-24b-instruct:free">
+                                Mistral Small 24B
+                              </option>
+                              <option value="meta-llama/llama-3.1-8b-instruct:free">
+                                Llama 3.1 8B
+                              </option>
+                            </select>
+                          )}
+                          {plan === "free" && (
+                            <Link
+                              href="/pricing"
+                              className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+                            >
+                              <svg
+                                width="10"
+                                height="10"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                aria-hidden="true"
+                              >
+                                <rect
+                                  x="3"
+                                  y="11"
+                                  width="18"
+                                  height="11"
+                                  rx="2"
+                                  ry="2"
+                                />
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                              </svg>
+                              Model
+                            </Link>
+                          )}
+                          {/* Hint style — Elite */}
+                          {plan === "elite" && (
+                            <select
+                              value={localHintStyle}
+                              disabled={prefsSaving}
+                              onChange={async (e) => {
+                                setLocalHintStyle(e.target.value);
+                                await savePreference({
+                                  hint_style: e.target.value,
+                                });
+                              }}
+                              className="rounded border border-border bg-background px-2 py-0.5 text-xs text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                            >
+                              <option value="structured">Structured</option>
+                              <option value="socratic">Socratic</option>
+                              <option value="minimal">Minimal</option>
+                            </select>
+                          )}
+                          {/* Adaptive difficulty toggle — Elite */}
+                          {plan === "elite" && (
+                            <button
+                              type="button"
+                              disabled={prefsSaving}
+                              onClick={async () => {
+                                const next = !localAdaptive;
+                                setLocalAdaptive(next);
+                                await savePreference({
+                                  adaptive_difficulty: next,
+                                });
+                              }}
+                              className={`rounded-full px-2 py-0.5 text-xs font-medium transition-colors ${localAdaptive ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground hover:text-foreground"}`}
+                              title="Adaptive difficulty: hints adapt to contest-level context"
+                            >
+                              Adaptive
+                            </button>
+                          )}
+                        </div>
+                      </div>
                       {allNull ? (
                         <p className="text-sm text-muted-foreground">
                           No hints available yet.
@@ -2061,6 +2243,10 @@ export function ProblemViewer({
                             ).map(({ n, text }) => {
                               if (!text || n > hintsRevealed) return null;
                               if (isGated && n > 1) return null;
+                              const displayText = formatHintText(
+                                text,
+                                localHintStyle,
+                              );
                               const myRating = hintRatings[n];
                               return (
                                 <div
@@ -2071,7 +2257,7 @@ export function ProblemViewer({
                                     Hint {n}
                                   </span>
                                   <div className="text-sm leading-relaxed">
-                                    <FormattedText text={text} />
+                                    <FormattedText text={displayText} />
                                   </div>
                                   {userId && (
                                     <div className="flex items-center gap-1 pt-1">
@@ -2265,6 +2451,25 @@ export function ProblemViewer({
                               </Button>
                             </div>
                           )}
+                          {/* Hint history — Elite only */}
+                          {plan === "elite" &&
+                            hintHistorySessions.length > 0 && (
+                              <div className="flex flex-col gap-1.5 border-t border-border pt-3">
+                                <p className="text-xs font-medium text-muted-foreground">
+                                  Your hint sessions for this problem
+                                </p>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {hintHistorySessions.map((date) => (
+                                    <span
+                                      key={date}
+                                      className="rounded-full bg-muted px-2.5 py-0.5 text-xs text-muted-foreground tabular-nums"
+                                    >
+                                      {date}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                         </>
                       )}
                     </div>
@@ -2456,6 +2661,7 @@ export function ProblemViewer({
           onSaveQuickNote={() =>
             saveQuickNote(state.problem.problem_number ?? 0)
           }
+          onExportNotes={exportNotes}
           plan={plan}
           chatMessages={chatMessages}
           setChatMessages={setChatMessages}

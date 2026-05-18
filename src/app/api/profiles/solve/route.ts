@@ -46,14 +46,15 @@ function todayUtc(): string {
 function computeStreak(
   current: number,
   lastDate: string | null,
-): { streak: number; last_solved_date: string } {
+  streakFrozen: boolean,
+): { streak: number; last_solved_date: string; clearFreeze: boolean } {
   const today = todayUtc();
 
-  if (!lastDate) return { streak: 1, last_solved_date: today };
+  if (!lastDate)
+    return { streak: 1, last_solved_date: today, clearFreeze: false };
 
   if (lastDate === today) {
-    // Already solved something today — preserve streak
-    return { streak: current, last_solved_date: today };
+    return { streak: current, last_solved_date: today, clearFreeze: false };
   }
 
   const yesterday = new Date(today);
@@ -61,12 +62,15 @@ function computeStreak(
   const yesterdayStr = yesterday.toISOString().slice(0, 10);
 
   if (lastDate === yesterdayStr) {
-    // Solved yesterday — extend streak
-    return { streak: current + 1, last_solved_date: today };
+    return { streak: current + 1, last_solved_date: today, clearFreeze: false };
   }
 
-  // Gap — reset streak
-  return { streak: 1, last_solved_date: today };
+  // Gap — streak freeze absorbs one missed day
+  if (streakFrozen) {
+    return { streak: current, last_solved_date: today, clearFreeze: true };
+  }
+
+  return { streak: 1, last_solved_date: today, clearFreeze: false };
 }
 
 export async function POST(request: NextRequest) {
@@ -113,7 +117,7 @@ export async function POST(request: NextRequest) {
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select(
-      "rating, xp, level, solved_problems, streak, last_solved_date, focus",
+      "rating, xp, level, solved_problems, streak, last_solved_date, focus, streak_frozen",
     )
     .eq("id", user.id)
     .single();
@@ -148,9 +152,10 @@ export async function POST(request: NextRequest) {
   const new_xp = (profile.xp ?? 0) + xp_gain;
   const new_level = levelFromXp(new_xp);
 
-  const { streak, last_solved_date } = computeStreak(
+  const { streak, last_solved_date, clearFreeze } = computeStreak(
     profile.streak ?? 0,
     profile.last_solved_date ?? null,
+    profile.streak_frozen ?? false,
   );
 
   const newSolved = [...solved, problem_number];
@@ -193,17 +198,20 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  const profileUpdate: Record<string, unknown> = {
+    solved_problems: newSolved,
+    rating: new_rating,
+    xp: new_xp,
+    level: new_level,
+    streak,
+    last_solved_date,
+    recommended_problem_number,
+  };
+  if (clearFreeze) profileUpdate.streak_frozen = false;
+
   const { error: updateError } = await supabase
     .from("profiles")
-    .update({
-      solved_problems: newSolved,
-      rating: new_rating,
-      xp: new_xp,
-      level: new_level,
-      streak,
-      last_solved_date,
-      recommended_problem_number, // always write — clears stale value even when null
-    })
+    .update(profileUpdate)
     .eq("id", user.id);
 
   if (updateError) {

@@ -32,7 +32,11 @@ function SkillWebSkeleton() {
   );
 }
 
-async function PublicSkillWeb({ solvedProblems }: { solvedProblems: number[] }) {
+async function PublicSkillWeb({
+  solvedProblems,
+}: {
+  solvedProblems: number[];
+}) {
   if (solvedProblems.length === 0) return null;
 
   const supabase = createAdminClient();
@@ -67,7 +71,9 @@ async function PublicSkillWeb({ solvedProblems }: { solvedProblems: number[] }) 
         )}
         {topTags.map(([tag, count]) => (
           <div key={tag} className="flex items-center gap-3 px-4 py-2.5">
-            <span className="text-sm w-40 shrink-0 truncate">{displayTag(tag)}</span>
+            <span className="text-sm w-40 shrink-0 truncate">
+              {displayTag(tag)}
+            </span>
             <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
               <div
                 className="h-full rounded-full bg-foreground/60 transition-all"
@@ -114,9 +120,10 @@ export default async function PublicProfilePage({
   const initial = profile.username[0]?.toUpperCase() ?? "U";
 
   const joinedDate = profile.created_at
-    ? new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(
-        new Date(profile.created_at),
-      )
+    ? new Intl.DateTimeFormat("en-US", {
+        month: "long",
+        year: "numeric",
+      }).format(new Date(profile.created_at))
     : null;
 
   return (
@@ -151,7 +158,9 @@ export default async function PublicProfilePage({
               </span>
             </div>
             {joinedDate && (
-              <p className="text-sm text-muted-foreground">Joined {joinedDate}</p>
+              <p className="text-sm text-muted-foreground">
+                Joined {joinedDate}
+              </p>
             )}
 
             {/* XP progress */}
@@ -168,13 +177,19 @@ export default async function PublicProfilePage({
               <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all duration-500"
-                  style={{ width: `${progress.percent}%`, background: config.gradient }}
+                  style={{
+                    width: `${progress.percent}%`,
+                    background: config.gradient,
+                  }}
                 />
               </div>
             </div>
 
             {profile.skill_level && (
-              <Badge variant="secondary" className="mt-2 w-fit capitalize text-xs">
+              <Badge
+                variant="secondary"
+                className="mt-2 w-fit capitalize text-xs"
+              >
                 {profile.skill_level}
               </Badge>
             )}
@@ -188,20 +203,32 @@ export default async function PublicProfilePage({
             <span className="text-xs text-muted-foreground">Level</span>
           </div>
           <div className="flex flex-1 flex-col gap-0.5 px-6 py-4">
-            <span className="text-2xl font-bold leading-none">{solvedProblems.length}</span>
+            <span className="text-2xl font-bold leading-none">
+              {solvedProblems.length}
+            </span>
             <span className="text-xs text-muted-foreground">Solved</span>
           </div>
           <div className="flex flex-1 flex-col gap-0.5 px-6 py-4">
             <span className="text-2xl font-bold leading-none">
               {streak}
-              <span style={status === "active" ? {} : { filter: "grayscale(1) opacity(0.35)" }}>
-                {" "}🔥
+              <span
+                style={
+                  status === "active"
+                    ? {}
+                    : { filter: "grayscale(1) opacity(0.35)" }
+                }
+              >
+                {" "}
+                🔥
               </span>
             </span>
             <span className="text-xs text-muted-foreground">Streak</span>
           </div>
           <div className="flex flex-1 flex-col gap-0.5 px-6 py-4">
-            <span className="text-2xl font-bold leading-none" style={{ color: config.color }}>
+            <span
+              className="text-2xl font-bold leading-none"
+              style={{ color: config.color }}
+            >
               {xp.toLocaleString()}
             </span>
             <span className="text-xs text-muted-foreground">XP</span>
