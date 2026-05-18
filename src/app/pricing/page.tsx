@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Button } from "~/components/ui/button";
+import { env } from "~/env";
+import { PricingCards } from "./pricing-cards";
 
 type Tier = "free" | "pro" | "elite";
 type FeatureValue = boolean | string;
@@ -105,8 +106,8 @@ const ROWS: FeatureRow[] = [
 function Check() {
   return (
     <svg
-      width="16"
-      height="16"
+      width="15"
+      height="15"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -124,7 +125,7 @@ function Check() {
 function Dash() {
   return (
     <span
-      className="mx-auto block h-px w-4 rounded bg-border"
+      className="mx-auto block h-px w-3 rounded bg-border"
       role="img"
       aria-label="Not included"
     />
@@ -147,123 +148,91 @@ export default function PricingPage() {
   return (
     <main className="mx-auto max-w-4xl px-6 py-16">
       {/* Header */}
-      <div className="mb-12 text-center">
+      <div className="mb-10 text-center">
         <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-primary">
           Pricing
         </p>
         <h1 className="text-3xl font-bold tracking-tight">
           Simple, honest pricing
         </h1>
-        <p className="mx-auto mt-3 max-w-md text-base text-muted-foreground">
-          Start free. Upgrade when you need more. No dark patterns — the free
-          plan is genuinely usable.
+        <p className="mx-auto mt-3 max-w-sm text-sm text-muted-foreground">
+          Built by a competitive programmer, priced for one. The free plan is
+          genuinely usable — no dark patterns.
         </p>
       </div>
 
-      {/* Tier header cards */}
-      <div className="mb-1 grid grid-cols-4 gap-3">
-        <div /> {/* spacer for label column */}
-        {(
-          [
-            {
-              tier: "Free",
-              price: "$0",
-              sub: "Forever",
-              cta: "Get started",
-              href: "/auth/signup",
-              variant: "outline" as const,
-              highlight: false,
-            },
-            {
-              tier: "Pro",
-              price: "$8",
-              sub: "/ mo · $65/yr",
-              cta: "Start Pro",
-              href: "/auth/signup",
-              variant: "default" as const,
-              highlight: true,
-            },
-            {
-              tier: "Elite",
-              price: "$16",
-              sub: "/ mo · $130/yr",
-              cta: "Start Elite",
-              href: "/auth/signup",
-              variant: "outline" as const,
-              highlight: false,
-            },
-          ] as const
-        ).map(({ tier, price, sub, cta, href, variant, highlight }) => (
-          <div
-            key={tier}
-            className={`flex flex-col gap-3 rounded-xl border p-4 text-center ${highlight ? "border-primary bg-primary/5" : "border-border bg-card"}`}
-          >
-            <div>
-              <p
-                className={`text-xs font-semibold uppercase tracking-widest ${highlight ? "text-primary" : "text-muted-foreground"}`}
-              >
-                {tier}
-              </p>
-              <p className="mt-1 text-2xl font-bold">{price}</p>
-              <p className="text-xs text-muted-foreground">{sub}</p>
-            </div>
-            <Button asChild variant={variant} size="sm">
-              <Link href={href}>{cta}</Link>
-            </Button>
-          </div>
-        ))}
-      </div>
+      {/* Interactive tier cards */}
+      <PricingCards
+        proMonthlyPriceId={env.STRIPE_PRO_MONTHLY_PRICE_ID ?? null}
+        proYearlyPriceId={env.STRIPE_PRO_YEARLY_PRICE_ID ?? null}
+        eliteMonthlyPriceId={env.STRIPE_ELITE_MONTHLY_PRICE_ID ?? null}
+        eliteYearlyPriceId={env.STRIPE_ELITE_YEARLY_PRICE_ID ?? null}
+      />
 
-      {/* Feature table */}
-      <div className="overflow-hidden rounded-xl border border-border">
-        <table className="w-full text-sm">
-          <thead className="sr-only">
-            <tr>
-              <th scope="col">Feature</th>
-              <th scope="col">Free</th>
-              <th scope="col">Pro</th>
-              <th scope="col">Elite</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {ROWS.map((row, i) => (
-              <>
-                {row.category && (
-                  <tr key={`cat-${row.category}`} className="bg-muted/30">
-                    <td
-                      colSpan={4}
-                      className="px-4 py-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground"
-                    >
-                      {row.category}
+      {/* Feature comparison table */}
+      <div className="mt-14">
+        <h2 className="mb-4 text-center text-sm font-semibold uppercase tracking-widest text-muted-foreground">
+          Full comparison
+        </h2>
+
+        {/* Column headers */}
+        <div className="mb-1 grid grid-cols-4 gap-0 text-center text-xs font-semibold uppercase tracking-widest">
+          <div />
+          <div className="py-2 text-muted-foreground">Free</div>
+          <div className="py-2 text-primary">Pro</div>
+          <div className="py-2 text-muted-foreground">Elite</div>
+        </div>
+
+        <div className="overflow-hidden rounded-xl border border-border">
+          <table className="w-full text-sm">
+            <thead className="sr-only">
+              <tr>
+                <th scope="col">Feature</th>
+                <th scope="col">Free</th>
+                <th scope="col">Pro</th>
+                <th scope="col">Elite</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {ROWS.map((row, i) => (
+                <>
+                  {row.category && (
+                    <tr key={`cat-${row.category}`} className="bg-muted/40">
+                      <td
+                        colSpan={4}
+                        className="px-4 py-2 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground"
+                      >
+                        {row.category}
+                      </td>
+                    </tr>
+                  )}
+                  <tr
+                    key={row.label}
+                    className={`transition-colors hover:bg-muted/20 ${i % 2 === 0 ? "bg-background" : "bg-muted/10"}`}
+                  >
+                    <td className="px-4 py-2.5 text-sm text-foreground/80">
+                      {row.label}
+                    </td>
+                    <td className="px-4 py-2.5 text-center">
+                      <Cell value={row.free} tier="free" />
+                    </td>
+                    <td className="bg-primary/[0.03] px-4 py-2.5 text-center">
+                      <Cell value={row.pro} tier="pro" />
+                    </td>
+                    <td className="px-4 py-2.5 text-center">
+                      <Cell value={row.elite} tier="elite" />
                     </td>
                   </tr>
-                )}
-                <tr
-                  key={row.label}
-                  className={`transition-colors hover:bg-muted/20 ${i % 2 === 0 ? "" : ""}`}
-                >
-                  <td className="px-4 py-3 text-sm text-foreground/80">
-                    {row.label}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <Cell value={row.free} tier="free" />
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <Cell value={row.pro} tier="pro" />
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <Cell value={row.elite} tier="elite" />
-                  </td>
-                </tr>
-              </>
-            ))}
-          </tbody>
-        </table>
+                </>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* FAQ */}
       <div className="mt-14 border-t border-border pt-10">
-        <h2 className="mb-6 text-center text-lg font-semibold">
+        <h2 className="mb-6 text-center text-base font-semibold">
           Common questions
         </h2>
         <div className="grid gap-6 sm:grid-cols-2">

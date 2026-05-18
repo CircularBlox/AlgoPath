@@ -190,6 +190,9 @@ PostHog web vitals (90th percentile LCP) shows poor scores across key pages:
 - Everything should have Sentry Error Tracking
 
 ---
+## After
+- Give a proper recap of what you did
+- Push changes to dev unless instructed otherwise
 
 ## Design
 - Should be a Techy, black and blue style

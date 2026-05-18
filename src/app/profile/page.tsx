@@ -9,6 +9,7 @@ import { effectiveStreak, streakStatus } from "~/lib/streak";
 import { createClient, getUser } from "~/lib/supabase/server";
 import { displayTag } from "~/lib/tags";
 import { levelFromXp, levelTitle, rankConfig, xpProgress } from "~/lib/xp";
+import { ManageSubscriptionButton } from "./manage-subscription-button";
 import { SkillLevelEditor } from "./skill-level-editor";
 import { TopicRadar } from "./topic-radar";
 import { TopicRecommendation } from "./topic-recommendation";
@@ -25,6 +26,8 @@ type Profile = {
   created_at: string;
   recommended_problem_number: number | null;
   focus: string | null;
+  plan: "free" | "pro" | "elite" | null;
+  stripe_customer_id: string | null;
 };
 
 type Problem = {
@@ -377,7 +380,7 @@ export default async function ProfilePage() {
   const { data: profile } = await supabase
     .from("profiles")
     .select(
-      "username, rating, xp, level, skill_level, solved_problems, streak, last_solved_date, created_at, recommended_problem_number, focus",
+      "username, rating, xp, level, skill_level, solved_problems, streak, last_solved_date, created_at, recommended_problem_number, focus, plan, stripe_customer_id",
     )
     .eq("id", user.id)
     .single<Profile>();
@@ -406,6 +409,15 @@ export default async function ProfilePage() {
   const initial = username[0]?.toUpperCase() ?? "U";
   const cachedRecNumber = profile?.recommended_problem_number ?? null;
   const focus = profile?.focus ?? null;
+  const plan = profile?.plan ?? "free";
+  const hasStripeCustomer = !!profile?.stripe_customer_id;
+
+  const planLabel: Record<string, string> = { free: "Free", pro: "Pro", elite: "Elite" };
+  const planColors: Record<string, string> = {
+    free: "text-muted-foreground border-border bg-muted/40",
+    pro: "text-primary border-primary/40 bg-primary/10",
+    elite: "text-amber-400 border-amber-400/40 bg-amber-400/10",
+  };
   const statItems = [
     { label: "Level", value: String(level), fire: false, fireActive: false },
     { label: "XP", value: xp.toLocaleString(), fire: false, fireActive: false },
@@ -485,6 +497,25 @@ export default async function ProfilePage() {
             <div className="mt-2 flex flex-col gap-0.5">
               <SkillLevelEditor initialLevel={skillLevel} />
               <span className="text-xs text-muted-foreground">Skill Level</span>
+            </div>
+
+            {/* Plan */}
+            <div className="mt-3 flex items-center gap-2 flex-wrap">
+              <span
+                className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${planColors[plan] ?? planColors.free}`}
+              >
+                {planLabel[plan] ?? "Free"} Plan
+              </span>
+              {plan === "free" ? (
+                <Link
+                  href="/pricing"
+                  className="text-xs text-primary underline underline-offset-2 hover:opacity-80"
+                >
+                  Upgrade
+                </Link>
+              ) : hasStripeCustomer ? (
+                <ManageSubscriptionButton />
+              ) : null}
             </div>
           </div>
         </div>
