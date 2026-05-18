@@ -172,6 +172,7 @@ export default function PricingPage() {
               cta: "Get started",
               href: "/auth/signup",
               variant: "outline" as const,
+              highlight: false,
             },
             {
               tier: "Pro",
@@ -189,6 +190,7 @@ export default function PricingPage() {
               cta: "Start Elite",
               href: "/auth/signup",
               variant: "outline" as const,
+              highlight: false,
             },
           ] as const
         ).map(({ tier, price, sub, cta, href, variant, highlight }) => (
