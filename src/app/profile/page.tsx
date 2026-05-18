@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { EmailNudgeToggle } from "~/components/email-nudge-toggle";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
@@ -26,7 +25,6 @@ type Profile = {
   created_at: string;
   recommended_problem_number: number | null;
   focus: string | null;
-  email_streak_nudge: boolean;
 };
 
 type Problem = {
@@ -260,7 +258,9 @@ async function SkillAndSolvedSection({
           Solved Problems
         </h2>
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-12 text-center">
-          <p className="text-sm text-muted-foreground">No problems solved yet.</p>
+          <p className="text-sm text-muted-foreground">
+            No problems solved yet.
+          </p>
           <p className="mt-1 text-xs text-muted-foreground">
             Head to the Problems tab to get started.
           </p>
@@ -377,7 +377,7 @@ export default async function ProfilePage() {
   const { data: profile } = await supabase
     .from("profiles")
     .select(
-      "username, rating, xp, level, skill_level, solved_problems, streak, last_solved_date, created_at, recommended_problem_number, focus, email_streak_nudge",
+      "username, rating, xp, level, skill_level, solved_problems, streak, last_solved_date, created_at, recommended_problem_number, focus",
     )
     .eq("id", user.id)
     .single<Profile>();
@@ -406,13 +406,21 @@ export default async function ProfilePage() {
   const initial = username[0]?.toUpperCase() ?? "U";
   const cachedRecNumber = profile?.recommended_problem_number ?? null;
   const focus = profile?.focus ?? null;
-  const emailStreakNudge = profile?.email_streak_nudge ?? true;
-
   const statItems = [
     { label: "Level", value: String(level), fire: false, fireActive: false },
     { label: "XP", value: xp.toLocaleString(), fire: false, fireActive: false },
-    { label: "Solved", value: String(solvedProblems.length), fire: false, fireActive: false },
-    { label: "Streak", value: String(streak), fire: true, fireActive: status === "active" },
+    {
+      label: "Solved",
+      value: String(solvedProblems.length),
+      fire: false,
+      fireActive: false,
+    },
+    {
+      label: "Streak",
+      value: String(streak),
+      fire: true,
+      fireActive: status === "active",
+    },
   ];
 
   return (
@@ -447,7 +455,9 @@ export default async function ProfilePage() {
               </span>
             </div>
             {joinedDate && (
-              <p className="text-sm text-muted-foreground">Joined {joinedDate}</p>
+              <p className="text-sm text-muted-foreground">
+                Joined {joinedDate}
+              </p>
             )}
 
             {/* XP progress bar */}
@@ -510,12 +520,21 @@ export default async function ProfilePage() {
       {/* ── Streak nudge ────────────────────────────────────────── */}
       {status === "at_risk" && (
         <div className="flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
-          <span style={{ filter: "grayscale(1) opacity(0.4)", fontSize: "1.1rem" }}>🔥</span>
+          <span
+            style={{ filter: "grayscale(1) opacity(0.4)", fontSize: "1.1rem" }}
+          >
+            🔥
+          </span>
           <div className="flex flex-col gap-0.5">
-            <p className="text-sm font-medium">Your {rawStreak}-day streak is at risk</p>
+            <p className="text-sm font-medium">
+              Your {rawStreak}-day streak is at risk
+            </p>
             <p className="text-xs text-muted-foreground">
               Solve a problem today to keep it going.{" "}
-              <Link href="/display-problem" className="text-foreground underline underline-offset-2">
+              <Link
+                href="/display-problem"
+                className="text-foreground underline underline-offset-2"
+              >
                 Practice now
               </Link>
             </p>
@@ -527,10 +546,15 @@ export default async function ProfilePage() {
         <div className="flex items-start gap-3 rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3">
           <span style={{ fontSize: "1.1rem" }}>💔</span>
           <div className="flex flex-col gap-0.5">
-            <p className="text-sm font-medium">Your {rawStreak}-day streak was broken</p>
+            <p className="text-sm font-medium">
+              Your {rawStreak}-day streak was broken
+            </p>
             <p className="text-xs text-muted-foreground">
               You missed a day. Solve a problem today to start a new streak.{" "}
-              <Link href="/display-problem" className="text-foreground underline underline-offset-2">
+              <Link
+                href="/display-problem"
+                className="text-foreground underline underline-offset-2"
+              >
                 Practice now
               </Link>
             </p>
@@ -540,12 +564,19 @@ export default async function ProfilePage() {
 
       {status === "none" && (
         <div className="flex items-start gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3">
-          <span style={{ filter: "grayscale(1) opacity(0.4)", fontSize: "1.1rem" }}>🔥</span>
+          <span
+            style={{ filter: "grayscale(1) opacity(0.4)", fontSize: "1.1rem" }}
+          >
+            🔥
+          </span>
           <div className="flex flex-col gap-0.5">
             <p className="text-sm font-medium">No streak yet</p>
             <p className="text-xs text-muted-foreground">
               Solve a problem today to start your streak.{" "}
-              <Link href="/display-problem" className="text-foreground underline underline-offset-2">
+              <Link
+                href="/display-problem"
+                className="text-foreground underline underline-offset-2"
+              >
                 Practice now
               </Link>
             </p>
@@ -558,7 +589,9 @@ export default async function ProfilePage() {
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
           Recommended for You
         </h2>
-        <Suspense fallback={<div className="h-40 animate-pulse rounded-xl bg-muted" />}>
+        <Suspense
+          fallback={<div className="h-40 animate-pulse rounded-xl bg-muted" />}
+        >
           <RecommendedProblem
             cachedRecNumber={cachedRecNumber}
             solvedProblems={solvedProblems}
@@ -573,7 +606,9 @@ export default async function ProfilePage() {
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
           What to Focus On Next
         </h2>
-        <Suspense fallback={<div className="h-24 animate-pulse rounded-xl bg-muted" />}>
+        <Suspense
+          fallback={<div className="h-24 animate-pulse rounded-xl bg-muted" />}
+        >
           <TopicRecommendation />
         </Suspense>
       </section>
@@ -582,16 +617,6 @@ export default async function ProfilePage() {
       <Suspense fallback={<SkillAndSolvedSkeleton />}>
         <SkillAndSolvedSection solvedProblems={solvedProblems} />
       </Suspense>
-
-      {/* ── Notifications ──────────────────────────────────────── */}
-      <section>
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-          Notifications
-        </h2>
-        <div className="rounded-xl border border-border px-5 py-4">
-          <EmailNudgeToggle initial={emailStreakNudge} />
-        </div>
-      </section>
     </main>
   );
 }

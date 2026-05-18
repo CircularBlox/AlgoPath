@@ -897,7 +897,6 @@ export default function Home() {
                   "Adaptive difficulty hints",
                   "Hint style: Socratic / Minimal",
                   "Insights dashboard",
-                  "Weekly email digest",
                   "Priority generation",
                 ].map((f) => (
                   <li

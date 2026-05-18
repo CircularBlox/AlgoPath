@@ -1,50 +1,119 @@
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
 
-const FREE_FEATURES = [
-  "3 hint sessions per day (all 3 hints per session)",
-  "3 notes per day (unlimited reading)",
-  "Unlimited problem browsing & practice",
-  "LeetCode + Codeforces problems",
-  "Streak tracking",
-  "XP & rank system",
-  "14-day activity history",
-  "Public profile page",
+type Tier = "free" | "pro" | "elite";
+type FeatureValue = boolean | string;
+
+type FeatureRow = {
+  category?: string;
+  label: string;
+  free: FeatureValue;
+  pro: FeatureValue;
+  elite: FeatureValue;
+};
+
+const ROWS: FeatureRow[] = [
+  {
+    category: "Practice",
+    label: "Problem browsing & practice",
+    free: true,
+    pro: true,
+    elite: true,
+  },
+  {
+    label: "LeetCode + Codeforces problems",
+    free: true,
+    pro: true,
+    elite: true,
+  },
+  {
+    label: "XP, levels & rank progression",
+    free: true,
+    pro: true,
+    elite: true,
+  },
+  { label: "Streak tracking", free: true, pro: true, elite: true },
+  { label: "Public profile page", free: true, pro: true, elite: true },
+
+  {
+    category: "Hints",
+    label: "Hint sessions per day",
+    free: "3 / day",
+    pro: "Unlimited",
+    elite: "Unlimited",
+  },
+  {
+    label: "Hints visible per session",
+    free: "All 3",
+    pro: "All 3",
+    elite: "All 3",
+  },
+  { label: "Model selection for hints", free: false, pro: true, elite: true },
+  {
+    label: "Adaptive difficulty (contest-level)",
+    free: false,
+    pro: false,
+    elite: true,
+  },
+  {
+    label: "Hint style (Socratic / Minimal)",
+    free: false,
+    pro: false,
+    elite: true,
+  },
+
+  {
+    category: "Notes & History",
+    label: "Notes per day",
+    free: "3 / day",
+    pro: "Unlimited",
+    elite: "Unlimited",
+  },
+  { label: "Activity history", free: "14 days", pro: "Full", elite: "Full" },
+  {
+    label: "Hint history across attempts",
+    free: false,
+    pro: false,
+    elite: true,
+  },
+  { label: "Export notes as Markdown", free: false, pro: true, elite: true },
+
+  {
+    category: "Analysis",
+    label: "AI code review",
+    free: false,
+    pro: "Unlimited",
+    elite: "Unlimited",
+  },
+  {
+    label: "Insights dashboard (weak topics, solve rate)",
+    free: false,
+    pro: false,
+    elite: true,
+  },
+
+  {
+    category: "Perks",
+    label: "Streak freeze",
+    free: false,
+    pro: "1 / month",
+    elite: "1 / month",
+  },
+  { label: "Priority hint generation", free: false, pro: false, elite: true },
 ];
 
-const PRO_FEATURES = [
-  "Everything in Free",
-  "Unlimited hint sessions",
-  "Unlimited notes + full activity history",
-  "Model selection for AI hints",
-  "Unlimited AI code review",
-  "Streak freeze (1/month)",
-  "Export notes as Markdown",
-  "Priority hint generation",
-];
-
-const ELITE_FEATURES = [
-  "Everything in Pro",
-  "Adaptive difficulty (contest-level hints)",
-  "Hint style: Socratic / Structured / Minimal",
-  "Hint history across attempts",
-  "Insights dashboard (weak topics, solve rate)",
-  "Weekly email digest",
-  "Queue skip priority",
-];
-
-function CheckIcon() {
+function Check() {
   return (
     <svg
-      width="14"
-      height="14"
+      width="16"
+      height="16"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth="2.5"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="mt-0.5 shrink-0 text-primary"
+      className="mx-auto text-primary"
       aria-hidden="true"
     >
       <polyline points="20 6 9 17 4 12" />
@@ -52,9 +121,32 @@ function CheckIcon() {
   );
 }
 
+function Dash() {
+  return (
+    <span
+      className="mx-auto block h-px w-4 rounded bg-border"
+      role="img"
+      aria-label="Not included"
+    />
+  );
+}
+
+function Cell({ value, tier }: { value: FeatureValue; tier: Tier }) {
+  if (value === true) return <Check />;
+  if (value === false) return <Dash />;
+  return (
+    <span
+      className={`text-xs font-medium tabular-nums ${tier === "free" ? "text-muted-foreground" : "text-foreground"}`}
+    >
+      {value}
+    </span>
+  );
+}
+
 export default function PricingPage() {
   return (
     <main className="mx-auto max-w-4xl px-6 py-16">
+      {/* Header */}
       <div className="mb-12 text-center">
         <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-primary">
           Pricing
@@ -62,98 +154,113 @@ export default function PricingPage() {
         <h1 className="text-3xl font-bold tracking-tight">
           Simple, honest pricing
         </h1>
-        <p className="mt-3 text-base text-muted-foreground max-w-md mx-auto">
-          Start free. Upgrade when you need more. No dark patterns, no hidden
-          limits on core practice.
+        <p className="mx-auto mt-3 max-w-md text-base text-muted-foreground">
+          Start free. Upgrade when you need more. No dark patterns — the free
+          plan is genuinely usable.
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
-        {/* Free */}
-        <div className="flex flex-col rounded-xl border border-border bg-card p-6">
-          <div className="mb-4">
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              Free
-            </p>
-            <div className="mt-2 flex items-baseline gap-1">
-              <span className="text-3xl font-bold">$0</span>
-              <span className="text-sm text-muted-foreground">/ month</span>
+      {/* Tier header cards */}
+      <div className="mb-1 grid grid-cols-4 gap-3">
+        <div /> {/* spacer for label column */}
+        {(
+          [
+            {
+              tier: "Free",
+              price: "$0",
+              sub: "Forever",
+              cta: "Get started",
+              href: "/auth/signup",
+              variant: "outline" as const,
+            },
+            {
+              tier: "Pro",
+              price: "$8",
+              sub: "/ mo · $65/yr",
+              cta: "Start Pro",
+              href: "/auth/signup",
+              variant: "default" as const,
+              highlight: true,
+            },
+            {
+              tier: "Elite",
+              price: "$16",
+              sub: "/ mo · $130/yr",
+              cta: "Start Elite",
+              href: "/auth/signup",
+              variant: "outline" as const,
+            },
+          ] as const
+        ).map(({ tier, price, sub, cta, href, variant, highlight }) => (
+          <div
+            key={tier}
+            className={`flex flex-col gap-3 rounded-xl border p-4 text-center ${highlight ? "border-primary bg-primary/5" : "border-border bg-card"}`}
+          >
+            <div>
+              <p
+                className={`text-xs font-semibold uppercase tracking-widest ${highlight ? "text-primary" : "text-muted-foreground"}`}
+              >
+                {tier}
+              </p>
+              <p className="mt-1 text-2xl font-bold">{price}</p>
+              <p className="text-xs text-muted-foreground">{sub}</p>
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">Forever free</p>
+            <Button asChild variant={variant} size="sm">
+              <Link href={href}>{cta}</Link>
+            </Button>
           </div>
-          <Button asChild variant="outline" className="mb-6">
-            <Link href="/auth/signup">Get started</Link>
-          </Button>
-          <ul className="flex flex-col gap-2.5">
-            {FREE_FEATURES.map((f) => (
-              <li key={f} className="flex items-start gap-2 text-sm">
-                <CheckIcon />
-                <span>{f}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Pro */}
-        <div className="relative flex flex-col rounded-xl border-2 border-primary bg-card p-6">
-          <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full border border-primary bg-primary px-3 py-0.5 text-xs font-semibold text-primary-foreground">
-            Most popular
-          </div>
-          <div className="mb-4">
-            <p className="text-xs font-semibold uppercase tracking-widest text-primary">
-              Pro
-            </p>
-            <div className="mt-2 flex items-baseline gap-1">
-              <span className="text-3xl font-bold">$8</span>
-              <span className="text-sm text-muted-foreground">/ month</span>
-            </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              or $65 / year (save 32%)
-            </p>
-          </div>
-          <Button asChild className="mb-6">
-            <Link href="/auth/signup">Start Pro</Link>
-          </Button>
-          <ul className="flex flex-col gap-2.5">
-            {PRO_FEATURES.map((f) => (
-              <li key={f} className="flex items-start gap-2 text-sm">
-                <CheckIcon />
-                <span>{f}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Elite */}
-        <div className="flex flex-col rounded-xl border border-border bg-card p-6">
-          <div className="mb-4">
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              Elite
-            </p>
-            <div className="mt-2 flex items-baseline gap-1">
-              <span className="text-3xl font-bold">$16</span>
-              <span className="text-sm text-muted-foreground">/ month</span>
-            </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              or $130 / year (save 32%)
-            </p>
-          </div>
-          <Button asChild variant="outline" className="mb-6">
-            <Link href="/auth/signup">Start Elite</Link>
-          </Button>
-          <ul className="flex flex-col gap-2.5">
-            {ELITE_FEATURES.map((f) => (
-              <li key={f} className="flex items-start gap-2 text-sm">
-                <CheckIcon />
-                <span>{f}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+        ))}
       </div>
 
-      {/* FAQ row */}
-      <div className="mt-16 border-t border-border pt-10">
+      {/* Feature table */}
+      <div className="overflow-hidden rounded-xl border border-border">
+        <table className="w-full text-sm">
+          <thead className="sr-only">
+            <tr>
+              <th scope="col">Feature</th>
+              <th scope="col">Free</th>
+              <th scope="col">Pro</th>
+              <th scope="col">Elite</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {ROWS.map((row, i) => (
+              <>
+                {row.category && (
+                  <tr key={`cat-${row.category}`} className="bg-muted/30">
+                    <td
+                      colSpan={4}
+                      className="px-4 py-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground"
+                    >
+                      {row.category}
+                    </td>
+                  </tr>
+                )}
+                <tr
+                  key={row.label}
+                  className={`transition-colors hover:bg-muted/20 ${i % 2 === 0 ? "" : ""}`}
+                >
+                  <td className="px-4 py-3 text-sm text-foreground/80">
+                    {row.label}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <Cell value={row.free} tier="free" />
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <Cell value={row.pro} tier="pro" />
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <Cell value={row.elite} tier="elite" />
+                  </td>
+                </tr>
+              </>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* FAQ */}
+      <div className="mt-14 border-t border-border pt-10">
         <h2 className="mb-6 text-center text-lg font-semibold">
           Common questions
         </h2>
@@ -161,11 +268,11 @@ export default function PricingPage() {
           {[
             {
               q: "What counts as a hint session?",
-              a: "Opening hints on one problem = one session. Opening the same problem again on the same day doesn't use another session. Free users get 3 unique problems per day.",
+              a: "Opening hints on one problem = one session. Reopening the same problem the same day doesn't use another session. Free users get 3 unique problems per day.",
             },
             {
-              q: "Do hints 2 & 3 get locked when I hit the cap?",
-              a: "Yes — Hint 1 stays visible. Hints 2 and 3 are blurred with a quiet one-line note. No annoying modal, no countdown.",
+              q: "What happens when I hit the daily limit?",
+              a: "Hint 1 stays fully visible. Hints 2 and 3 are blurred with a quiet note. No modal, no countdown — it resets at midnight UTC.",
             },
             {
               q: "Can I cancel anytime?",
@@ -173,7 +280,7 @@ export default function PricingPage() {
             },
             {
               q: "Is my data safe if I downgrade?",
-              a: "All your notes, solve history, and streaks are preserved. You just lose access to paid features going forward.",
+              a: "All your notes, solve history, and streaks are preserved. You lose access to paid features going forward, not your data.",
             },
           ].map(({ q, a }) => (
             <div key={q} className="flex flex-col gap-1.5">
@@ -188,7 +295,7 @@ export default function PricingPage() {
         Payments not yet enabled — plans shown reflect upcoming pricing.{" "}
         <Link
           href="/changelog"
-          className="underline underline-offset-2 hover:text-foreground transition-colors"
+          className="underline underline-offset-2 transition-colors hover:text-foreground"
         >
           Check the changelog
         </Link>{" "}
