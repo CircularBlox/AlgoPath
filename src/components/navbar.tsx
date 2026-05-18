@@ -14,7 +14,10 @@ const navLinks = [
   { href: "/settings", label: "Settings" },
 ];
 
-const publicNavLinks = [{ href: "/changelog", label: "Changelog" }];
+const publicNavLinks = [
+  { href: "/changelog", label: "Changelog" },
+  { href: "/pricing", label: "Pricing" },
+];
 
 async function signOut() {
   "use server";

@@ -516,6 +516,432 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ── Rank Progression ─────────────────────────────────── */}
+      <section className="border-t border-border bg-muted/20">
+        <div className="mx-auto max-w-3xl px-6 py-20">
+          <div className="mb-10 text-center">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-primary">
+              Gamified progression
+            </p>
+            <h2 className="text-2xl font-semibold tracking-tight">
+              Earn XP. Climb the ranks.
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Every problem you solve earns XP. Harder problems and fewer hints
+              mean bigger rewards.
+            </p>
+          </div>
+
+          {/* Horizontal progression chart */}
+          <div className="mb-8 overflow-x-auto pb-2">
+            <div className="flex min-w-max items-stretch gap-0">
+              {[
+                {
+                  icon: "🌱",
+                  title: "Newcomer",
+                  color: "#9ca3af",
+                  xp: "0",
+                  levels: "Lv. 1",
+                },
+                {
+                  icon: "⚡",
+                  title: "Apprentice",
+                  color: "#f59e0b",
+                  xp: "50",
+                  levels: "Lv. 2–4",
+                },
+                {
+                  icon: "🔥",
+                  title: "Solver",
+                  color: "#10b981",
+                  xp: "800",
+                  levels: "Lv. 5–8",
+                },
+                {
+                  icon: "💡",
+                  title: "Coder",
+                  color: "#3b82f6",
+                  xp: "3.2K",
+                  levels: "Lv. 9–12",
+                },
+                {
+                  icon: "🎯",
+                  title: "Expert",
+                  color: "#8b5cf6",
+                  xp: "7.2K",
+                  levels: "Lv. 13–17",
+                },
+                {
+                  icon: "⭐",
+                  title: "Master",
+                  color: "#f97316",
+                  xp: "15K",
+                  levels: "Lv. 18–22",
+                },
+                {
+                  icon: "👑",
+                  title: "Grandmaster",
+                  color: "#ef4444",
+                  xp: "25.2K",
+                  levels: "Lv. 23–27",
+                },
+                {
+                  icon: "🏆",
+                  title: "Legendary",
+                  color: "#a855f7",
+                  xp: "37.5K",
+                  levels: "Lv. 28+",
+                },
+              ].map((rank, i, arr) => (
+                <div key={rank.title} className="flex items-center">
+                  <div
+                    className="flex flex-col items-center gap-1.5 px-3 py-3 rounded-xl border text-center min-w-[90px]"
+                    style={{
+                      borderColor: `${rank.color}35`,
+                      background: `${rank.color}10`,
+                    }}
+                  >
+                    <span className="text-xl leading-none">{rank.icon}</span>
+                    <span
+                      className="text-xs font-semibold leading-tight"
+                      style={{ color: rank.color }}
+                    >
+                      {rank.title}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground leading-none">
+                      {rank.levels}
+                    </span>
+                    <span
+                      className="mt-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-mono font-medium leading-none"
+                      style={{
+                        backgroundColor: `${rank.color}15`,
+                        color: rank.color,
+                      }}
+                    >
+                      {rank.xp} XP
+                    </span>
+                  </div>
+                  {i < arr.length - 1 && (
+                    <svg
+                      width="20"
+                      height="16"
+                      viewBox="0 0 20 16"
+                      fill="none"
+                      className="shrink-0 text-border"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M1 8h14M11 3l5 5-5 5"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Grid cards */}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {[
+              {
+                icon: "🌱",
+                title: "Newcomer",
+                color: "#9ca3af",
+                bg: "rgba(156,163,175,0.08)",
+                levels: "Lv. 1",
+                xp: "Start here",
+              },
+              {
+                icon: "⚡",
+                title: "Apprentice",
+                color: "#f59e0b",
+                bg: "rgba(245,158,11,0.08)",
+                levels: "Lv. 2–4",
+                xp: "50 XP",
+              },
+              {
+                icon: "🔥",
+                title: "Solver",
+                color: "#10b981",
+                bg: "rgba(16,185,129,0.08)",
+                levels: "Lv. 5–8",
+                xp: "800 XP",
+              },
+              {
+                icon: "💡",
+                title: "Coder",
+                color: "#3b82f6",
+                bg: "rgba(59,130,246,0.08)",
+                levels: "Lv. 9–12",
+                xp: "3,200 XP",
+              },
+              {
+                icon: "🎯",
+                title: "Expert",
+                color: "#8b5cf6",
+                bg: "rgba(139,92,246,0.08)",
+                levels: "Lv. 13–17",
+                xp: "7,200 XP",
+              },
+              {
+                icon: "⭐",
+                title: "Master",
+                color: "#f97316",
+                bg: "rgba(249,115,22,0.08)",
+                levels: "Lv. 18–22",
+                xp: "15,050 XP",
+              },
+              {
+                icon: "👑",
+                title: "Grandmaster",
+                color: "#ef4444",
+                bg: "rgba(239,68,68,0.08)",
+                levels: "Lv. 23–27",
+                xp: "25,200 XP",
+              },
+              {
+                icon: "🏆",
+                title: "Legendary",
+                color: "#a855f7",
+                bg: "rgba(168,85,247,0.08)",
+                levels: "Lv. 28+",
+                xp: "37,450+ XP",
+              },
+            ].map((rank) => (
+              <div
+                key={rank.title}
+                className="flex flex-col gap-2.5 rounded-xl border p-4"
+                style={{ borderColor: `${rank.color}30`, background: rank.bg }}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xl">{rank.icon}</span>
+                  <span
+                    className="rounded-full px-1.5 py-0.5 text-[10px] font-mono"
+                    style={{
+                      backgroundColor: `${rank.color}15`,
+                      color: rank.color,
+                    }}
+                  >
+                    {rank.xp}
+                  </span>
+                </div>
+                <div>
+                  <p
+                    className="text-sm font-semibold"
+                    style={{ color: rank.color }}
+                  >
+                    {rank.title}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{rank.levels}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <p className="mt-6 text-center text-xs text-muted-foreground">
+            XP required grows with each tier — consistent practice is the only
+            path forward.
+          </p>
+        </div>
+      </section>
+
+      {/* ── Pricing ───────────────────────────────────────────── */}
+      <section className="border-t border-border">
+        <div className="mx-auto max-w-3xl px-6 py-20">
+          <div className="mb-10 text-center">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-primary">
+              Pricing
+            </p>
+            <h2 className="text-2xl font-semibold tracking-tight">
+              Built by a competitive programmer.
+              <br />
+              Priced like one, too.
+            </h2>
+            <p className="mt-3 text-sm text-muted-foreground max-w-sm mx-auto">
+              The free plan isn&apos;t a trial — it&apos;s fully usable. We know
+              how it feels to be gated out of tools you actually need.
+            </p>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-3">
+            {/* Free */}
+            <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                  Free
+                </p>
+                <p className="mt-1.5 text-2xl font-bold">$0</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Forever. No credit card.
+                </p>
+              </div>
+              <div className="h-px bg-border" />
+              <ul className="flex flex-col gap-2 text-sm">
+                {[
+                  "Unlimited problem practice",
+                  "3 hint sessions per day",
+                  "All 3 hints visible per session",
+                  "XP, levels & streaks",
+                  "Notes (3/day)",
+                  "14-day activity history",
+                ].map((f) => (
+                  <li
+                    key={f}
+                    className="flex items-start gap-2 text-muted-foreground"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="mt-0.5 shrink-0 text-emerald-400"
+                      aria-hidden="true"
+                    >
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href="/auth/signup"
+                className="mt-auto rounded-lg border border-border py-2 text-center text-sm font-medium transition-colors hover:bg-muted"
+              >
+                Get started free
+              </Link>
+            </div>
+
+            {/* Pro */}
+            <div className="relative flex flex-col gap-4 rounded-xl border-2 border-primary bg-card p-5">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-0.5 text-xs font-semibold text-primary-foreground">
+                Most popular
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-primary">
+                  Pro
+                </p>
+                <div className="mt-1.5 flex items-baseline gap-1">
+                  <p className="text-2xl font-bold">$8</p>
+                  <span className="text-xs text-muted-foreground">/ mo</span>
+                </div>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  or $65/yr — save 32%
+                </p>
+              </div>
+              <div className="h-px bg-border" />
+              <ul className="flex flex-col gap-2 text-sm">
+                {[
+                  "Everything in Free",
+                  "Unlimited hint sessions",
+                  "Unlimited notes + full history",
+                  "Model selection for hints",
+                  "Unlimited AI code review",
+                  "Streak freeze (1/month)",
+                ].map((f) => (
+                  <li
+                    key={f}
+                    className="flex items-start gap-2 text-muted-foreground"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="mt-0.5 shrink-0 text-primary"
+                      aria-hidden="true"
+                    >
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href="/auth/signup"
+                className="mt-auto rounded-lg bg-primary py-2 text-center text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+              >
+                Start Pro
+              </Link>
+            </div>
+
+            {/* Elite */}
+            <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                  Elite
+                </p>
+                <div className="mt-1.5 flex items-baseline gap-1">
+                  <p className="text-2xl font-bold">$16</p>
+                  <span className="text-xs text-muted-foreground">/ mo</span>
+                </div>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  or $130/yr — save 32%
+                </p>
+              </div>
+              <div className="h-px bg-border" />
+              <ul className="flex flex-col gap-2 text-sm">
+                {[
+                  "Everything in Pro",
+                  "Adaptive difficulty hints",
+                  "Hint style: Socratic / Minimal",
+                  "Insights dashboard",
+                  "Priority generation",
+                ].map((f) => (
+                  <li
+                    key={f}
+                    className="flex items-start gap-2 text-muted-foreground"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="mt-0.5 shrink-0 text-primary"
+                      aria-hidden="true"
+                    >
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href="/auth/signup"
+                className="mt-auto rounded-lg border border-border py-2 text-center text-sm font-medium transition-colors hover:bg-muted"
+              >
+                Start Elite
+              </Link>
+            </div>
+          </div>
+
+          <p className="mt-6 text-center text-xs text-muted-foreground">
+            Payments coming soon.{" "}
+            <Link
+              href="/pricing"
+              className="underline underline-offset-2 hover:text-foreground transition-colors"
+            >
+              Full plan comparison →
+            </Link>
+          </p>
+        </div>
+      </section>
+
       {/* ── Closing CTA ───────────────────────────────────────── */}
       <section className="border-t border-border">
         <div className="relative mx-auto flex max-w-3xl flex-col items-center gap-5 overflow-hidden px-6 py-24 text-center">

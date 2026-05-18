@@ -6,6 +6,58 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.8",
+    date: "2026-05-18",
+    changes: [
+      {
+        type: "feat",
+        text: "Stripe integration — Pro and Elite plans now have working checkout, webhook handler, and customer portal. Plans are enforced server-side on hints and notes.",
+      },
+      {
+        type: "feat",
+        text: "Plan gating — AI code review is Pro/Elite only; free users see a clear upgrade prompt. Notes daily limit (3/day free) now shows an inline message with upgrade link instead of silently failing.",
+      },
+      {
+        type: "improve",
+        text: "Pricing page redesign — billing toggle (monthly/yearly), compact tier cards, feature lists aligned below each panel, and current plan highlighted for signed-in users.",
+      },
+      {
+        type: "feat",
+        text: "Admin plan tool — /admin/plans lets admins search any user by username or email and update their plan instantly.",
+      },
+      {
+        type: "improve",
+        text: "Free plan expanded — drill mode, problem recommendations, and tag-based filtering are now explicitly listed as free features.",
+      },
+      {
+        type: "feat",
+        text: "XP gain notification — after marking a problem solved, a rank-colored card shows +XP earned, progress bar to next level, and a Level Up badge when applicable.",
+      },
+    ],
+  },
+  {
+    version: "1.0.7",
+    date: "2026-05-15",
+    changes: [
+      {
+        type: "feat",
+        text: "Skill web — profile page now shows a radar chart visualizing tag-level strength across solved problems.",
+      },
+      {
+        type: "feat",
+        text: "Drill mode — start a focused session on any tag from the Problems page; problems queue up back-to-back until you stop.",
+      },
+      {
+        type: "improve",
+        text: "Bulk hint generation now uses the model router with fallbacks and retry logic — no more silent failures on free models.",
+      },
+      {
+        type: "improve",
+        text: "Performance — blocking Supabase fetches moved behind Suspense on key pages; FCP and LCP improved across /profile and /display-problem.",
+      },
+    ],
+  },
+  {
     version: "1.0.6",
     date: "2026-05-12",
     changes: [

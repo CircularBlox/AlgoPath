@@ -33,6 +33,9 @@ export type Hints = {
   hint_1: string | null;
   hint_2: string | null;
   hint_3: string | null;
+  gated?: boolean;
+  sessions_used?: number;
+  sessions_limit?: number;
 };
 
 export type ViewerState =
@@ -50,7 +53,7 @@ export type ViewerState =
 export type MarkDoneState =
   | { status: "idle" }
   | { status: "loading" }
-  | { status: "done"; xpGain: number; newLevel: number }
+  | { status: "done"; xpGain: number; newLevel: number; oldLevel: number }
   | { status: "already_solved" }
   | { status: "error"; message: string };
 

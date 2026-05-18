@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@sentry/nextjs": "^10",
+    "@stripe/stripe-js": "^9.5.0",
     "@supabase/ssr": "^0.10.0",
     "@supabase/supabase-js": "^2.101.1",
     "@t3-oss/env-nextjs": "^0.13.11",
@@ -32,6 +33,7 @@
     "react-dom": "19.2.4",
     "react-simple-code-editor": "^0.14.1",
     "resend": "^6.12.3",
+    "stripe": "^22.1.1",
     "tailwind-merge": "^3.5.0",
     "zod": "^4.3.6"
   },

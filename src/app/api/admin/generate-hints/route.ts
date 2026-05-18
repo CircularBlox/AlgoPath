@@ -2,6 +2,7 @@ import * as Sentry from "@sentry/nextjs";
 import { type NextRequest, NextResponse } from "next/server";
 import { env } from "~/env";
 import { isAdmin } from "~/lib/is-admin";
+import { routedCompletion } from "~/lib/model-router";
 import { createClient, getUser } from "~/lib/supabase/server";
 
 export async function POST(request: NextRequest) {
@@ -71,59 +72,23 @@ Rules:
 - Never state what to do — only ask what the solver might notice or wonder about.
 - No labels, bullets, or headers inside the hint text.`;
 
-  let aiRes: Response;
-  try {
-    aiRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://localhost:3000",
-        "X-Title": "CompetitiveProgrammingApp",
-      },
-      body: JSON.stringify({
-        model: "openrouter/free",
-        messages: [{ role: "user", content: prompt }],
-      }),
-      signal: AbortSignal.timeout(30000),
+  const result = await routedCompletion({
+    messages: [{ role: "user", content: prompt }],
+    taskType: "balanced",
+    apiKey,
+    timeoutMs: 45000,
+  });
+
+  if (!result.ok) {
+    Sentry.captureMessage(result.error, {
+      level: "error",
+      tags: { route: "generate-hints", step: "routed-completion" },
+      extra: { problem_number: problemNumber },
     });
-  } catch (err) {
-    Sentry.captureException(err, {
-      tags: { route: "generate-hints", step: "openrouter_fetch" },
-    });
-    return NextResponse.json(
-      { error: "Failed to reach OpenRouter." },
-      { status: 502 },
-    );
+    return NextResponse.json({ error: result.error }, { status: 502 });
   }
 
-  const rawText = await aiRes.text();
-
-  if (!aiRes.ok) {
-    Sentry.captureMessage(
-      `OpenRouter error in generate-hints: ${aiRes.status}`,
-      { level: "error", extra: { body: rawText.slice(0, 500) } },
-    );
-    return NextResponse.json(
-      { error: `OpenRouter responded with ${aiRes.status}: ${rawText}` },
-      { status: 502 },
-    );
-  }
-
-  let aiBody: { choices: { message: { content: string } }[] };
-  try {
-    aiBody = JSON.parse(rawText) as typeof aiBody;
-  } catch (err) {
-    Sentry.captureException(err, {
-      tags: { route: "generate-hints", step: "parse_response" },
-    });
-    return NextResponse.json(
-      { error: `OpenRouter returned non-JSON: ${rawText.slice(0, 200)}` },
-      { status: 502 },
-    );
-  }
-
-  const aiText = aiBody.choices?.[0]?.message?.content ?? "";
+  const aiText = result.content;
   const trimmed = aiText.slice(
     aiText.indexOf("{"),
     aiText.lastIndexOf("}") + 1,

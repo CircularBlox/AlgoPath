@@ -144,6 +144,7 @@ export async function POST(request: NextRequest) {
   const new_rating = (profile.rating ?? 1200) + rating_gain;
 
   const xp_gain = calcXpGain(difficulty, hints_viewed);
+  const old_level = profile.level ?? levelFromXp(profile.xp ?? 0);
   const new_xp = (profile.xp ?? 0) + xp_gain;
   const new_level = levelFromXp(new_xp);
 
@@ -251,6 +252,7 @@ export async function POST(request: NextRequest) {
     already_solved: false,
     rating_gain,
     xp_gain,
+    old_level,
     new_rating,
     new_level,
     streak,

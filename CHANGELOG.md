@@ -7,6 +7,23 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) conventi
 
 ## [Unreleased]
 
+### Added
+- **XP gain notification**: After marking a problem as done, a prominent card shows `+X XP`, current rank level in rank color, a progress bar to the next level, and a "Level Up!" badge when crossing a rank boundary. (`problem-viewer.tsx`, `solve/route.ts` now returns `old_level`)
+- **Monetization infrastructure**: `plan` column on profiles (free/pro/elite), `hint_sessions` table for per-user per-day dedup. Free tier enforced server-side. (`supabase/migrations/20260517000000`, `src/lib/plan.ts`)
+- **Hint gating (free tier)**: After 3 unique-problem hint sessions per day, hints 2 & 3 are blurred with a lock overlay and quiet "Resets tomorrow / Upgrade to Pro" CTA. No modal. (`GET /api/problems/[number]/hints`, `problem-viewer.tsx`)
+- **Notes daily cap (free tier)**: 4th+ note on free plan returns HTTP 429 with a clear message. (`POST /api/notes`)
+- **Pricing page** (`/pricing`): Static Free / Pro / Elite comparison with feature lists, yearly discount, and FAQ. Linked from navbar for all users.
+- **Public profiles** (`/profile/[username]`): Any user's profile is publicly viewable.
+- **Rank color system** (`lib/xp.ts`): `rankConfig()` and `RANK_CONFIGS` — 8 ranks each with color, gradient, and icon.
+
+### Changed
+- **Search merged into Problems**: `/search` page removed. The Problems page (`/display-problem`) already has full title search + platform/difficulty filter. Navbar "Search" link replaced by "Pricing". Page heading updated to "Problems" with a descriptive subtitle.
+- **Landing page rank section**: Redesigned with a horizontal scrollable progression chart showing each rank in order with XP thresholds and connecting arrows. Rank grid below also shows XP requirement per tier.
+- **Profile hero**: Rank badge and XP progress bar now use rank-specific color and gradient.
+- **Performance — display-problem**: Page streams the "Problems" heading immediately; Supabase work moved behind Suspense.
+- **Performance — profile page**: Heavy `solvedProblemDetails` query moved into a Suspense component; profile hero renders from a single fast query.
+- **Performance — loading.tsx**: Added skeletons for `/onboarding` and `/auth/setup-username`.
+
 ---
 
 ## [1.0.7] - 2026-05-15

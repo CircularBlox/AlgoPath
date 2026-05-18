@@ -16,6 +16,7 @@ import { Input } from "~/components/ui/input";
 import { processHtmlLatex } from "~/lib/latex";
 import { highlight, languages } from "~/lib/prism-setup";
 import { timeAgo } from "~/lib/time";
+import { levelTitle, rankConfig, xpProgress } from "~/lib/xp";
 import { FormattedText } from "./formatting";
 import { SidePanel } from "./side-panel";
 import type {
@@ -46,11 +47,13 @@ export function ProblemViewer({
   initialProblem = null,
   csrfToken,
   showFocusPrompt = false,
+  plan = "free",
 }: {
   userId: string | null;
   initialProblem?: Problem | null;
   csrfToken: string;
   showFocusPrompt?: boolean;
+  plan?: "free" | "pro" | "elite";
 }) {
   const [state, setState] = useState<ViewerState>(
     initialProblem
@@ -240,6 +243,7 @@ export function ProblemViewer({
   >([]);
   const [notesLoading, setNotesLoading] = useState(false);
   const [notesLoaded, setNotesLoaded] = useState(false);
+  const [notesLimitError, setNotesLimitError] = useState<string | null>(null);
   const [quickTitle, setQuickTitle] = useState("");
   const [quickContent, setQuickContent] = useState("");
   const [quickSaving, setQuickSaving] = useState(false);
@@ -281,6 +285,7 @@ export function ProblemViewer({
 
   async function saveQuickNote(problemNumber: number) {
     if (!quickTitle.trim() && !quickContent.trim()) return;
+    setNotesLimitError(null);
     setQuickSaving(true);
     try {
       const res = await fetch("/api/notes", {
@@ -292,6 +297,10 @@ export function ProblemViewer({
           problem_number: problemNumber,
         }),
       });
+      if (res.status === 429) {
+        setNotesLimitError("Free plan: 3 notes/day. Resets at midnight UTC.");
+        return;
+      }
       if (res.ok) {
         const data = (await res.json()) as {
           id: string;
@@ -814,6 +823,7 @@ export function ProblemViewer({
         setMarkDoneState({
           status: "done",
           xpGain: data.xp_gain ?? data.rating_gain ?? 0,
+          oldLevel: data.old_level ?? data.new_level ?? 1,
           newLevel: data.new_level ?? 1,
         });
         posthog.capture("problem_solved", {
@@ -1653,6 +1663,79 @@ export function ProblemViewer({
                 </div>
               )}
 
+              {/* XP gain notification */}
+              {markDoneState.status === "done" &&
+                (() => {
+                  const { xpGain, newLevel, oldLevel } = markDoneState;
+                  const leveledUp = newLevel > oldLevel;
+                  const config = rankConfig(newLevel);
+                  const progress = xpProgress(0, newLevel);
+                  return (
+                    <div
+                      className="flex flex-col gap-3 rounded-xl border px-5 py-4"
+                      style={{
+                        borderColor: `${config.color}40`,
+                        background: config.bg,
+                      }}
+                    >
+                      <div className="flex items-center justify-between gap-3 flex-wrap">
+                        <div className="flex items-center gap-2.5">
+                          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500/15 text-sm">
+                            ✓
+                          </span>
+                          <span className="font-semibold text-sm">
+                            Problem Solved!
+                          </span>
+                        </div>
+                        <span
+                          className="inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold"
+                          style={{
+                            color: config.color,
+                            borderColor: `${config.color}40`,
+                            backgroundColor: config.bg,
+                          }}
+                        >
+                          {config.icon} Lv.{newLevel} · {levelTitle(newLevel)}
+                        </span>
+                      </div>
+                      <div className="flex items-baseline gap-2">
+                        <span
+                          className="text-3xl font-bold tabular-nums"
+                          style={{ color: config.color }}
+                        >
+                          +{xpGain}
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                          XP earned
+                        </span>
+                        {leveledUp && (
+                          <span className="ml-auto rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+                            Level Up! ↑
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                          <span>Progress to Lv.{newLevel + 1}</span>
+                          <span>
+                            {progress.current.toLocaleString()} /{" "}
+                            {progress.needed.toLocaleString()} XP
+                          </span>
+                        </div>
+                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                          <div
+                            className="h-full rounded-full transition-all duration-700"
+                            style={{
+                              width: `${progress.percent}%`,
+                              background: config.gradient,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
               {/* Try this next card — replaces auto-load after solving */}
               {markDoneState.status === "done" &&
                 (nextProblemLoading || nextProblem) && (
@@ -1950,8 +2033,11 @@ export function ProblemViewer({
                     !hints.hint_1 && !hints.hint_2 && !hints.hint_3;
                   const hintValues = [hints.hint_1, hints.hint_2, hints.hint_3];
                   const maxRevealable = hintValues.filter(Boolean).length;
+                  const isGated = hints.gated === true;
                   const canRevealMore =
-                    hintsRevealed < 3 && hintsRevealed < maxRevealable;
+                    !isGated &&
+                    hintsRevealed < 3 &&
+                    hintsRevealed < maxRevealable;
 
                   return (
                     <div
@@ -1974,6 +2060,7 @@ export function ProblemViewer({
                               ] as const
                             ).map(({ n, text }) => {
                               if (!text || n > hintsRevealed) return null;
+                              if (isGated && n > 1) return null;
                               const myRating = hintRatings[n];
                               return (
                                 <div
@@ -2062,7 +2149,71 @@ export function ProblemViewer({
                                 </div>
                               );
                             })}
+                            {/* Gated hint placeholders for hints 2 & 3 */}
+                            {isGated &&
+                              (hints.hint_2 || hints.hint_3) &&
+                              [2, 3].map((n) => (
+                                <div
+                                  key={`gated-${n}`}
+                                  className="relative overflow-hidden rounded-md border border-dashed border-border bg-muted/20"
+                                >
+                                  <div
+                                    className="pointer-events-none select-none px-4 py-3 blur-sm"
+                                    aria-hidden="true"
+                                  >
+                                    <span className="text-xs font-medium text-muted-foreground">
+                                      Hint {n}
+                                    </span>
+                                    <p className="mt-1 text-sm text-muted-foreground">
+                                      This hint contains further guidance to
+                                      help you solve the problem.
+                                    </p>
+                                  </div>
+                                  <div className="absolute inset-0 flex items-center justify-center bg-background/60 backdrop-blur-[2px]">
+                                    <svg
+                                      width="14"
+                                      height="14"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      className="text-muted-foreground"
+                                      aria-hidden="true"
+                                    >
+                                      <rect
+                                        x="3"
+                                        y="11"
+                                        width="18"
+                                        height="11"
+                                        rx="2"
+                                        ry="2"
+                                      />
+                                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                                    </svg>
+                                  </div>
+                                </div>
+                              ))}
                           </div>
+                          {isGated && (
+                            <div className="flex flex-col gap-2 rounded-md border border-primary/20 bg-primary/5 px-4 py-3">
+                              <p className="text-sm font-medium">
+                                Daily limit reached
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                Free plan includes {hints.sessions_limit ?? 3}{" "}
+                                hint sessions per day. Hints 2 and 3 are
+                                available on Pro. Resets tomorrow.
+                              </p>
+                              <Link
+                                href="/pricing"
+                                className="self-start rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-80"
+                              >
+                                Upgrade to Pro →
+                              </Link>
+                            </div>
+                          )}
                           {canRevealMore &&
                             (userId ? (
                               <Button
@@ -2298,12 +2449,14 @@ export function ProblemViewer({
           quickContent={quickContent}
           setQuickContent={setQuickContent}
           quickSaving={quickSaving}
+          notesLimitError={notesLimitError}
           onLoadNotes={() =>
             loadProblemNotes(state.problem.problem_number ?? 0)
           }
           onSaveQuickNote={() =>
             saveQuickNote(state.problem.problem_number ?? 0)
           }
+          plan={plan}
           chatMessages={chatMessages}
           setChatMessages={setChatMessages}
           chatLoading={chatLoading}

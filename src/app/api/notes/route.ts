@@ -1,5 +1,6 @@
 import * as Sentry from "@sentry/nextjs";
 import { type NextRequest, NextResponse } from "next/server";
+import { PLAN_LIMITS, todayUtc } from "~/lib/plan";
 import { createClient, getUser } from "~/lib/supabase/server";
 
 export async function GET(request: NextRequest) {
@@ -58,6 +59,34 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = await createClient();
+
+  // Enforce daily note creation limit for free users
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("plan")
+    .eq("id", user.id)
+    .single<{ plan: string }>();
+  const plan = profile?.plan ?? "free";
+  if (plan === "free") {
+    const today = todayUtc();
+    const { count } = await supabase
+      .from("notes")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .gte("created_at", `${today}T00:00:00Z`)
+      .lt("created_at", `${today}T23:59:59Z`);
+    if ((count ?? 0) >= PLAN_LIMITS.free.notes_per_day) {
+      return NextResponse.json(
+        {
+          error: `Free plan limit: ${PLAN_LIMITS.free.notes_per_day} notes per day. Resets tomorrow.`,
+          limit_type: "notes",
+          daily_limit: PLAN_LIMITS.free.notes_per_day,
+        },
+        { status: 429 },
+      );
+    }
+  }
+
   const { data, error } = await supabase
     .from("notes")
     .insert({
