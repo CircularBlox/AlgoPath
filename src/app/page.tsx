@@ -749,6 +749,200 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ── Pricing ───────────────────────────────────────────── */}
+      <section className="border-t border-border">
+        <div className="mx-auto max-w-3xl px-6 py-20">
+          <div className="mb-10 text-center">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-primary">
+              Pricing
+            </p>
+            <h2 className="text-2xl font-semibold tracking-tight">
+              Built by a competitive programmer.
+              <br />
+              Priced like one, too.
+            </h2>
+            <p className="mt-3 text-sm text-muted-foreground max-w-sm mx-auto">
+              The free plan isn&apos;t a trial — it&apos;s fully usable. We know
+              how it feels to be gated out of tools you actually need.
+            </p>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-3">
+            {/* Free */}
+            <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                  Free
+                </p>
+                <p className="mt-1.5 text-2xl font-bold">$0</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Forever. No credit card.
+                </p>
+              </div>
+              <div className="h-px bg-border" />
+              <ul className="flex flex-col gap-2 text-sm">
+                {[
+                  "Unlimited problem practice",
+                  "3 hint sessions per day",
+                  "All 3 hints visible per session",
+                  "XP, levels & streaks",
+                  "Notes (3/day)",
+                  "14-day activity history",
+                ].map((f) => (
+                  <li
+                    key={f}
+                    className="flex items-start gap-2 text-muted-foreground"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="mt-0.5 shrink-0 text-emerald-400"
+                      aria-hidden="true"
+                    >
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href="/auth/signup"
+                className="mt-auto rounded-lg border border-border py-2 text-center text-sm font-medium transition-colors hover:bg-muted"
+              >
+                Get started free
+              </Link>
+            </div>
+
+            {/* Pro */}
+            <div className="relative flex flex-col gap-4 rounded-xl border-2 border-primary bg-card p-5">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-0.5 text-xs font-semibold text-primary-foreground">
+                Most popular
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-primary">
+                  Pro
+                </p>
+                <div className="mt-1.5 flex items-baseline gap-1">
+                  <p className="text-2xl font-bold">$8</p>
+                  <span className="text-xs text-muted-foreground">/ mo</span>
+                </div>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  or $65/yr — save 32%
+                </p>
+              </div>
+              <div className="h-px bg-border" />
+              <ul className="flex flex-col gap-2 text-sm">
+                {[
+                  "Everything in Free",
+                  "Unlimited hint sessions",
+                  "Unlimited notes + full history",
+                  "Model selection for hints",
+                  "Unlimited AI code review",
+                  "Streak freeze (1/month)",
+                ].map((f) => (
+                  <li
+                    key={f}
+                    className="flex items-start gap-2 text-muted-foreground"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="mt-0.5 shrink-0 text-primary"
+                      aria-hidden="true"
+                    >
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href="/auth/signup"
+                className="mt-auto rounded-lg bg-primary py-2 text-center text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+              >
+                Start Pro
+              </Link>
+            </div>
+
+            {/* Elite */}
+            <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                  Elite
+                </p>
+                <div className="mt-1.5 flex items-baseline gap-1">
+                  <p className="text-2xl font-bold">$16</p>
+                  <span className="text-xs text-muted-foreground">/ mo</span>
+                </div>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  or $130/yr — save 32%
+                </p>
+              </div>
+              <div className="h-px bg-border" />
+              <ul className="flex flex-col gap-2 text-sm">
+                {[
+                  "Everything in Pro",
+                  "Adaptive difficulty hints",
+                  "Hint style: Socratic / Minimal",
+                  "Insights dashboard",
+                  "Weekly email digest",
+                  "Priority generation",
+                ].map((f) => (
+                  <li
+                    key={f}
+                    className="flex items-start gap-2 text-muted-foreground"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="mt-0.5 shrink-0 text-primary"
+                      aria-hidden="true"
+                    >
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href="/auth/signup"
+                className="mt-auto rounded-lg border border-border py-2 text-center text-sm font-medium transition-colors hover:bg-muted"
+              >
+                Start Elite
+              </Link>
+            </div>
+          </div>
+
+          <p className="mt-6 text-center text-xs text-muted-foreground">
+            Payments coming soon.{" "}
+            <Link
+              href="/pricing"
+              className="underline underline-offset-2 hover:text-foreground transition-colors"
+            >
+              Full plan comparison →
+            </Link>
+          </p>
+        </div>
+      </section>
+
       {/* ── Closing CTA ───────────────────────────────────────── */}
       <section className="border-t border-border">
         <div className="relative mx-auto flex max-w-3xl flex-col items-center gap-5 overflow-hidden px-6 py-24 text-center">
