@@ -1,18 +1,32 @@
 import "prismjs/themes/prism-okaidia.css";
+import { Suspense } from "react";
 import { generateCsrfToken } from "~/lib/csrf";
 import { createClient, getUser } from "~/lib/supabase/server";
 import { ProblemViewer } from "./problem-viewer";
 import type { Problem } from "./types";
 
-export default async function DisplayProblemPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ p?: string }>;
-}) {
-  const [user, supabase, { p }, csrfToken] = await Promise.all([
+function ProblemContentSkeleton() {
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-wrap gap-2">
+        <div className="h-7 w-20 animate-pulse rounded-full bg-muted" />
+        <div className="h-7 w-24 animate-pulse rounded-md bg-muted" />
+        <div className="h-7 w-24 animate-pulse rounded-md bg-muted" />
+      </div>
+      <div className="flex gap-2">
+        <div className="h-10 w-72 animate-pulse rounded-md bg-muted" />
+        <div className="h-10 w-20 animate-pulse rounded-md bg-muted" />
+      </div>
+      <div className="h-px bg-border" />
+      <div className="h-10 w-48 animate-pulse rounded-md bg-muted" />
+    </div>
+  );
+}
+
+async function ProblemContent({ p }: { p?: string }) {
+  const [user, supabase, csrfToken] = await Promise.all([
     getUser(),
     createClient(),
-    searchParams,
     generateCsrfToken(),
   ]);
 
@@ -45,14 +59,28 @@ export default async function DisplayProblemPage({
   const initialProblem: Problem | null = problemResult.data ?? null;
 
   return (
+    <ProblemViewer
+      userId={user?.id ?? null}
+      initialProblem={initialProblem}
+      csrfToken={csrfToken}
+      showFocusPrompt={showFocusPrompt}
+    />
+  );
+}
+
+export default async function DisplayProblemPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ p?: string }>;
+}) {
+  const { p } = await searchParams;
+
+  return (
     <main className="mx-auto max-w-4xl px-6 py-16">
       <h1 className="mb-8 text-2xl font-bold tracking-tight">Practice</h1>
-      <ProblemViewer
-        userId={user?.id ?? null}
-        initialProblem={initialProblem}
-        csrfToken={csrfToken}
-        showFocusPrompt={showFocusPrompt}
-      />
+      <Suspense fallback={<ProblemContentSkeleton />}>
+        <ProblemContent p={p} />
+      </Suspense>
     </main>
   );
 }

@@ -516,6 +516,57 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ── Rank Progression ─────────────────────────────────── */}
+      <section className="border-t border-border">
+        <div className="mx-auto max-w-3xl px-6 py-20">
+          <div className="mb-10 text-center">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-primary">
+              Gamified progression
+            </p>
+            <h2 className="text-2xl font-semibold tracking-tight">
+              Earn XP. Climb the ranks.
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Every problem you solve earns XP. Every rank unlocks a new identity.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {[
+              { icon: "🌱", title: "Newcomer", color: "#9ca3af", bg: "rgba(156,163,175,0.10)", levels: "Lv. 1" },
+              { icon: "⚡", title: "Apprentice", color: "#f59e0b", bg: "rgba(245,158,11,0.10)", levels: "Lv. 2–4" },
+              { icon: "🔥", title: "Solver", color: "#10b981", bg: "rgba(16,185,129,0.10)", levels: "Lv. 5–8" },
+              { icon: "💡", title: "Coder", color: "#3b82f6", bg: "rgba(59,130,246,0.10)", levels: "Lv. 9–12" },
+              { icon: "🎯", title: "Expert", color: "#8b5cf6", bg: "rgba(139,92,246,0.10)", levels: "Lv. 13–17" },
+              { icon: "⭐", title: "Master", color: "#f97316", bg: "rgba(249,115,22,0.10)", levels: "Lv. 18–22" },
+              { icon: "👑", title: "Grandmaster", color: "#ef4444", bg: "rgba(239,68,68,0.10)", levels: "Lv. 23–27" },
+              { icon: "🏆", title: "Legendary", color: "#a855f7", bg: "rgba(168,85,247,0.10)", levels: "Lv. 28+" },
+            ].map((rank) => (
+              <div
+                key={rank.title}
+                className="flex flex-col gap-2 rounded-xl border p-4 transition-colors"
+                style={{
+                  borderColor: `${rank.color}30`,
+                  background: rank.bg,
+                }}
+              >
+                <span className="text-2xl">{rank.icon}</span>
+                <div>
+                  <p className="text-sm font-semibold" style={{ color: rank.color }}>
+                    {rank.title}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{rank.levels}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <p className="mt-6 text-center text-xs text-muted-foreground">
+            XP scales with difficulty — harder problems, bigger rewards. Using hints costs XP.
+          </p>
+        </div>
+      </section>
+
       {/* ── Closing CTA ───────────────────────────────────────── */}
       <section className="border-t border-border">
         <div className="relative mx-auto flex max-w-3xl flex-col items-center gap-5 overflow-hidden px-6 py-24 text-center">

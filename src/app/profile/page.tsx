@@ -9,7 +9,7 @@ import { difficultyBuckets, difficultyLabel } from "~/lib/difficulty";
 import { effectiveStreak, streakStatus } from "~/lib/streak";
 import { createClient, getUser } from "~/lib/supabase/server";
 import { displayTag } from "~/lib/tags";
-import { levelFromXp, levelTitle, xpProgress } from "~/lib/xp";
+import { levelFromXp, levelTitle, rankConfig, xpProgress } from "~/lib/xp";
 import { SkillLevelEditor } from "./skill-level-editor";
 import { TopicRadar } from "./topic-radar";
 import { TopicRecommendation } from "./topic-recommendation";
@@ -233,6 +233,140 @@ async function RecommendedProblem({
   );
 }
 
+function SkillAndSolvedSkeleton() {
+  return (
+    <>
+      <div className="flex flex-col gap-3">
+        <div className="h-3 w-24 animate-pulse rounded-md bg-muted" />
+        <div className="h-56 w-full animate-pulse rounded-xl bg-muted" />
+      </div>
+      <div className="flex flex-col gap-3">
+        <div className="h-3 w-32 animate-pulse rounded-md bg-muted" />
+        <div className="h-64 w-full animate-pulse rounded-lg bg-muted" />
+      </div>
+    </>
+  );
+}
+
+async function SkillAndSolvedSection({
+  solvedProblems,
+}: {
+  solvedProblems: number[];
+}) {
+  if (solvedProblems.length === 0) {
+    return (
+      <section>
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+          Solved Problems
+        </h2>
+        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-12 text-center">
+          <p className="text-sm text-muted-foreground">No problems solved yet.</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Head to the Problems tab to get started.
+          </p>
+        </div>
+      </section>
+    );
+  }
+
+  const supabase = await createClient();
+  const solvedProblemDetails = await supabase
+    .from("problems")
+    .select("id, problem_number, title, difficulty, tags, platform")
+    .in("problem_number", solvedProblems)
+    .then(({ data }) => (data as Problem[] | null) ?? []);
+
+  const solvedOrdered = [...solvedProblems]
+    .reverse()
+    .map((n) => solvedProblemDetails.find((p) => p.problem_number === n))
+    .filter((p): p is Problem => p != null);
+
+  const tagCounts: Record<string, number> = {};
+  for (const p of solvedProblemDetails) {
+    for (const tag of p.tags ?? []) {
+      tagCounts[tag] = (tagCounts[tag] ?? 0) + 1;
+    }
+  }
+  const topTags = Object.entries(tagCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8);
+  const maxTagCount = topTags[0]?.[1] ?? 1;
+
+  return (
+    <>
+      {topTags.length > 0 && (
+        <section>
+          <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            Skill Web
+          </h2>
+          <div className="overflow-hidden rounded-xl border border-border divide-y divide-border">
+            {topTags.length >= 3 && (
+              <div className="p-4">
+                <TopicRadar tags={topTags} maxCount={maxTagCount} />
+              </div>
+            )}
+            {topTags.map(([tag, count]) => (
+              <div key={tag} className="flex items-center gap-3 px-4 py-2.5">
+                <span className="text-sm w-40 shrink-0 truncate">
+                  {displayTag(tag)}
+                </span>
+                <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-foreground/60 transition-all"
+                    style={{ width: `${(count / maxTagCount) * 100}%` }}
+                  />
+                </div>
+                <span className="text-xs text-muted-foreground tabular-nums w-14 text-right shrink-0">
+                  {count} solved
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section>
+        <div className="mb-3 flex items-baseline gap-2">
+          <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            Solved Problems
+          </h2>
+          <span className="text-xs text-muted-foreground">
+            {solvedProblems.length}
+          </span>
+        </div>
+        <div className="flex flex-col divide-y divide-border overflow-hidden rounded-lg border border-border">
+          {solvedOrdered.map((problem) => (
+            <Link
+              key={problem.problem_number}
+              href={`/display-problem?p=${problem.problem_number}`}
+              className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/50"
+            >
+              <CheckIcon />
+              <span className="w-8 shrink-0 font-mono text-xs text-muted-foreground">
+                #{problem.problem_number}
+              </span>
+              <span className="flex-1 truncate text-sm font-medium">
+                {problem.title}
+              </span>
+              <div className="flex shrink-0 items-center gap-1.5">
+                {problem.difficulty && (
+                  <Badge variant="outline" className="text-xs">
+                    {problem.difficulty}
+                  </Badge>
+                )}
+                <Badge variant="secondary" className="text-xs">
+                  {problem.platform === "codeforces" ? "CF" : "LC"}
+                </Badge>
+              </div>
+              <ChevronRightIcon />
+            </Link>
+          ))}
+        </div>
+      </section>
+    </>
+  );
+}
+
 export default async function ProfilePage() {
   const [user, supabase] = await Promise.all([getUser(), createClient()]);
 
@@ -253,6 +387,7 @@ export default async function ProfilePage() {
   const xp = profile?.xp ?? 0;
   const level = profile?.level ?? levelFromXp(xp);
   const title = levelTitle(level);
+  const config = rankConfig(level);
   const progress = xpProgress(xp, level);
   const skillLevel = profile?.skill_level ?? "intermediate";
   const solvedProblems: number[] = profile?.solved_problems ?? [];
@@ -269,81 +404,30 @@ export default async function ProfilePage() {
     : null;
 
   const initial = username[0]?.toUpperCase() ?? "U";
-
-  const rankColor: Record<string, string> = {
-    Apprentice: "#d97706",
-    Solver: "#10b981",
-    Coder: "#3b82f6",
-    Expert: "#8b5cf6",
-    Master: "#eab308",
-    Grandmaster: "#f97316",
-    Legendary: "#ef4444",
-  };
-  const dotColor = rankColor[title] ?? "#6b7280";
-
   const cachedRecNumber = profile?.recommended_problem_number ?? null;
   const focus = profile?.focus ?? null;
   const emailStreakNudge = profile?.email_streak_nudge ?? true;
 
-  const solvedProblemDetails = await (solvedProblems.length > 0
-    ? supabase
-        .from("problems")
-        .select("id, problem_number, title, difficulty, tags, platform")
-        .in("problem_number", solvedProblems)
-        .then(({ data }) => (data as Problem[] | null) ?? [])
-    : Promise.resolve([] as Problem[]));
-
-  const solvedOrdered = [...solvedProblems]
-    .reverse()
-    .map((n) => solvedProblemDetails.find((p) => p.problem_number === n))
-    .filter((p): p is Problem => p != null);
-
-  // Aggregate tag frequencies from all solved problems
-  const tagCounts: Record<string, number> = {};
-  for (const p of solvedProblemDetails) {
-    for (const tag of p.tags ?? []) {
-      tagCounts[tag] = (tagCounts[tag] ?? 0) + 1;
-    }
-  }
-  const topTags = Object.entries(tagCounts)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 8);
-  const maxTagCount = topTags[0]?.[1] ?? 1;
-
   const statItems = [
-    {
-      label: "Level",
-      value: String(level),
-      fire: false,
-      fireActive: false,
-    },
-    {
-      label: "XP",
-      value: xp.toLocaleString(),
-      fire: false,
-      fireActive: false,
-    },
-    {
-      label: "Solved",
-      value: String(solvedProblems.length),
-      fire: false,
-      fireActive: false,
-    },
-    {
-      label: "Streak",
-      value: String(streak),
-      fire: true,
-      fireActive: status === "active",
-    },
+    { label: "Level", value: String(level), fire: false, fireActive: false },
+    { label: "XP", value: xp.toLocaleString(), fire: false, fireActive: false },
+    { label: "Solved", value: String(solvedProblems.length), fire: false, fireActive: false },
+    { label: "Streak", value: String(streak), fire: true, fireActive: status === "active" },
   ];
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-12 flex flex-col gap-10">
       {/* ── Profile hero ───────────────────────────────────────── */}
       <div className="overflow-hidden rounded-xl border border-border">
-        {/* Avatar + name */}
         <div className="flex items-start gap-5 p-6">
-          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-muted text-2xl font-bold text-foreground ring-4 ring-border">
+          <div
+            className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full text-2xl font-bold"
+            style={{
+              background: config.bg,
+              color: config.color,
+              boxShadow: `0 0 0 3px ${config.color}30`,
+            }}
+          >
             {initial}
           </div>
           <div className="flex flex-col gap-1 pt-1 min-w-0 flex-1">
@@ -351,34 +435,19 @@ export default async function ProfilePage() {
               <h1 className="text-2xl font-bold tracking-tight leading-none">
                 {username}
               </h1>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted px-2.5 py-0.5 text-xs font-semibold text-foreground">
-                <span
-                  style={{
-                    width: 7,
-                    height: 7,
-                    borderRadius: "50%",
-                    backgroundColor: dotColor,
-                    display: "inline-block",
-                    flexShrink: 0,
-                  }}
-                />
-                Lv.{level} · {title}
+              <span
+                className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                style={{
+                  color: config.color,
+                  backgroundColor: config.bg,
+                  border: `1px solid ${config.color}40`,
+                }}
+              >
+                {config.icon} Lv.{level} · {title}
               </span>
             </div>
-            {topTags.length > 0 && (
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs text-muted-foreground">
-                  Top skill:
-                </span>
-                <span className="rounded-sm bg-muted px-1.5 py-0.5 text-xs font-medium text-foreground">
-                  {displayTag(topTags[0][0])}
-                </span>
-              </div>
-            )}
             {joinedDate && (
-              <p className="text-sm text-muted-foreground">
-                Joined {joinedDate}
-              </p>
+              <p className="text-sm text-muted-foreground">Joined {joinedDate}</p>
             )}
 
             {/* XP progress bar */}
@@ -388,14 +457,17 @@ export default async function ProfilePage() {
                   {progress.current.toLocaleString()} /{" "}
                   {progress.needed.toLocaleString()} XP to Lv.{level + 1}
                 </span>
-                <span className="text-xs text-muted-foreground">
+                <span className="text-xs" style={{ color: config.color }}>
                   {progress.percent}%
                 </span>
               </div>
               <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-foreground transition-all duration-500"
-                  style={{ width: `${progress.percent}%` }}
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{
+                    width: `${progress.percent}%`,
+                    background: config.gradient,
+                  }}
                 />
               </div>
             </div>
@@ -438,21 +510,12 @@ export default async function ProfilePage() {
       {/* ── Streak nudge ────────────────────────────────────────── */}
       {status === "at_risk" && (
         <div className="flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
-          <span
-            style={{ filter: "grayscale(1) opacity(0.4)", fontSize: "1.1rem" }}
-          >
-            🔥
-          </span>
+          <span style={{ filter: "grayscale(1) opacity(0.4)", fontSize: "1.1rem" }}>🔥</span>
           <div className="flex flex-col gap-0.5">
-            <p className="text-sm font-medium">
-              Your {rawStreak}-day streak is at risk
-            </p>
+            <p className="text-sm font-medium">Your {rawStreak}-day streak is at risk</p>
             <p className="text-xs text-muted-foreground">
               Solve a problem today to keep it going.{" "}
-              <Link
-                href="/display-problem"
-                className="text-foreground underline underline-offset-2"
-              >
+              <Link href="/display-problem" className="text-foreground underline underline-offset-2">
                 Practice now
               </Link>
             </p>
@@ -464,15 +527,10 @@ export default async function ProfilePage() {
         <div className="flex items-start gap-3 rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3">
           <span style={{ fontSize: "1.1rem" }}>💔</span>
           <div className="flex flex-col gap-0.5">
-            <p className="text-sm font-medium">
-              Your {rawStreak}-day streak was broken
-            </p>
+            <p className="text-sm font-medium">Your {rawStreak}-day streak was broken</p>
             <p className="text-xs text-muted-foreground">
               You missed a day. Solve a problem today to start a new streak.{" "}
-              <Link
-                href="/display-problem"
-                className="text-foreground underline underline-offset-2"
-              >
+              <Link href="/display-problem" className="text-foreground underline underline-offset-2">
                 Practice now
               </Link>
             </p>
@@ -482,19 +540,12 @@ export default async function ProfilePage() {
 
       {status === "none" && (
         <div className="flex items-start gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3">
-          <span
-            style={{ filter: "grayscale(1) opacity(0.4)", fontSize: "1.1rem" }}
-          >
-            🔥
-          </span>
+          <span style={{ filter: "grayscale(1) opacity(0.4)", fontSize: "1.1rem" }}>🔥</span>
           <div className="flex flex-col gap-0.5">
             <p className="text-sm font-medium">No streak yet</p>
             <p className="text-xs text-muted-foreground">
               Solve a problem today to start your streak.{" "}
-              <Link
-                href="/display-problem"
-                className="text-foreground underline underline-offset-2"
-              >
+              <Link href="/display-problem" className="text-foreground underline underline-offset-2">
                 Practice now
               </Link>
             </p>
@@ -507,9 +558,7 @@ export default async function ProfilePage() {
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
           Recommended for You
         </h2>
-        <Suspense
-          fallback={<div className="h-40 animate-pulse rounded-xl bg-muted" />}
-        >
+        <Suspense fallback={<div className="h-40 animate-pulse rounded-xl bg-muted" />}>
           <RecommendedProblem
             cachedRecNumber={cachedRecNumber}
             solvedProblems={solvedProblems}
@@ -524,42 +573,17 @@ export default async function ProfilePage() {
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
           What to Focus On Next
         </h2>
-        <TopicRecommendation />
+        <Suspense fallback={<div className="h-24 animate-pulse rounded-xl bg-muted" />}>
+          <TopicRecommendation />
+        </Suspense>
       </section>
 
-      {/* ── Skill Web ─────────────────────────────────────────── */}
-      {topTags.length > 0 && (
-        <section>
-          <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            Skill Web
-          </h2>
-          <div className="overflow-hidden rounded-xl border border-border divide-y divide-border">
-            {topTags.length >= 3 && (
-              <div className="p-4">
-                <TopicRadar tags={topTags} maxCount={maxTagCount} />
-              </div>
-            )}
-            {topTags.map(([tag, count]) => (
-              <div key={tag} className="flex items-center gap-3 px-4 py-2.5">
-                <span className="text-sm w-40 shrink-0 truncate">
-                  {displayTag(tag)}
-                </span>
-                <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-foreground/60 transition-all"
-                    style={{ width: `${(count / maxTagCount) * 100}%` }}
-                  />
-                </div>
-                <span className="text-xs text-muted-foreground tabular-nums w-14 text-right shrink-0">
-                  {count} solved
-                </span>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+      {/* ── Skill Web + Solved (deferred) ─────────────────────── */}
+      <Suspense fallback={<SkillAndSolvedSkeleton />}>
+        <SkillAndSolvedSection solvedProblems={solvedProblems} />
+      </Suspense>
 
-      {/* ── Settings ───────────────────────────────────────────── */}
+      {/* ── Notifications ──────────────────────────────────────── */}
       <section>
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
           Notifications
@@ -567,60 +591,6 @@ export default async function ProfilePage() {
         <div className="rounded-xl border border-border px-5 py-4">
           <EmailNudgeToggle initial={emailStreakNudge} />
         </div>
-      </section>
-
-      {/* ── Solved Problems ────────────────────────────────────── */}
-      <section>
-        <div className="mb-3 flex items-baseline gap-2">
-          <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            Solved Problems
-          </h2>
-          {solvedProblems.length > 0 && (
-            <span className="text-xs text-muted-foreground">
-              {solvedProblems.length}
-            </span>
-          )}
-        </div>
-
-        {solvedOrdered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-12 text-center">
-            <p className="text-sm text-muted-foreground">
-              No problems solved yet.
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Head to the Problems tab to get started.
-            </p>
-          </div>
-        ) : (
-          <div className="flex flex-col divide-y divide-border overflow-hidden rounded-lg border border-border">
-            {solvedOrdered.map((problem) => (
-              <Link
-                key={problem.problem_number}
-                href={`/display-problem?p=${problem.problem_number}`}
-                className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/50"
-              >
-                <CheckIcon />
-                <span className="w-8 shrink-0 font-mono text-xs text-muted-foreground">
-                  #{problem.problem_number}
-                </span>
-                <span className="flex-1 truncate text-sm font-medium">
-                  {problem.title}
-                </span>
-                <div className="flex shrink-0 items-center gap-1.5">
-                  {problem.difficulty && (
-                    <Badge variant="outline" className="text-xs">
-                      {problem.difficulty}
-                    </Badge>
-                  )}
-                  <Badge variant="secondary" className="text-xs">
-                    {problem.platform === "codeforces" ? "CF" : "LC"}
-                  </Badge>
-                </div>
-                <ChevronRightIcon />
-              </Link>
-            ))}
-          </div>
-        )}
       </section>
     </main>
   );
