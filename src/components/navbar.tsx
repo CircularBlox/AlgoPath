@@ -8,14 +8,16 @@ import { createClient, getUser } from "~/lib/supabase/server";
 
 const navLinks = [
   { href: "/display-problem", label: "Problems" },
-  { href: "/search", label: "Search" },
   { href: "/notes", label: "Notes" },
   { href: "/activity", label: "Activity" },
   { href: "/profile", label: "Profile" },
   { href: "/settings", label: "Settings" },
 ];
 
-const publicNavLinks = [{ href: "/changelog", label: "Changelog" }];
+const publicNavLinks = [
+  { href: "/changelog", label: "Changelog" },
+  { href: "/pricing", label: "Pricing" },
+];
 
 async function signOut() {
   "use server";

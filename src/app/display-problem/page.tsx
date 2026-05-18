@@ -77,7 +77,13 @@ export default async function DisplayProblemPage({
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-16">
-      <h1 className="mb-8 text-2xl font-bold tracking-tight">Practice</h1>
+      <div className="mb-8 flex flex-col gap-1">
+        <h1 className="text-2xl font-bold tracking-tight">Problems</h1>
+        <p className="text-sm text-muted-foreground">
+          Search by title, filter by platform or difficulty, or let us pick for
+          you.
+        </p>
+      </div>
       <Suspense fallback={<ProblemContentSkeleton />}>
         <ProblemContent p={p} />
       </Suspense>

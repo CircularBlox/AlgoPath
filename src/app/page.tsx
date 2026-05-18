@@ -517,7 +517,7 @@ export default function Home() {
       </section>
 
       {/* ── Rank Progression ─────────────────────────────────── */}
-      <section className="border-t border-border">
+      <section className="border-t border-border bg-muted/20">
         <div className="mx-auto max-w-3xl px-6 py-20">
           <div className="mb-10 text-center">
             <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-primary">
@@ -527,32 +527,213 @@ export default function Home() {
               Earn XP. Climb the ranks.
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Every problem you solve earns XP. Every rank unlocks a new identity.
+              Every problem you solve earns XP. Harder problems and fewer hints
+              mean bigger rewards.
             </p>
           </div>
 
+          {/* Horizontal progression chart */}
+          <div className="mb-8 overflow-x-auto pb-2">
+            <div className="flex min-w-max items-stretch gap-0">
+              {[
+                {
+                  icon: "🌱",
+                  title: "Newcomer",
+                  color: "#9ca3af",
+                  xp: "0",
+                  levels: "Lv. 1",
+                },
+                {
+                  icon: "⚡",
+                  title: "Apprentice",
+                  color: "#f59e0b",
+                  xp: "50",
+                  levels: "Lv. 2–4",
+                },
+                {
+                  icon: "🔥",
+                  title: "Solver",
+                  color: "#10b981",
+                  xp: "800",
+                  levels: "Lv. 5–8",
+                },
+                {
+                  icon: "💡",
+                  title: "Coder",
+                  color: "#3b82f6",
+                  xp: "3.2K",
+                  levels: "Lv. 9–12",
+                },
+                {
+                  icon: "🎯",
+                  title: "Expert",
+                  color: "#8b5cf6",
+                  xp: "7.2K",
+                  levels: "Lv. 13–17",
+                },
+                {
+                  icon: "⭐",
+                  title: "Master",
+                  color: "#f97316",
+                  xp: "15K",
+                  levels: "Lv. 18–22",
+                },
+                {
+                  icon: "👑",
+                  title: "Grandmaster",
+                  color: "#ef4444",
+                  xp: "25.2K",
+                  levels: "Lv. 23–27",
+                },
+                {
+                  icon: "🏆",
+                  title: "Legendary",
+                  color: "#a855f7",
+                  xp: "37.5K",
+                  levels: "Lv. 28+",
+                },
+              ].map((rank, i, arr) => (
+                <div key={rank.title} className="flex items-center">
+                  <div
+                    className="flex flex-col items-center gap-1.5 px-3 py-3 rounded-xl border text-center min-w-[90px]"
+                    style={{
+                      borderColor: `${rank.color}35`,
+                      background: `${rank.color}10`,
+                    }}
+                  >
+                    <span className="text-xl leading-none">{rank.icon}</span>
+                    <span
+                      className="text-xs font-semibold leading-tight"
+                      style={{ color: rank.color }}
+                    >
+                      {rank.title}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground leading-none">
+                      {rank.levels}
+                    </span>
+                    <span
+                      className="mt-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-mono font-medium leading-none"
+                      style={{
+                        backgroundColor: `${rank.color}15`,
+                        color: rank.color,
+                      }}
+                    >
+                      {rank.xp} XP
+                    </span>
+                  </div>
+                  {i < arr.length - 1 && (
+                    <svg
+                      width="20"
+                      height="16"
+                      viewBox="0 0 20 16"
+                      fill="none"
+                      className="shrink-0 text-border"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M1 8h14M11 3l5 5-5 5"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Grid cards */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[
-              { icon: "🌱", title: "Newcomer", color: "#9ca3af", bg: "rgba(156,163,175,0.10)", levels: "Lv. 1" },
-              { icon: "⚡", title: "Apprentice", color: "#f59e0b", bg: "rgba(245,158,11,0.10)", levels: "Lv. 2–4" },
-              { icon: "🔥", title: "Solver", color: "#10b981", bg: "rgba(16,185,129,0.10)", levels: "Lv. 5–8" },
-              { icon: "💡", title: "Coder", color: "#3b82f6", bg: "rgba(59,130,246,0.10)", levels: "Lv. 9–12" },
-              { icon: "🎯", title: "Expert", color: "#8b5cf6", bg: "rgba(139,92,246,0.10)", levels: "Lv. 13–17" },
-              { icon: "⭐", title: "Master", color: "#f97316", bg: "rgba(249,115,22,0.10)", levels: "Lv. 18–22" },
-              { icon: "👑", title: "Grandmaster", color: "#ef4444", bg: "rgba(239,68,68,0.10)", levels: "Lv. 23–27" },
-              { icon: "🏆", title: "Legendary", color: "#a855f7", bg: "rgba(168,85,247,0.10)", levels: "Lv. 28+" },
+              {
+                icon: "🌱",
+                title: "Newcomer",
+                color: "#9ca3af",
+                bg: "rgba(156,163,175,0.08)",
+                levels: "Lv. 1",
+                xp: "Start here",
+              },
+              {
+                icon: "⚡",
+                title: "Apprentice",
+                color: "#f59e0b",
+                bg: "rgba(245,158,11,0.08)",
+                levels: "Lv. 2–4",
+                xp: "50 XP",
+              },
+              {
+                icon: "🔥",
+                title: "Solver",
+                color: "#10b981",
+                bg: "rgba(16,185,129,0.08)",
+                levels: "Lv. 5–8",
+                xp: "800 XP",
+              },
+              {
+                icon: "💡",
+                title: "Coder",
+                color: "#3b82f6",
+                bg: "rgba(59,130,246,0.08)",
+                levels: "Lv. 9–12",
+                xp: "3,200 XP",
+              },
+              {
+                icon: "🎯",
+                title: "Expert",
+                color: "#8b5cf6",
+                bg: "rgba(139,92,246,0.08)",
+                levels: "Lv. 13–17",
+                xp: "7,200 XP",
+              },
+              {
+                icon: "⭐",
+                title: "Master",
+                color: "#f97316",
+                bg: "rgba(249,115,22,0.08)",
+                levels: "Lv. 18–22",
+                xp: "15,050 XP",
+              },
+              {
+                icon: "👑",
+                title: "Grandmaster",
+                color: "#ef4444",
+                bg: "rgba(239,68,68,0.08)",
+                levels: "Lv. 23–27",
+                xp: "25,200 XP",
+              },
+              {
+                icon: "🏆",
+                title: "Legendary",
+                color: "#a855f7",
+                bg: "rgba(168,85,247,0.08)",
+                levels: "Lv. 28+",
+                xp: "37,450+ XP",
+              },
             ].map((rank) => (
               <div
                 key={rank.title}
-                className="flex flex-col gap-2 rounded-xl border p-4 transition-colors"
-                style={{
-                  borderColor: `${rank.color}30`,
-                  background: rank.bg,
-                }}
+                className="flex flex-col gap-2.5 rounded-xl border p-4"
+                style={{ borderColor: `${rank.color}30`, background: rank.bg }}
               >
-                <span className="text-2xl">{rank.icon}</span>
+                <div className="flex items-center justify-between">
+                  <span className="text-xl">{rank.icon}</span>
+                  <span
+                    className="rounded-full px-1.5 py-0.5 text-[10px] font-mono"
+                    style={{
+                      backgroundColor: `${rank.color}15`,
+                      color: rank.color,
+                    }}
+                  >
+                    {rank.xp}
+                  </span>
+                </div>
                 <div>
-                  <p className="text-sm font-semibold" style={{ color: rank.color }}>
+                  <p
+                    className="text-sm font-semibold"
+                    style={{ color: rank.color }}
+                  >
                     {rank.title}
                   </p>
                   <p className="text-xs text-muted-foreground">{rank.levels}</p>
@@ -562,7 +743,8 @@ export default function Home() {
           </div>
 
           <p className="mt-6 text-center text-xs text-muted-foreground">
-            XP scales with difficulty — harder problems, bigger rewards. Using hints costs XP.
+            XP required grows with each tier — consistent practice is the only
+            path forward.
           </p>
         </div>
       </section>
