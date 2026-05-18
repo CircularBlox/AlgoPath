@@ -28,11 +28,13 @@ const DIFFICULTIES = [
 function difficultyColor(d: string | null) {
   if (!d) return "text-muted-foreground border-border";
   const lower = d.toLowerCase();
-  if (lower === "easy") return "text-emerald-400 border-emerald-500/30 bg-emerald-500/8";
+  if (lower === "easy")
+    return "text-emerald-400 border-emerald-500/30 bg-emerald-500/8";
   if (lower === "hard") return "text-red-400 border-red-500/30 bg-red-500/8";
   const num = Number(d);
   if (!Number.isNaN(num)) {
-    if (num < 1400) return "text-emerald-400 border-emerald-500/30 bg-emerald-500/8";
+    if (num < 1400)
+      return "text-emerald-400 border-emerald-500/30 bg-emerald-500/8";
     if (num >= 2000) return "text-red-400 border-red-500/30 bg-red-500/8";
     return "text-amber-400 border-amber-500/30 bg-amber-500/8";
   }
@@ -94,7 +96,8 @@ export default function SearchPage() {
       <div className="mb-8">
         <h1 className="text-2xl font-bold tracking-tight">Search Problems</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Find LeetCode and Codeforces problems by title, platform, or difficulty.
+          Find LeetCode and Codeforces problems by title, platform, or
+          difficulty.
         </p>
       </div>
 
@@ -121,7 +124,6 @@ export default function SearchPage() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className="w-full rounded-lg border border-border bg-card py-2.5 pl-9 pr-4 text-sm outline-none ring-0 transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary"
-          autoFocus
         />
         {loading && (
           <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -164,9 +166,7 @@ export default function SearchPage() {
       </div>
 
       {/* Results */}
-      {error && (
-        <p className="text-sm text-destructive">{error}</p>
-      )}
+      {error && <p className="text-sm text-destructive">{error}</p>}
 
       {!hasFilters && (
         <div className="flex flex-col items-center gap-3 py-20 text-center">
@@ -191,12 +191,20 @@ export default function SearchPage() {
         </div>
       )}
 
-      {hasFilters && !loading && hasSearched && results.length === 0 && !error && (
-        <div className="py-16 text-center">
-          <p className="text-sm text-muted-foreground">No problems matched your search.</p>
-          <p className="mt-1 text-xs text-muted-foreground">Try a different title or filter.</p>
-        </div>
-      )}
+      {hasFilters &&
+        !loading &&
+        hasSearched &&
+        results.length === 0 &&
+        !error && (
+          <div className="py-16 text-center">
+            <p className="text-sm text-muted-foreground">
+              No problems matched your search.
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Try a different title or filter.
+            </p>
+          </div>
+        )}
 
       {results.length > 0 && (
         <div className="flex flex-col divide-y divide-border overflow-hidden rounded-lg border border-border">
