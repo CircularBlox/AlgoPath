@@ -197,14 +197,6 @@ export default async function PricingPage() {
           Full comparison
         </h2>
 
-        {/* Column headers */}
-        <div className="mb-1 grid grid-cols-4 gap-0 text-center text-xs font-semibold uppercase tracking-widest">
-          <div />
-          <div className="py-2 text-muted-foreground">Free</div>
-          <div className="py-2 text-primary">Pro</div>
-          <div className="py-2 text-muted-foreground">Elite</div>
-        </div>
-
         <div className="overflow-hidden rounded-xl border border-border">
           <table className="w-full text-sm">
             <thead className="sr-only">
@@ -219,14 +211,31 @@ export default async function PricingPage() {
               {ROWS.map((row, i) => (
                 <>
                   {row.category && (
-                    <tr key={`cat-${row.category}`} className="bg-muted/40">
-                      <td
-                        colSpan={4}
-                        className="px-4 py-2 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground"
+                    <>
+                      <tr
+                        key={`cat-${row.category}`}
+                        className="border-t-2 border-border bg-muted/50"
                       >
-                        {row.category}
-                      </td>
-                    </tr>
+                        <td
+                          colSpan={4}
+                          className="px-4 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground"
+                        >
+                          {row.category}
+                        </td>
+                      </tr>
+                      <tr key={`col-${row.category}`} className="bg-muted/30">
+                        <td className="px-4 pb-2 pt-0" />
+                        <td className="px-4 pb-2 pt-0 text-center text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                          Free
+                        </td>
+                        <td className="bg-primary/[0.04] px-4 pb-2 pt-0 text-center text-[10px] font-semibold uppercase tracking-widest text-primary">
+                          Pro
+                        </td>
+                        <td className="px-4 pb-2 pt-0 text-center text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                          Elite
+                        </td>
+                      </tr>
+                    </>
                   )}
                   <tr
                     key={row.label}
