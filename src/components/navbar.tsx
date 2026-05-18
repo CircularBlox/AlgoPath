@@ -62,7 +62,7 @@ async function NavbarSignButton() {
     <form action={signOut}>
       <button
         type="submit"
-        className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+        className="whitespace-nowrap text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
         Sign out
       </button>
