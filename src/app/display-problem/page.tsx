@@ -38,7 +38,7 @@ async function ProblemContent({ p }: { p?: string }) {
     user
       ? supabase
           .from("profiles")
-          .select("focus, onboarding_completed")
+          .select("focus, onboarding_completed, plan")
           .eq("id", user.id)
           .maybeSingle()
       : Promise.resolve({ data: null }),
@@ -57,6 +57,9 @@ async function ProblemContent({ p }: { p?: string }) {
     profileResult.data?.onboarding_completed === true &&
     !profileResult.data?.focus;
   const initialProblem: Problem | null = problemResult.data ?? null;
+  const rawPlan = profileResult.data?.plan;
+  const plan: "free" | "pro" | "elite" =
+    rawPlan === "pro" || rawPlan === "elite" ? rawPlan : "free";
 
   return (
     <ProblemViewer
@@ -64,6 +67,7 @@ async function ProblemContent({ p }: { p?: string }) {
       initialProblem={initialProblem}
       csrfToken={csrfToken}
       showFocusPrompt={showFocusPrompt}
+      plan={plan}
     />
   );
 }

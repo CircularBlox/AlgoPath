@@ -47,11 +47,13 @@ export function ProblemViewer({
   initialProblem = null,
   csrfToken,
   showFocusPrompt = false,
+  plan = "free",
 }: {
   userId: string | null;
   initialProblem?: Problem | null;
   csrfToken: string;
   showFocusPrompt?: boolean;
+  plan?: "free" | "pro" | "elite";
 }) {
   const [state, setState] = useState<ViewerState>(
     initialProblem
@@ -241,6 +243,7 @@ export function ProblemViewer({
   >([]);
   const [notesLoading, setNotesLoading] = useState(false);
   const [notesLoaded, setNotesLoaded] = useState(false);
+  const [notesLimitError, setNotesLimitError] = useState<string | null>(null);
   const [quickTitle, setQuickTitle] = useState("");
   const [quickContent, setQuickContent] = useState("");
   const [quickSaving, setQuickSaving] = useState(false);
@@ -282,6 +285,7 @@ export function ProblemViewer({
 
   async function saveQuickNote(problemNumber: number) {
     if (!quickTitle.trim() && !quickContent.trim()) return;
+    setNotesLimitError(null);
     setQuickSaving(true);
     try {
       const res = await fetch("/api/notes", {
@@ -293,6 +297,10 @@ export function ProblemViewer({
           problem_number: problemNumber,
         }),
       });
+      if (res.status === 429) {
+        setNotesLimitError("Free plan: 3 notes/day. Resets at midnight UTC.");
+        return;
+      }
       if (res.ok) {
         const data = (await res.json()) as {
           id: string;
@@ -2441,12 +2449,14 @@ export function ProblemViewer({
           quickContent={quickContent}
           setQuickContent={setQuickContent}
           quickSaving={quickSaving}
+          notesLimitError={notesLimitError}
           onLoadNotes={() =>
             loadProblemNotes(state.problem.problem_number ?? 0)
           }
           onSaveQuickNote={() =>
             saveQuickNote(state.problem.problem_number ?? 0)
           }
+          plan={plan}
           chatMessages={chatMessages}
           setChatMessages={setChatMessages}
           chatLoading={chatLoading}

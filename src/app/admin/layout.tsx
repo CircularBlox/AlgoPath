@@ -6,6 +6,7 @@ import { getAuthContext } from "~/lib/is-admin";
 const NAV_LINKS = [
   { href: "/admin/fix-io", label: "Fix Sample I/O" },
   { href: "/admin/classify-difficulty", label: "Classify Difficulty" },
+  { href: "/admin/plans", label: "Plans" },
   { href: "/add-hints", label: "Bulk Hints" },
   { href: "/add-solution", label: "Add Solution" },
 ] as const;

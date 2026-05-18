@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Button } from "~/components/ui/button";
 import { highlight, languages } from "~/lib/prism-setup";
 import type { ChatMessage, NoteItem } from "./types";
@@ -106,8 +107,10 @@ export interface SidePanelProps {
   quickContent: string;
   setQuickContent: (v: string) => void;
   quickSaving: boolean;
+  notesLimitError: string | null;
   onLoadNotes: () => void;
   onSaveQuickNote: () => void;
+  plan: "free" | "pro" | "elite";
   // chat
   chatMessages: ChatMessage[];
   setChatMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
@@ -145,8 +148,10 @@ export function SidePanel({
   quickContent,
   setQuickContent,
   quickSaving,
+  notesLimitError,
   onLoadNotes,
   onSaveQuickNote,
+  plan,
   chatMessages,
   setChatMessages,
   chatLoading,
@@ -391,6 +396,17 @@ export function SidePanel({
               >
                 {quickSaving ? "Saving…" : "Save Note"}
               </Button>
+              {notesLimitError && (
+                <p className="text-xs text-muted-foreground">
+                  {notesLimitError}{" "}
+                  <Link
+                    href="/pricing"
+                    className="text-primary underline underline-offset-2"
+                  >
+                    Upgrade →
+                  </Link>
+                </p>
+              )}
             </div>
           </div>
         )}
@@ -539,7 +555,40 @@ export function SidePanel({
         )}
 
         {/* ── AI Review panel ── */}
-        {activeTab === "ai" && (
+        {activeTab === "ai" && plan === "free" && (
+          <div className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="text-primary"
+                aria-hidden="true"
+              >
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+            </div>
+            <div className="flex flex-col gap-1">
+              <p className="text-sm font-semibold">Pro feature</p>
+              <p className="text-xs text-muted-foreground">
+                AI code review is available on Pro and Elite plans.
+              </p>
+            </div>
+            <Link
+              href="/pricing"
+              className="rounded-full bg-primary px-4 py-1.5 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-80"
+            >
+              Upgrade to Pro →
+            </Link>
+          </div>
+        )}
+        {activeTab === "ai" && plan !== "free" && (
           <div className="flex flex-1 flex-col overflow-hidden">
             <div className="flex shrink-0 items-center justify-between border-b border-border bg-muted/10 px-4 py-2">
               <p className="text-xs text-muted-foreground">

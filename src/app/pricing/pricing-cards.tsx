@@ -10,6 +10,7 @@ type Props = {
   proYearlyPriceId: string | null;
   eliteMonthlyPriceId: string | null;
   eliteYearlyPriceId: string | null;
+  currentPlan: "free" | "pro" | "elite" | null;
 };
 
 const FREE_FEATURES = [
@@ -44,6 +45,7 @@ export function PricingCards({
   proYearlyPriceId,
   eliteMonthlyPriceId,
   eliteYearlyPriceId,
+  currentPlan,
 }: Props) {
   const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
   const yearly = billing === "yearly";
@@ -96,9 +98,15 @@ export function PricingCards({
             <p className="mt-1 text-xs text-muted-foreground">Forever</p>
           </div>
 
-          <Button asChild variant="outline" size="sm" className="w-full">
-            <Link href="/auth/signup">Get started</Link>
-          </Button>
+          {currentPlan === "free" ? (
+            <Button variant="outline" size="sm" className="w-full" disabled>
+              Current plan
+            </Button>
+          ) : (
+            <Button asChild variant="outline" size="sm" className="w-full">
+              <Link href="/auth/signup">Get started</Link>
+            </Button>
+          )}
 
           <ul className="flex flex-col gap-2">
             {FREE_FEATURES.map((f) => (
@@ -131,12 +139,18 @@ export function PricingCards({
             </p>
           </div>
 
-          <UpgradeButton
-            priceId={proPriceId}
-            label="Start Pro"
-            variant="default"
-            className="w-full"
-          />
+          {currentPlan === "pro" ? (
+            <Button variant="default" size="sm" className="w-full" disabled>
+              Current plan
+            </Button>
+          ) : (
+            <UpgradeButton
+              priceId={proPriceId}
+              label={currentPlan === "elite" ? "Downgrade to Pro" : "Start Pro"}
+              variant="default"
+              className="w-full"
+            />
+          )}
 
           <ul className="flex flex-col gap-2">
             {PRO_FEATURES.map((f) => (
@@ -165,12 +179,18 @@ export function PricingCards({
             </p>
           </div>
 
-          <UpgradeButton
-            priceId={elitePriceId}
-            label="Start Elite"
-            variant="outline"
-            className="w-full"
-          />
+          {currentPlan === "elite" ? (
+            <Button variant="outline" size="sm" className="w-full" disabled>
+              Current plan
+            </Button>
+          ) : (
+            <UpgradeButton
+              priceId={elitePriceId}
+              label="Start Elite"
+              variant="outline"
+              className="w-full"
+            />
+          )}
 
           <ul className="flex flex-col gap-2">
             {ELITE_FEATURES.map((f) => (

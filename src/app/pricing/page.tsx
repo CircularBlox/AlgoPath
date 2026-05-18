@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { env } from "~/env";
+import { createClient, getUser } from "~/lib/supabase/server";
 import { PricingCards } from "./pricing-cards";
 
 type Tier = "free" | "pro" | "elite";
@@ -144,7 +145,20 @@ function Cell({ value, tier }: { value: FeatureValue; tier: Tier }) {
   );
 }
 
-export default function PricingPage() {
+export default async function PricingPage() {
+  const user = await getUser();
+  let currentPlan: "free" | "pro" | "elite" = "free";
+  if (user) {
+    const supabase = await createClient();
+    const { data } = await supabase
+      .from("profiles")
+      .select("plan")
+      .eq("id", user.id)
+      .maybeSingle<{ plan: string }>();
+    const p = data?.plan;
+    if (p === "pro" || p === "elite") currentPlan = p;
+  }
+
   return (
     <main className="mx-auto max-w-4xl px-6 py-16">
       {/* Header */}
@@ -167,6 +181,7 @@ export default function PricingPage() {
         proYearlyPriceId={env.STRIPE_PRO_YEARLY_PRICE_ID ?? null}
         eliteMonthlyPriceId={env.STRIPE_ELITE_MONTHLY_PRICE_ID ?? null}
         eliteYearlyPriceId={env.STRIPE_ELITE_YEARLY_PRICE_ID ?? null}
+        currentPlan={user ? currentPlan : null}
       />
 
       {/* Feature comparison table */}
