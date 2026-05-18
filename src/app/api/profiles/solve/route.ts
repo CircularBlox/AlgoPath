@@ -50,7 +50,8 @@ function computeStreak(
 ): { streak: number; last_solved_date: string; clearFreeze: boolean } {
   const today = todayUtc();
 
-  if (!lastDate) return { streak: 1, last_solved_date: today, clearFreeze: false };
+  if (!lastDate)
+    return { streak: 1, last_solved_date: today, clearFreeze: false };
 
   if (lastDate === today) {
     return { streak: current, last_solved_date: today, clearFreeze: false };
