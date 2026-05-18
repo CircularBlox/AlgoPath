@@ -9,27 +9,50 @@ export async function GET(_req: NextRequest) {
 
   const supabase = await createClient();
 
+  const { data: profileData } = await supabase
+    .from("profiles")
+    .select("plan")
+    .eq("id", user.id)
+    .single<{ plan: string }>();
+  const plan = profileData?.plan ?? "free";
+  const cutoff =
+    plan === "free"
+      ? new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString()
+      : null;
+
   const [solvesRes, notesRes, reviewsRes] = await Promise.all([
-    supabase
-      .from("solves")
-      .select("problem_number, xp_gained, hints_used, solved_at")
-      .eq("user_id", user.id)
-      .order("solved_at", { ascending: false })
-      .limit(50),
+    (() => {
+      let q = supabase
+        .from("solves")
+        .select("problem_number, xp_gained, hints_used, solved_at")
+        .eq("user_id", user.id)
+        .order("solved_at", { ascending: false })
+        .limit(50);
+      if (cutoff) q = q.gte("solved_at", cutoff);
+      return q;
+    })(),
 
-    supabase
-      .from("notes")
-      .select("id, title, problem_number, created_at, updated_at")
-      .eq("user_id", user.id)
-      .order("updated_at", { ascending: false })
-      .limit(20),
+    (() => {
+      let q = supabase
+        .from("notes")
+        .select("id, title, problem_number, created_at, updated_at")
+        .eq("user_id", user.id)
+        .order("updated_at", { ascending: false })
+        .limit(20);
+      if (cutoff) q = q.gte("updated_at", cutoff);
+      return q;
+    })(),
 
-    supabase
-      .from("code_reviews")
-      .select("problem_number, created_at")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(20),
+    (() => {
+      let q = supabase
+        .from("code_reviews")
+        .select("problem_number, created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (cutoff) q = q.gte("created_at", cutoff);
+      return q;
+    })(),
   ]);
 
   for (const { error } of [solvesRes, notesRes, reviewsRes]) {
