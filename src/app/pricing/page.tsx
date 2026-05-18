@@ -29,6 +29,13 @@ const ROWS: FeatureRow[] = [
     elite: true,
   },
   {
+    label: "Drill mode (tag-based sessions)",
+    free: true,
+    pro: true,
+    elite: true,
+  },
+  { label: "Problem recommendations", free: true, pro: true, elite: true },
+  {
     label: "XP, levels & rank progression",
     free: true,
     pro: true,

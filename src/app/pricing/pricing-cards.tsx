@@ -14,9 +14,13 @@ type Props = {
 };
 
 const FREE_FEATURES = [
-  "3 hint sessions / day",
-  "All 3 hints per session",
-  "XP, levels & streaks",
+  "3 complete hint sessions / day",
+  "All 3 hints visible per session",
+  "3 notes / day",
+  "XP, levels & rank progression",
+  "Streak tracking",
+  "Drill mode (tag-based sessions)",
+  "Problem recommendations",
   "Public profile page",
   "14-day activity history",
 ];
@@ -27,7 +31,7 @@ const PRO_FEATURES = [
   "Model selection for hints",
   "Full activity history",
   "AI code review",
-  "Streak freeze (1 / mo)",
+  "Streak freeze (1 / month)",
   "Export notes as Markdown",
 ];
 
@@ -56,7 +60,7 @@ export function PricingCards({
   return (
     <div className="flex flex-col gap-6">
       {/* Billing toggle */}
-      <div className="flex items-center justify-center gap-1 rounded-full border border-border bg-muted/40 p-1 w-fit mx-auto">
+      <div className="mx-auto flex w-fit items-center gap-1 rounded-full border border-border bg-muted/40 p-1">
         <button
           type="button"
           onClick={() => setBilling("monthly")}
@@ -84,61 +88,51 @@ export function PricingCards({
         </button>
       </div>
 
-      {/* Tier cards */}
+      {/* Compact tier cards */}
       <div className="grid gap-4 sm:grid-cols-3">
         {/* Free */}
-        <div className="flex flex-col rounded-xl border border-border bg-card p-6 gap-5">
-          <div>
+        <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5">
+          <div className="flex flex-col gap-0.5">
             <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
               Free
             </p>
-            <div className="mt-2 flex items-baseline gap-1">
-              <span className="text-4xl font-bold">$0</span>
+            <div className="flex items-baseline gap-1">
+              <span className="text-3xl font-bold">$0</span>
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">Forever</p>
+            <p className="text-xs text-muted-foreground">
+              Forever · No credit card
+            </p>
           </div>
-
           {currentPlan === "free" ? (
             <Button variant="outline" size="sm" className="w-full" disabled>
               Current plan
             </Button>
           ) : (
             <Button asChild variant="outline" size="sm" className="w-full">
-              <Link href="/auth/signup">Get started</Link>
+              <Link href="/auth/signup">Get started free</Link>
             </Button>
           )}
-
-          <ul className="flex flex-col gap-2">
-            {FREE_FEATURES.map((f) => (
-              <li key={f} className="flex items-start gap-2 text-sm">
-                <CheckIcon />
-                <span className="text-foreground/80">{f}</span>
-              </li>
-            ))}
-          </ul>
         </div>
 
         {/* Pro */}
-        <div className="relative flex flex-col rounded-xl border border-primary bg-primary/5 p-6 gap-5 shadow-sm">
-          <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full border border-primary/40 bg-primary px-3 py-0.5 text-[11px] font-semibold text-primary-foreground whitespace-nowrap">
+        <div className="relative flex flex-col gap-4 rounded-xl border border-primary bg-primary/5 p-5 shadow-sm">
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border border-primary/40 bg-primary px-3 py-0.5 text-[11px] font-semibold text-primary-foreground">
             Most popular
           </div>
-
-          <div>
+          <div className="flex flex-col gap-0.5">
             <p className="text-xs font-semibold uppercase tracking-widest text-primary">
               Pro
             </p>
-            <div className="mt-2 flex items-baseline gap-1">
-              <span className="text-4xl font-bold">
+            <div className="flex items-baseline gap-1">
+              <span className="text-3xl font-bold">
                 {yearly ? "$5.42" : "$8"}
               </span>
               <span className="text-sm text-muted-foreground">/ mo</span>
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               {yearly ? "Billed $65 / year" : "Billed monthly"}
             </p>
           </div>
-
           {currentPlan === "pro" ? (
             <Button variant="default" size="sm" className="w-full" disabled>
               Current plan
@@ -151,34 +145,24 @@ export function PricingCards({
               className="w-full"
             />
           )}
-
-          <ul className="flex flex-col gap-2">
-            {PRO_FEATURES.map((f) => (
-              <li key={f} className="flex items-start gap-2 text-sm">
-                <CheckIcon primary />
-                <span className="text-foreground/80">{f}</span>
-              </li>
-            ))}
-          </ul>
         </div>
 
         {/* Elite */}
-        <div className="flex flex-col rounded-xl border border-border bg-card p-6 gap-5">
-          <div>
+        <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5">
+          <div className="flex flex-col gap-0.5">
             <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
               Elite
             </p>
-            <div className="mt-2 flex items-baseline gap-1">
-              <span className="text-4xl font-bold">
+            <div className="flex items-baseline gap-1">
+              <span className="text-3xl font-bold">
                 {yearly ? "$10.83" : "$16"}
               </span>
               <span className="text-sm text-muted-foreground">/ mo</span>
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               {yearly ? "Billed $130 / year" : "Billed monthly"}
             </p>
           </div>
-
           {currentPlan === "elite" ? (
             <Button variant="outline" size="sm" className="w-full" disabled>
               Current plan
@@ -191,16 +175,49 @@ export function PricingCards({
               className="w-full"
             />
           )}
-
-          <ul className="flex flex-col gap-2">
-            {ELITE_FEATURES.map((f) => (
-              <li key={f} className="flex items-start gap-2 text-sm">
-                <CheckIcon />
-                <span className="text-foreground/80">{f}</span>
-              </li>
-            ))}
-          </ul>
         </div>
+      </div>
+
+      {/* Feature lists aligned under cards */}
+      <div className="grid gap-6 sm:grid-cols-3">
+        {/* Free features */}
+        <ul className="flex flex-col gap-2">
+          <li className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+            Included
+          </li>
+          {FREE_FEATURES.map((f) => (
+            <li key={f} className="flex items-start gap-2 text-sm">
+              <CheckIcon />
+              <span className="text-foreground/80">{f}</span>
+            </li>
+          ))}
+        </ul>
+
+        {/* Pro features */}
+        <ul className="flex flex-col gap-2">
+          <li className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-primary">
+            Included
+          </li>
+          {PRO_FEATURES.map((f) => (
+            <li key={f} className="flex items-start gap-2 text-sm">
+              <CheckIcon primary />
+              <span className="text-foreground/80">{f}</span>
+            </li>
+          ))}
+        </ul>
+
+        {/* Elite features */}
+        <ul className="flex flex-col gap-2">
+          <li className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+            Included
+          </li>
+          {ELITE_FEATURES.map((f) => (
+            <li key={f} className="flex items-start gap-2 text-sm">
+              <CheckIcon />
+              <span className="text-foreground/80">{f}</span>
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   );
