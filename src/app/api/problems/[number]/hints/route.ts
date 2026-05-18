@@ -65,6 +65,9 @@ export async function GET(
   let gated = false;
   let sessionsUsed = 0;
   const sessionsLimit = PLAN_LIMITS.free.hint_sessions_per_day;
+  let hintStyle = "structured";
+  let adaptiveDifficulty = false;
+  let preferredModel: string | null = null;
 
   const {
     data: { user },
@@ -73,11 +76,24 @@ export async function GET(
   if (user) {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("plan")
+      .select("plan, hint_style, adaptive_difficulty, preferred_hint_model")
       .eq("id", user.id)
-      .single<{ plan: string }>();
+      .single<{
+        plan: string;
+        hint_style: string | null;
+        adaptive_difficulty: boolean | null;
+        preferred_hint_model: string | null;
+      }>();
 
     const plan = profile?.plan ?? "free";
+
+    if (plan === "elite") {
+      hintStyle = profile?.hint_style ?? "structured";
+      adaptiveDifficulty = profile?.adaptive_difficulty ?? false;
+      preferredModel = profile?.preferred_hint_model ?? null;
+    } else if (plan === "pro") {
+      preferredModel = profile?.preferred_hint_model ?? null;
+    }
 
     if (plan === "free") {
       const today = todayUtc();
@@ -128,5 +144,8 @@ export async function GET(
     gated,
     sessions_used: sessionsUsed,
     sessions_limit: sessionsLimit,
+    hint_style: hintStyle,
+    adaptive_difficulty: adaptiveDifficulty,
+    preferred_model: preferredModel,
   });
 }

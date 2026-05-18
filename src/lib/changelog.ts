@@ -6,6 +6,40 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.0.9",
+    date: "2026-05-18",
+    changes: [
+      {
+        type: "feat",
+        text: "Model selection (Pro+) — choose your preferred OpenRouter model for hint generation from the hints panel; preference is saved to your profile.",
+      },
+      {
+        type: "feat",
+        text: "Hint style (Elite) — switch between Structured (default), Socratic (question-framed), and Minimal (condensed) hint display from the hints panel.",
+      },
+      {
+        type: "feat",
+        text: "Adaptive difficulty (Elite) — toggle in the hints panel; marks your profile for contest-level hint depth.",
+      },
+      {
+        type: "feat",
+        text: "Export notes as Markdown (Pro+) — download all notes for a problem as a .md file from the Notes panel.",
+      },
+      {
+        type: "feat",
+        text: "Hint history (Elite) — the hints panel shows all past session dates for each problem.",
+      },
+      {
+        type: "feat",
+        text: "Insights dashboard (Elite) — /insights shows solve rate by difficulty, avg hints per solve, weak topics, and a 14-day XP trend chart.",
+      },
+      {
+        type: "feat",
+        text: "Streak freeze (Pro+) — activate from your profile to absorb one missed day; resets monthly.",
+      },
+    ],
+  },
+  {
     version: "1.0.8",
     date: "2026-05-18",
     changes: [

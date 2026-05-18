@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { generateCsrfToken } from "~/lib/csrf";
 import { difficultyBuckets, difficultyLabel } from "~/lib/difficulty";
 import { effectiveStreak, streakStatus } from "~/lib/streak";
 import { createClient, getUser } from "~/lib/supabase/server";
@@ -11,6 +12,7 @@ import { displayTag } from "~/lib/tags";
 import { levelFromXp, levelTitle, rankConfig, xpProgress } from "~/lib/xp";
 import { ManageSubscriptionButton } from "./manage-subscription-button";
 import { SkillLevelEditor } from "./skill-level-editor";
+import { StreakFreezeButton } from "./streak-freeze-button";
 import { TopicRadar } from "./topic-radar";
 import { TopicRecommendation } from "./topic-recommendation";
 
@@ -28,6 +30,8 @@ type Profile = {
   focus: string | null;
   plan: "free" | "pro" | "elite" | null;
   stripe_customer_id: string | null;
+  streak_frozen: boolean | null;
+  streak_freeze_used_at: string | null;
 };
 
 type Problem = {
@@ -377,13 +381,16 @@ export default async function ProfilePage() {
     redirect("/auth/login?next=/profile");
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select(
-      "username, rating, xp, level, skill_level, solved_problems, streak, last_solved_date, created_at, recommended_problem_number, focus, plan, stripe_customer_id",
-    )
-    .eq("id", user.id)
-    .single<Profile>();
+  const [{ data: profile }, csrfToken] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select(
+        "username, rating, xp, level, skill_level, solved_problems, streak, last_solved_date, created_at, recommended_problem_number, focus, plan, stripe_customer_id, streak_frozen, streak_freeze_used_at",
+      )
+      .eq("id", user.id)
+      .single<Profile>(),
+    generateCsrfToken(),
+  ]);
 
   const username = profile?.username ?? user.email?.split("@")[0] ?? "User";
   const rating = profile?.rating ?? 1200;
@@ -411,8 +418,24 @@ export default async function ProfilePage() {
   const focus = profile?.focus ?? null;
   const plan = profile?.plan ?? "free";
   const hasStripeCustomer = !!profile?.stripe_customer_id;
+  const streakFrozen = profile?.streak_frozen ?? false;
+  const streakFreezeUsedAt = profile?.streak_freeze_used_at ?? null;
+  const freezeUsedThisMonth = streakFreezeUsedAt
+    ? (() => {
+        const d = new Date(streakFreezeUsedAt);
+        const now = new Date();
+        return (
+          d.getUTCFullYear() === now.getUTCFullYear() &&
+          d.getUTCMonth() === now.getUTCMonth()
+        );
+      })()
+    : false;
 
-  const planLabel: Record<string, string> = { free: "Free", pro: "Pro", elite: "Elite" };
+  const planLabel: Record<string, string> = {
+    free: "Free",
+    pro: "Pro",
+    elite: "Elite",
+  };
   const planColors: Record<string, string> = {
     free: "text-muted-foreground border-border bg-muted/40",
     pro: "text-primary border-primary/40 bg-primary/10",
@@ -517,6 +540,24 @@ export default async function ProfilePage() {
                 <ManageSubscriptionButton />
               ) : null}
             </div>
+
+            {/* Streak freeze (Pro+) */}
+            {plan !== "free" && (
+              <div className="mt-3 flex flex-col gap-1">
+                <span className="text-xs text-muted-foreground font-medium">
+                  Streak Freeze
+                </span>
+                <StreakFreezeButton
+                  csrfToken={csrfToken}
+                  streakFrozen={streakFrozen}
+                  freezeUsedThisMonth={freezeUsedThisMonth}
+                  streak={streak}
+                />
+                <span className="text-[10px] text-muted-foreground">
+                  1 free per month · absorbs one missed day
+                </span>
+              </div>
+            )}
           </div>
         </div>
 

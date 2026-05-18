@@ -10,6 +10,7 @@ const navLinks = [
   { href: "/display-problem", label: "Problems" },
   { href: "/notes", label: "Notes" },
   { href: "/activity", label: "Activity" },
+  { href: "/insights", label: "Insights" },
   { href: "/profile", label: "Profile" },
   { href: "/settings", label: "Settings" },
 ];
