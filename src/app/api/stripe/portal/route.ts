@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { createClient, getUser } from "~/lib/supabase/server";
 import { getStripe } from "~/lib/stripe";
+import { createClient, getUser } from "~/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
