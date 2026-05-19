@@ -65,6 +65,22 @@ export const CHANGELOG: ChangelogEntry[] = [
         type: "improve",
         text: '"Decide for me" intent card now includes a one-line explanation of why to use it over manual browsing.',
       },
+      {
+        type: "fix",
+        text: "Hint session history now shown for Pro (last session) and Elite (full history) — was previously Elite-only in the UI despite the API supporting both.",
+      },
+      {
+        type: "fix",
+        text: 'Export as Markdown now correctly triggers a download in all browsers (anchor was not attached to DOM before click; revoke was racing the download).',
+      },
+      {
+        type: "fix",
+        text: "Browser tab title now updates when a problem is loaded client-side (search result, random, resume) — was only set on hard navigation.",
+      },
+      {
+        type: "improve",
+        text: '"Too hard — try easier" option in skip confirmation is now blue to visually distinguish it from the amber skip action.',
+      },
     ],
   },
   {

@@ -102,6 +102,21 @@ export function ProblemViewer({
   const loadedProblemDifficulty =
     state.status === "loaded" ? state.problem.difficulty : null;
 
+  // Sync browser tab title with the loaded problem
+  useEffect(() => {
+    if (state.status === "loaded") {
+      const { problem } = state;
+      if (problem.problem_number != null && problem.title) {
+        document.title = `#${problem.problem_number} ${problem.title} — AlgoPath`;
+      }
+    } else {
+      document.title = "Problems — AlgoPath";
+    }
+    return () => {
+      document.title = "Problems — AlgoPath";
+    };
+  }, [state]);
+
   // Track problem view at the top of the hint-consumption funnel
   useEffect(() => {
     if (!loadedProblemNumber) return;
@@ -730,8 +745,8 @@ export function ProblemViewer({
             3: ratingsData[3] ?? null,
           });
         }
-        // Fetch hint history for Elite
-        if (plan === "elite") {
+        // Fetch hint history for Pro (last session) and Elite (full history)
+        if (plan === "pro" || plan === "elite") {
           fetch(`/api/problems/${problemNumber}/hint-history`)
             .then(async (r) => {
               if (r.ok) {
@@ -1078,8 +1093,10 @@ export function ProblemViewer({
     const a = document.createElement("a");
     a.href = url;
     a.download = `${problemTitle.replace(/[^a-z0-9]/gi, "-").toLowerCase()}-notes.md`;
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 100);
   }
 
   function formatHintText(text: string, style: string): string {
@@ -1399,7 +1416,7 @@ export function ProblemViewer({
                 setSkipWarningPending(null);
                 void fetchRandomLower();
               }}
-              className="rounded px-2 py-0.5 text-xs font-medium text-foreground/70 hover:bg-muted transition-colors"
+              className="rounded px-2 py-0.5 text-xs font-medium text-sky-400 hover:bg-sky-500/20 transition-colors"
             >
               Too hard — try easier
             </button>
@@ -2535,12 +2552,14 @@ export function ProblemViewer({
                               </Button>
                             </div>
                           )}
-                          {/* Hint history — Elite only */}
-                          {plan === "elite" &&
+                          {/* Hint history — Pro (last session) and Elite (all sessions) */}
+                          {(plan === "pro" || plan === "elite") &&
                             hintHistorySessions.length > 0 && (
                               <div className="flex flex-col gap-1.5 border-t border-border pt-3">
                                 <p className="text-xs font-medium text-muted-foreground">
-                                  Your hint sessions for this problem
+                                  {plan === "pro"
+                                    ? "Last hint session"
+                                    : "Your hint sessions for this problem"}
                                 </p>
                                 <div className="flex flex-wrap gap-1.5">
                                   {hintHistorySessions.map((date) => (
