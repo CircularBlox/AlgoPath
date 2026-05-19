@@ -1,9 +1,31 @@
 import "prismjs/themes/prism-okaidia.css";
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { generateCsrfToken } from "~/lib/csrf";
 import { createClient, getUser } from "~/lib/supabase/server";
 import { ProblemViewer } from "./problem-viewer";
 import type { Problem } from "./types";
+
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ p?: string }>;
+}): Promise<Metadata> {
+  const { p } = await searchParams;
+  const num = p ? Number.parseInt(p, 10) : null;
+  if (!num || Number.isNaN(num)) return { title: "Problems — AlgoPath" };
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("problems")
+    .select("title")
+    .eq("problem_number", num)
+    .maybeSingle<{ title: string }>();
+  return {
+    title: data?.title
+      ? `#${num} ${data.title} — AlgoPath`
+      : `Problem #${num} — AlgoPath`,
+  };
+}
 
 function ProblemContentSkeleton() {
   return (
@@ -38,7 +60,7 @@ async function ProblemContent({ p }: { p?: string }) {
     user
       ? supabase
           .from("profiles")
-          .select("focus, onboarding_completed, plan")
+          .select("focus, onboarding_completed, plan, solved_problems")
           .eq("id", user.id)
           .maybeSingle()
       : Promise.resolve({ data: null }),
@@ -60,6 +82,8 @@ async function ProblemContent({ p }: { p?: string }) {
   const rawPlan = profileResult.data?.plan;
   const plan: "free" | "pro" | "elite" =
     rawPlan === "pro" || rawPlan === "elite" ? rawPlan : "free";
+  const solvedCount: number =
+    (profileResult.data?.solved_problems as number[] | null)?.length ?? 0;
 
   return (
     <ProblemViewer
@@ -68,6 +92,7 @@ async function ProblemContent({ p }: { p?: string }) {
       csrfToken={csrfToken}
       showFocusPrompt={showFocusPrompt}
       plan={plan}
+      solvedCount={solvedCount}
     />
   );
 }

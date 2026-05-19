@@ -70,9 +70,15 @@ export async function POST(req: Request) {
         const customerId =
           typeof sub.customer === "string" ? sub.customer : sub.customer.id;
         const priceId = sub.items.data[0]?.price.id;
+
+        // past_due = Stripe is still retrying — don't downgrade yet
+        if (sub.status === "past_due") break;
+
         const plan =
-          sub.status === "active" && priceId
-            ? planFromPriceId(priceId)
+          sub.status === "active" || sub.status === "trialing"
+            ? priceId
+              ? planFromPriceId(priceId)
+              : null
             : "free";
         if (!plan) break;
 

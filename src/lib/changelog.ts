@@ -6,6 +6,84 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.1.0",
+    date: "2026-05-18",
+    changes: [
+      {
+        type: "feat",
+        text: "Solve activity heatmap (free) — GitHub-style calendar on your profile showing solve frequency over the past year.",
+      },
+      {
+        type: "feat",
+        text: "Average hints stat (free) — profile stats bar now shows your average hints used per solve.",
+      },
+      {
+        type: "feat",
+        text: "Export notes as Markdown (now free) — download notes for any problem as a .md file; previously Pro-only.",
+      },
+      {
+        type: "feat",
+        text: "Hint history now available to Pro — Pro users see their most recent hint session; Elite sees full history across all sessions.",
+      },
+      {
+        type: "feat",
+        text: 'Tag-aware random — "Pick a Problem for Me" now respects the active tag and difficulty filters.',
+      },
+      {
+        type: "feat",
+        text: "Report a bug — floating button on every page opens a modal that submits a bug report directly to the team.",
+      },
+      {
+        type: "feat",
+        text: "First-time welcome banner — new users with no solves see a contextual welcome card pointing them to hints.",
+      },
+      {
+        type: "feat",
+        text: 'Problem page titles — browser tab now shows the problem number and title (e.g. "#42 Two Sum — AlgoPath").',
+      },
+      {
+        type: "fix",
+        text: "Stripe plan downgrade grace period — subscriptions on past_due (card retry in progress) no longer immediately revert to free.",
+      },
+      {
+        type: "fix",
+        text: 'Profile skill web — duplicate tags (e.g. "Recursion" twice) fixed by normalizing tag case before counting; "linkedlist" now displays as "Linked List".',
+      },
+      {
+        type: "improve",
+        text: '"Stuck? Get a hint →" inline link added to the problem card so hints are accessible without scrolling to the footer.',
+      },
+      {
+        type: "improve",
+        text: 'Skip confirmation now offers "Too hard — try easier" to automatically fetch a lower-difficulty problem.',
+      },
+      {
+        type: "improve",
+        text: '"Skip problem" button changed to outline style for better visibility in the problem footer.',
+      },
+      {
+        type: "improve",
+        text: '"Decide for me" intent card now includes a one-line explanation of why to use it over manual browsing.',
+      },
+      {
+        type: "fix",
+        text: "Hint session history now shown for Pro (last session) and Elite (full history) — was previously Elite-only in the UI despite the API supporting both.",
+      },
+      {
+        type: "fix",
+        text: 'Export as Markdown now correctly triggers a download in all browsers (anchor was not attached to DOM before click; revoke was racing the download).',
+      },
+      {
+        type: "fix",
+        text: "Browser tab title now updates when a problem is loaded client-side (search result, random, resume) — was only set on hard navigation.",
+      },
+      {
+        type: "improve",
+        text: '"Too hard — try easier" option in skip confirmation is now blue to visually distinguish it from the amber skip action.',
+      },
+    ],
+  },
+  {
     version: "1.0.9",
     date: "2026-05-18",
     changes: [

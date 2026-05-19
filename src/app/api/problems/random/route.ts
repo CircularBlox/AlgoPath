@@ -6,6 +6,9 @@ import { createClient } from "~/lib/supabase/server";
 export async function GET(request: NextRequest) {
   const platformOverride =
     request.nextUrl.searchParams.get("platform")?.trim().toLowerCase() ?? null;
+  const tagFilter = request.nextUrl.searchParams.get("tag")?.trim() || null;
+  const difficultyFilter =
+    request.nextUrl.searchParams.get("difficulty")?.trim() || null;
 
   const supabase = await createClient();
 
@@ -43,6 +46,8 @@ export async function GET(request: NextRequest) {
   if (solvedFilter) q = q.not("problem_number", "in", solvedFilter);
   // Explicit platform override from filter bar takes priority over focus bias
   if (platformOverride) q = q.eq("platform", platformOverride);
+  if (tagFilter) q = q.contains("tags", [tagFilter]);
+  if (difficultyFilter) q = q.eq("difficulty", difficultyFilter);
 
   const { data, error } = await q;
 
@@ -72,10 +77,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(pool[Math.floor(Math.random() * pool.length)]);
   }
 
-  // Fallback: any unsolved problem, ignore difficulty
+  // Fallback: any unsolved problem, ignore difficulty but keep tag/platform
   let fb = supabase.from("problems").select("*").limit(50);
   if (solvedFilter) fb = fb.not("problem_number", "in", solvedFilter);
   if (platformOverride) fb = fb.eq("platform", platformOverride);
+  if (tagFilter) fb = fb.contains("tags", [tagFilter]);
   const { data: fallback } = await fb;
 
   if (fallback && fallback.length > 0) {

@@ -48,12 +48,14 @@ export function ProblemViewer({
   csrfToken,
   showFocusPrompt = false,
   plan = "free",
+  solvedCount = 0,
 }: {
   userId: string | null;
   initialProblem?: Problem | null;
   csrfToken: string;
   showFocusPrompt?: boolean;
   plan?: "free" | "pro" | "elite";
+  solvedCount?: number;
 }) {
   const [state, setState] = useState<ViewerState>(
     initialProblem
@@ -99,6 +101,21 @@ export function ProblemViewer({
     state.status === "loaded" ? state.problem.platform : null;
   const loadedProblemDifficulty =
     state.status === "loaded" ? state.problem.difficulty : null;
+
+  // Sync browser tab title with the loaded problem
+  useEffect(() => {
+    if (state.status === "loaded") {
+      const { problem } = state;
+      if (problem.problem_number != null && problem.title) {
+        document.title = `#${problem.problem_number} ${problem.title} — AlgoPath`;
+      }
+    } else {
+      document.title = "Problems — AlgoPath";
+    }
+    return () => {
+      document.title = "Problems — AlgoPath";
+    };
+  }, [state]);
 
   // Track problem view at the top of the hint-consumption funnel
   useEffect(() => {
@@ -346,6 +363,44 @@ export function ProblemViewer({
     try {
       const params = new URLSearchParams();
       if (filterPlatform !== "all") params.set("platform", filterPlatform);
+      if (filterTag.trim()) params.set("tag", filterTag.trim());
+      if (filterDifficulty.trim())
+        params.set("difficulty", filterDifficulty.trim());
+      const url =
+        params.size > 0
+          ? `/api/problems/random?${params}`
+          : "/api/problems/random";
+      const res = await fetch(url);
+      const data = await res.json();
+      if (!res.ok) {
+        setState({ status: "error", message: data.error ?? "Unknown error." });
+      } else {
+        setState({ status: "loaded", problem: data, contentOpen: false });
+      }
+    } catch {
+      setState({ status: "error", message: "Failed to reach the server." });
+    }
+  }
+
+  function lowerDifficulty(diff: string | null | undefined): string {
+    if (diff === "Hard") return "Medium";
+    if (diff === "Medium") return "Easy";
+    return "";
+  }
+
+  async function fetchRandomLower() {
+    const currentDiff =
+      state.status === "loaded" ? (state.problem.difficulty ?? "") : "";
+    setState({ status: "loading" });
+    resetPanels();
+    setDrillQueue(null);
+    setDrillComplete(null);
+    try {
+      const params = new URLSearchParams();
+      if (filterPlatform !== "all") params.set("platform", filterPlatform);
+      if (filterTag.trim()) params.set("tag", filterTag.trim());
+      const lower = lowerDifficulty(currentDiff);
+      if (lower) params.set("difficulty", lower);
       const url =
         params.size > 0
           ? `/api/problems/random?${params}`
@@ -690,8 +745,8 @@ export function ProblemViewer({
             3: ratingsData[3] ?? null,
           });
         }
-        // Fetch hint history for Elite
-        if (plan === "elite") {
+        // Fetch hint history for Pro (last session) and Elite (full history)
+        if (plan === "pro" || plan === "elite") {
           fetch(`/api/problems/${problemNumber}/hint-history`)
             .then(async (r) => {
               if (r.ok) {
@@ -1038,8 +1093,10 @@ export function ProblemViewer({
     const a = document.createElement("a");
     a.href = url;
     a.download = `${problemTitle.replace(/[^a-z0-9]/gi, "-").toLowerCase()}-notes.md`;
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 100);
   }
 
   function formatHintText(text: string, style: string): string {
@@ -1098,6 +1155,27 @@ export function ProblemViewer({
         </div>
       )}
 
+      {/* First-time welcome — shown to authenticated users with 0 solves */}
+      {state.status === "idle" && userId && solvedCount === 0 && (
+        <div className="rounded-xl border border-primary/20 bg-primary/5 px-5 py-4">
+          <p className="text-sm font-semibold">Welcome to AlgoPath!</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Not sure where to start? Hit{" "}
+            <button
+              type="button"
+              onClick={() => triggerWithSkipWarning(fetchRandom)}
+              className="font-medium text-primary underline underline-offset-2 hover:opacity-80"
+            >
+              Decide for me
+            </button>{" "}
+            and we'll pick a problem matched to your skill level. Once you load
+            a problem, click{" "}
+            <span className="font-medium text-foreground">Get Hints</span> if
+            you get stuck.
+          </p>
+        </div>
+      )}
+
       {/* Intent screen — three paths for starting a session */}
       {state.status === "idle" && (
         <div className="flex flex-col gap-3">
@@ -1113,7 +1191,8 @@ export function ProblemViewer({
             >
               <span className="text-sm font-semibold">Decide for me</span>
               <span className="text-xs text-muted-foreground">
-                Pick a problem matched to your level instantly
+                Skip the guesswork — we pick a problem matched to your skill
+                level so you can start immediately.
               </span>
             </button>
             <button
@@ -1326,11 +1405,21 @@ export function ProblemViewer({
 
       {/* Skip warning */}
       {skipWarningPending && (
-        <div className="flex items-center gap-2 rounded-md border border-amber-500/30 bg-amber-500/8 px-3 py-1.5">
+        <div className="flex flex-wrap items-center gap-2 rounded-md border border-amber-500/30 bg-amber-500/8 px-3 py-1.5">
           <span className="text-xs text-amber-400">
-            Skipping counts as giving up this problem.
+            Move on from this problem?
           </span>
           <div className="ml-auto flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => {
+                setSkipWarningPending(null);
+                void fetchRandomLower();
+              }}
+              className="rounded px-2 py-0.5 text-xs font-medium text-sky-400 hover:bg-sky-500/20 transition-colors"
+            >
+              Too hard — try easier
+            </button>
             <button
               type="button"
               onClick={() => {
@@ -1340,7 +1429,7 @@ export function ProblemViewer({
               }}
               className="rounded px-2 py-0.5 text-xs font-medium text-amber-400 hover:bg-amber-500/20 transition-colors"
             >
-              Skip anyway
+              Skip
             </button>
             <button
               type="button"
@@ -1598,6 +1687,18 @@ export function ProblemViewer({
                   <div className="rounded-md border border-border bg-muted/40 px-4 py-3 text-sm break-all text-muted-foreground">
                     {problem.url}
                   </div>
+                  {!hintsOpen && !hintsLoading && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowHintNudge(false);
+                        toggleHints(problem.problem_number ?? 0);
+                      }}
+                      className="self-start text-xs text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      Stuck? Get a hint →
+                    </button>
+                  )}
                 </CardContent>
 
                 {/* Hint nudge — appears after 45s of inactivity */}
@@ -1677,14 +1778,14 @@ export function ProblemViewer({
                     </Button>
                   )}
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     onClick={() =>
                       triggerWithSkipWarning(
                         drillQueue ? advanceDrill : fetchRandom,
                       )
                     }
                   >
-                    {drillQueue ? "Skip →" : "Skip"}
+                    {drillQueue ? "Skip →" : "Skip problem"}
                   </Button>
                   {userId && (
                     <div className="ml-auto flex items-center gap-1">
@@ -2451,12 +2552,14 @@ export function ProblemViewer({
                               </Button>
                             </div>
                           )}
-                          {/* Hint history — Elite only */}
-                          {plan === "elite" &&
+                          {/* Hint history — Pro (last session) and Elite (all sessions) */}
+                          {(plan === "pro" || plan === "elite") &&
                             hintHistorySessions.length > 0 && (
                               <div className="flex flex-col gap-1.5 border-t border-border pt-3">
                                 <p className="text-xs font-medium text-muted-foreground">
-                                  Your hint sessions for this problem
+                                  {plan === "pro"
+                                    ? "Last hint session"
+                                    : "Your hint sessions for this problem"}
                                 </p>
                                 <div className="flex flex-wrap gap-1.5">
                                   {hintHistorySessions.map((date) => (
