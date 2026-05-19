@@ -97,11 +97,12 @@ export async function SolveHeatmap() {
       <div className="overflow-x-auto rounded-lg border border-border bg-card p-4">
         {/* Month labels */}
         <div className="mb-1 flex" style={{ paddingLeft: "1.5rem" }}>
-          {weeks.map((_, i) => {
+          {weeks.map((week, i) => {
             const pos = monthPositions.find((m) => m.col === i);
+            const weekKey = week[0]?.date ?? `w${i}`;
             return (
               <div
-                key={i}
+                key={weekKey}
                 className="w-3.5 shrink-0 text-[9px] text-muted-foreground"
                 style={{ marginRight: 2 }}
               >
@@ -113,18 +114,31 @@ export async function SolveHeatmap() {
         <div className="flex gap-0.5">
           {/* Day labels */}
           <div className="flex flex-col gap-0.5 pr-1.5 pt-px">
-            {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
+            {(
+              [
+                { key: "sun", label: "" },
+                { key: "mon", label: "M" },
+                { key: "tue", label: "" },
+                { key: "wed", label: "W" },
+                { key: "thu", label: "" },
+                { key: "fri", label: "F" },
+                { key: "sat", label: "" },
+              ] as const
+            ).map(({ key, label }) => (
               <div
-                key={i}
+                key={key}
                 className="h-3 w-3 text-[9px] leading-3 text-muted-foreground"
               >
-                {i % 2 === 1 ? d : ""}
+                {label}
               </div>
             ))}
           </div>
           {/* Grid */}
-          {weeks.map((week, wi) => (
-            <div key={wi} className="flex flex-col gap-0.5">
+          {weeks.map((week) => (
+            <div
+              key={week[0]?.date ?? week[6]?.date}
+              className="flex flex-col gap-0.5"
+            >
               {week.map((cell) => (
                 <div
                   key={cell.date}
