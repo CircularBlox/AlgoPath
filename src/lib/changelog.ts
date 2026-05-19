@@ -6,6 +6,20 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.1.1",
+    date: "2026-05-19",
+    changes: [
+      {
+        type: "improve",
+        text: 'Mark as Done now asks "How\'d it go?" — choose "Solved it myself" (full XP) or "Needed a peek" (reduced XP). No pressure; both count toward your streak.',
+      },
+      {
+        type: "fix",
+        text: 'Bad "principal" tag removed from problem database — was a data entry error with no matching CP concept.',
+      },
+    ],
+  },
+  {
     version: "1.1.0",
     date: "2026-05-18",
     changes: [
@@ -71,7 +85,7 @@ export const CHANGELOG: ChangelogEntry[] = [
       },
       {
         type: "fix",
-        text: 'Export as Markdown now correctly triggers a download in all browsers (anchor was not attached to DOM before click; revoke was racing the download).',
+        text: "Export as Markdown now correctly triggers a download in all browsers (anchor was not attached to DOM before click; revoke was racing the download).",
       },
       {
         type: "fix",

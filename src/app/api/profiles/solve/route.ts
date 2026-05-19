@@ -95,6 +95,7 @@ export async function POST(request: NextRequest) {
     problem_number: number;
     difficulty?: string | null;
     hints_viewed?: number;
+    logged_as_reference?: boolean;
   };
   try {
     body = await request.json();
@@ -105,7 +106,16 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { problem_number, difficulty, hints_viewed = 0 } = body;
+  const {
+    problem_number,
+    difficulty,
+    hints_viewed = 0,
+    logged_as_reference = false,
+  } = body;
+  // If logged for reference (user needed to look it up), treat as max hints for XP calc
+  const effectiveHintsViewed = logged_as_reference
+    ? Math.max(hints_viewed, 3)
+    : hints_viewed;
 
   if (!Number.isInteger(problem_number)) {
     return NextResponse.json(
@@ -144,10 +154,14 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  const rating_gain = calcRatingGain(difficulty, hints_viewed, solved.length);
+  const rating_gain = calcRatingGain(
+    difficulty,
+    effectiveHintsViewed,
+    solved.length,
+  );
   const new_rating = (profile.rating ?? 1200) + rating_gain;
 
-  const xp_gain = calcXpGain(difficulty, hints_viewed);
+  const xp_gain = calcXpGain(difficulty, effectiveHintsViewed);
   const old_level = profile.level ?? levelFromXp(profile.xp ?? 0);
   const new_xp = (profile.xp ?? 0) + xp_gain;
   const new_level = levelFromXp(new_xp);
@@ -230,7 +244,7 @@ export async function POST(request: NextRequest) {
     user_id: user.id,
     problem_number,
     xp_gained: xp_gain,
-    hints_used: hints_viewed,
+    hints_used: effectiveHintsViewed,
   });
   if (solveLogError) {
     Sentry.captureException(solveLogError, {
@@ -246,7 +260,8 @@ export async function POST(request: NextRequest) {
     properties: {
       problem_number,
       difficulty: difficulty ?? null,
-      hints_viewed,
+      hints_viewed: effectiveHintsViewed,
+      logged_as_reference,
       xp_gain,
       rating_gain,
       new_rating,

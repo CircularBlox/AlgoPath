@@ -244,6 +244,7 @@ export function ProblemViewer({
   } | null>(null);
   const [showHintNudge, setShowHintNudge] = useState(false);
   const hintNudgeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [showSolveConfirm, setShowSolveConfirm] = useState(false);
 
   const [activeTab, setActiveTab] = useState<"notes" | "code" | "ai" | null>(
     null,
@@ -517,6 +518,7 @@ export function ProblemViewer({
     setNextProblem(null);
     setNextProblemLoading(false);
     setShowHintNudge(false);
+    setShowSolveConfirm(false);
     setHintHistorySessions([]);
     if (hintNudgeTimer.current) clearTimeout(hintNudgeTimer.current);
   }
@@ -862,7 +864,7 @@ export function ProblemViewer({
     }
   }
 
-  async function handleMarkDone() {
+  async function handleMarkDone(loggedAsReference = false) {
     if (state.status !== "loaded") return;
     const { problem } = state;
     if (!problem.problem_number) return;
@@ -888,6 +890,7 @@ export function ProblemViewer({
           problem_number: problem.problem_number,
           difficulty: problem.difficulty,
           hints_viewed: hintsUsed,
+          logged_as_reference: loggedAsReference || undefined,
         }),
       });
       const data = await res.json();
@@ -911,6 +914,7 @@ export function ProblemViewer({
           problem_number: problem.problem_number,
           difficulty: problem.difficulty,
           hints_used: hintsUsed,
+          logged_as_reference: loggedAsReference,
           xp_gain: data.xp_gain,
           rating_gain: data.rating_gain,
           new_level: data.new_level,
@@ -1760,18 +1764,22 @@ export function ProblemViewer({
                     </Link>
                   </Button>
                   {userId ? (
-                    <Button
-                      className="ml-auto"
-                      onClick={handleMarkDone}
-                      disabled={markDoneDisabled}
-                      title={
-                        solutionViewed
-                          ? "Cannot mark as done after viewing the solution"
-                          : undefined
-                      }
-                    >
-                      {markDoneLabel}
-                    </Button>
+                    !showSolveConfirm && (
+                      <Button
+                        className="ml-auto"
+                        onClick={() => {
+                          if (!markDoneDisabled) setShowSolveConfirm(true);
+                        }}
+                        disabled={markDoneDisabled}
+                        title={
+                          solutionViewed
+                            ? "Cannot mark as done after viewing the solution"
+                            : undefined
+                        }
+                      >
+                        {markDoneLabel}
+                      </Button>
+                    )
                   ) : (
                     <Button className="ml-auto" variant="outline" asChild>
                       <Link href="/auth/login">Sign in to track progress</Link>
@@ -1817,6 +1825,49 @@ export function ProblemViewer({
                       >
                         Report
                       </Button>
+                    </div>
+                  )}
+
+                  {/* Solve confirmation */}
+                  {showSolveConfirm && (
+                    <div className="w-full rounded-lg border border-border bg-muted/40 px-4 py-3 flex flex-col gap-3">
+                      <div>
+                        <p className="text-sm font-medium text-foreground">
+                          How'd it go?
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          No pressure — both options count toward your streak.
+                          Solving without hints earns more XP.
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            setShowSolveConfirm(false);
+                            void handleMarkDone(false);
+                          }}
+                        >
+                          Solved it myself
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setShowSolveConfirm(false);
+                            void handleMarkDone(true);
+                          }}
+                        >
+                          Needed a peek
+                        </Button>
+                        <button
+                          type="button"
+                          onClick={() => setShowSolveConfirm(false)}
+                          className="ml-auto text-xs text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
                     </div>
                   )}
                 </CardFooter>
