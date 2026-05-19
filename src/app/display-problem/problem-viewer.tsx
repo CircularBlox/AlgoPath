@@ -367,6 +367,41 @@ export function ProblemViewer({
     }
   }
 
+  function lowerDifficulty(diff: string | null | undefined): string {
+    if (diff === "Hard") return "Medium";
+    if (diff === "Medium") return "Easy";
+    return "";
+  }
+
+  async function fetchRandomLower() {
+    const currentDiff =
+      state.status === "loaded" ? (state.problem.difficulty ?? "") : "";
+    setState({ status: "loading" });
+    resetPanels();
+    setDrillQueue(null);
+    setDrillComplete(null);
+    try {
+      const params = new URLSearchParams();
+      if (filterPlatform !== "all") params.set("platform", filterPlatform);
+      if (filterTag.trim()) params.set("tag", filterTag.trim());
+      const lower = lowerDifficulty(currentDiff);
+      if (lower) params.set("difficulty", lower);
+      const url =
+        params.size > 0
+          ? `/api/problems/random?${params}`
+          : "/api/problems/random";
+      const res = await fetch(url);
+      const data = await res.json();
+      if (!res.ok) {
+        setState({ status: "error", message: data.error ?? "Unknown error." });
+      } else {
+        setState({ status: "loaded", problem: data, contentOpen: false });
+      }
+    } catch {
+      setState({ status: "error", message: "Failed to reach the server." });
+    }
+  }
+
   async function handleSearch() {
     const q = searchQuery.trim();
     const tag = filterTag.trim();
@@ -1139,7 +1174,8 @@ export function ProblemViewer({
             >
               <span className="text-sm font-semibold">Decide for me</span>
               <span className="text-xs text-muted-foreground">
-                Pick a problem matched to your level instantly
+                Skip the guesswork — we pick a problem matched to your skill
+                level so you can start immediately.
               </span>
             </button>
             <button
@@ -1352,11 +1388,21 @@ export function ProblemViewer({
 
       {/* Skip warning */}
       {skipWarningPending && (
-        <div className="flex items-center gap-2 rounded-md border border-amber-500/30 bg-amber-500/8 px-3 py-1.5">
+        <div className="flex flex-wrap items-center gap-2 rounded-md border border-amber-500/30 bg-amber-500/8 px-3 py-1.5">
           <span className="text-xs text-amber-400">
-            Skipping counts as giving up this problem.
+            Move on from this problem?
           </span>
           <div className="ml-auto flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => {
+                setSkipWarningPending(null);
+                void fetchRandomLower();
+              }}
+              className="rounded px-2 py-0.5 text-xs font-medium text-foreground/70 hover:bg-muted transition-colors"
+            >
+              Too hard — try easier
+            </button>
             <button
               type="button"
               onClick={() => {
@@ -1366,7 +1412,7 @@ export function ProblemViewer({
               }}
               className="rounded px-2 py-0.5 text-xs font-medium text-amber-400 hover:bg-amber-500/20 transition-colors"
             >
-              Skip anyway
+              Skip
             </button>
             <button
               type="button"
@@ -1624,6 +1670,18 @@ export function ProblemViewer({
                   <div className="rounded-md border border-border bg-muted/40 px-4 py-3 text-sm break-all text-muted-foreground">
                     {problem.url}
                   </div>
+                  {!hintsOpen && !hintsLoading && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowHintNudge(false);
+                        toggleHints(problem.problem_number ?? 0);
+                      }}
+                      className="self-start text-xs text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      Stuck? Get a hint →
+                    </button>
+                  )}
                 </CardContent>
 
                 {/* Hint nudge — appears after 45s of inactivity */}
@@ -1703,14 +1761,14 @@ export function ProblemViewer({
                     </Button>
                   )}
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     onClick={() =>
                       triggerWithSkipWarning(
                         drillQueue ? advanceDrill : fetchRandom,
                       )
                     }
                   >
-                    {drillQueue ? "Skip →" : "Skip"}
+                    {drillQueue ? "Skip →" : "Skip problem"}
                   </Button>
                   {userId && (
                     <div className="ml-auto flex items-center gap-1">

@@ -45,6 +45,26 @@ export const CHANGELOG: ChangelogEntry[] = [
         type: "fix",
         text: "Stripe plan downgrade grace period — subscriptions on past_due (card retry in progress) no longer immediately revert to free.",
       },
+      {
+        type: "fix",
+        text: 'Profile skill web — duplicate tags (e.g. "Recursion" twice) fixed by normalizing tag case before counting; "linkedlist" now displays as "Linked List".',
+      },
+      {
+        type: "improve",
+        text: '"Stuck? Get a hint →" inline link added to the problem card so hints are accessible without scrolling to the footer.',
+      },
+      {
+        type: "improve",
+        text: 'Skip confirmation now offers "Too hard — try easier" to automatically fetch a lower-difficulty problem.',
+      },
+      {
+        type: "improve",
+        text: '"Skip problem" button changed to outline style for better visibility in the problem footer.',
+      },
+      {
+        type: "improve",
+        text: '"Decide for me" intent card now includes a one-line explanation of why to use it over manual browsing.',
+      },
     ],
   },
   {

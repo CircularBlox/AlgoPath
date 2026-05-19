@@ -291,7 +291,8 @@ async function SkillAndSolvedSection({
 
   const tagCounts: Record<string, number> = {};
   for (const p of solvedProblemDetails) {
-    for (const tag of p.tags ?? []) {
+    for (const raw of p.tags ?? []) {
+      const tag = raw.toLowerCase().trim();
       tagCounts[tag] = (tagCounts[tag] ?? 0) + 1;
     }
   }

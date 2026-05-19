@@ -45,6 +45,8 @@ const DB_TO_DISPLAY: Record<string, string> = {
   heap: "Heap",
   "priority queue": "Priority Queue",
   "linked list": "Linked List",
+  linkedlist: "Linked List",
+  "linked-list": "Linked List",
   matrix: "Matrix",
   simulation: "Simulation",
   "constructive algorithms": "Constructive Algorithms",
@@ -55,6 +57,17 @@ const DB_TO_DISPLAY: Record<string, string> = {
   "network flow": "Network Flow",
   flows: "Network Flow",
   "dynamic connectivity": "Dynamic Connectivity",
+  "two-pointers": "Two Pointers",
+  "two pointer": "Two Pointers",
+  "sliding-window": "Sliding Window",
+  "binary-search": "Binary Search",
+  "bit-manipulation": "Bit Manipulation",
+  "divide-and-conquer": "Divide and Conquer",
+  "prefix sum": "Prefix Sum",
+  "prefix sums": "Prefix Sum",
+  "monotonic stack": "Monotonic Stack",
+  "monotone stack": "Monotonic Stack",
+  "union find": "DSU / Union Find",
 };
 
 /**
