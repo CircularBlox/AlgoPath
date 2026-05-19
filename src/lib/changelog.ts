@@ -6,6 +6,48 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.1.0",
+    date: "2026-05-18",
+    changes: [
+      {
+        type: "feat",
+        text: "Solve activity heatmap (free) — GitHub-style calendar on your profile showing solve frequency over the past year.",
+      },
+      {
+        type: "feat",
+        text: "Average hints stat (free) — profile stats bar now shows your average hints used per solve.",
+      },
+      {
+        type: "feat",
+        text: "Export notes as Markdown (now free) — download notes for any problem as a .md file; previously Pro-only.",
+      },
+      {
+        type: "feat",
+        text: "Hint history now available to Pro — Pro users see their most recent hint session; Elite sees full history across all sessions.",
+      },
+      {
+        type: "feat",
+        text: 'Tag-aware random — "Pick a Problem for Me" now respects the active tag and difficulty filters.',
+      },
+      {
+        type: "feat",
+        text: "Report a bug — floating button on every page opens a modal that submits a bug report directly to the team.",
+      },
+      {
+        type: "feat",
+        text: "First-time welcome banner — new users with no solves see a contextual welcome card pointing them to hints.",
+      },
+      {
+        type: "feat",
+        text: 'Problem page titles — browser tab now shows the problem number and title (e.g. "#42 Two Sum — AlgoPath").',
+      },
+      {
+        type: "fix",
+        text: "Stripe plan downgrade grace period — subscriptions on past_due (card retry in progress) no longer immediately revert to free.",
+      },
+    ],
+  },
+  {
     version: "1.0.9",
     date: "2026-05-18",
     changes: [

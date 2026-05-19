@@ -12,6 +12,7 @@ import { displayTag } from "~/lib/tags";
 import { levelFromXp, levelTitle, rankConfig, xpProgress } from "~/lib/xp";
 import { ManageSubscriptionButton } from "./manage-subscription-button";
 import { SkillLevelEditor } from "./skill-level-editor";
+import { SolveHeatmap } from "./solve-heatmap";
 import { StreakFreezeButton } from "./streak-freeze-button";
 import { TopicRadar } from "./topic-radar";
 import { TopicRecommendation } from "./topic-recommendation";
@@ -381,7 +382,7 @@ export default async function ProfilePage() {
     redirect("/auth/login?next=/profile");
   }
 
-  const [{ data: profile }, csrfToken] = await Promise.all([
+  const [{ data: profile }, csrfToken, solvesResult] = await Promise.all([
     supabase
       .from("profiles")
       .select(
@@ -390,6 +391,7 @@ export default async function ProfilePage() {
       .eq("id", user.id)
       .single<Profile>(),
     generateCsrfToken(),
+    supabase.from("solves").select("hints_used").eq("user_id", user.id),
   ]);
 
   const username = profile?.username ?? user.email?.split("@")[0] ?? "User";
@@ -431,6 +433,17 @@ export default async function ProfilePage() {
       })()
     : false;
 
+  const solveRows = solvesResult.data ?? [];
+  const avgHints =
+    solveRows.length > 0
+      ? (
+          solveRows.reduce(
+            (sum, s) => sum + ((s.hints_used as number) ?? 0),
+            0,
+          ) / solveRows.length
+        ).toFixed(1)
+      : null;
+
   const planLabel: Record<string, string> = {
     free: "Free",
     pro: "Pro",
@@ -455,6 +468,12 @@ export default async function ProfilePage() {
       value: String(streak),
       fire: true,
       fireActive: status === "active",
+    },
+    {
+      label: "Avg Hints",
+      value: avgHints ?? "—",
+      fire: false,
+      fireActive: false,
     },
   ];
 
@@ -684,6 +703,13 @@ export default async function ProfilePage() {
           <TopicRecommendation />
         </Suspense>
       </section>
+
+      {/* ── Solve Activity Heatmap ────────────────────────────── */}
+      <Suspense
+        fallback={<div className="h-28 animate-pulse rounded-lg bg-muted" />}
+      >
+        <SolveHeatmap />
+      </Suspense>
 
       {/* ── Skill Web + Solved (deferred) ─────────────────────── */}
       <Suspense fallback={<SkillAndSolvedSkeleton />}>

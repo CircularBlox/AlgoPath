@@ -1,6 +1,7 @@
 import { Analytics } from "@vercel/analytics/next";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { BugReportButton } from "~/components/bug-report-button";
 import { Navbar } from "~/components/navbar";
 import { PostHogIdentify } from "~/components/posthog-identify";
 import { SettingsProvider } from "~/components/settings-provider";
@@ -30,6 +31,7 @@ export default function RootLayout({
           <SettingsProvider>
             <Navbar />
             {children}
+            <BugReportButton />
           </SettingsProvider>
         </ThemeProvider>
         <PostHogIdentify />

@@ -48,12 +48,14 @@ export function ProblemViewer({
   csrfToken,
   showFocusPrompt = false,
   plan = "free",
+  solvedCount = 0,
 }: {
   userId: string | null;
   initialProblem?: Problem | null;
   csrfToken: string;
   showFocusPrompt?: boolean;
   plan?: "free" | "pro" | "elite";
+  solvedCount?: number;
 }) {
   const [state, setState] = useState<ViewerState>(
     initialProblem
@@ -346,6 +348,9 @@ export function ProblemViewer({
     try {
       const params = new URLSearchParams();
       if (filterPlatform !== "all") params.set("platform", filterPlatform);
+      if (filterTag.trim()) params.set("tag", filterTag.trim());
+      if (filterDifficulty.trim())
+        params.set("difficulty", filterDifficulty.trim());
       const url =
         params.size > 0
           ? `/api/problems/random?${params}`
@@ -1095,6 +1100,27 @@ export function ProblemViewer({
               Dismiss
             </button>
           </div>
+        </div>
+      )}
+
+      {/* First-time welcome — shown to authenticated users with 0 solves */}
+      {state.status === "idle" && userId && solvedCount === 0 && (
+        <div className="rounded-xl border border-primary/20 bg-primary/5 px-5 py-4">
+          <p className="text-sm font-semibold">Welcome to AlgoPath!</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Not sure where to start? Hit{" "}
+            <button
+              type="button"
+              onClick={() => triggerWithSkipWarning(fetchRandom)}
+              className="font-medium text-primary underline underline-offset-2 hover:opacity-80"
+            >
+              Decide for me
+            </button>{" "}
+            and we'll pick a problem matched to your skill level. Once you load
+            a problem, click{" "}
+            <span className="font-medium text-foreground">Get Hints</span> if
+            you get stuck.
+          </p>
         </div>
       )}
 

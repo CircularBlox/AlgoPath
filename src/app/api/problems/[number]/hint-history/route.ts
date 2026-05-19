@@ -29,19 +29,24 @@ export async function GET(
     .eq("id", user.id)
     .single<{ plan: string }>();
 
-  if ((profile?.plan ?? "free") !== "elite") {
+  const plan = profile?.plan ?? "free";
+  if (plan === "free") {
     return NextResponse.json(
-      { error: "Hint history requires an Elite plan." },
+      { error: "Hint history requires a Pro or Elite plan." },
       { status: 403 },
     );
   }
 
-  const { data, error } = await supabase
+  // Pro gets last session only; Elite gets full history
+  let q = supabase
     .from("hint_sessions")
     .select("session_date")
     .eq("user_id", user.id)
     .eq("problem_number", problemNumber)
     .order("session_date", { ascending: false });
+  if (plan === "pro") q = q.limit(1);
+
+  const { data, error } = await q;
 
   if (error) {
     Sentry.captureException(error, { tags: { route: "hint-history" } });
