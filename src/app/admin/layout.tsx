@@ -9,6 +9,7 @@ const NAV_LINKS = [
   { href: "/admin/plans", label: "Plans" },
   { href: "/add-hints", label: "Bulk Hints" },
   { href: "/add-solution", label: "Add Solution" },
+  { href: "/admin/solutions", label: "Solutions" },
 ] as const;
 
 export default async function AdminLayout({
