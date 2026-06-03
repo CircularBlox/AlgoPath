@@ -346,6 +346,7 @@ export async function POST(request: NextRequest) {
         analysis: result.analysis,
         had_solution: solutionMap.has(result.problem_number),
         fallback: result.usedFallback,
+        api_error: result.apiError ?? null,
       });
 
       // Update anchors with newly assigned ratings so subsequent batches

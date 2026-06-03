@@ -13,6 +13,7 @@ interface ClassificationResult {
   analysis: string | null;
   had_solution: boolean;
   fallback: boolean;
+  api_error: string | null;
 }
 
 function ratingLabel(r: number): { label: string; cls: string } {
@@ -127,14 +128,21 @@ function ResultsTable({ results }: { results: ClassificationResult[] }) {
                     <td className="px-4 py-3">
                       <span className="flex items-center gap-1.5">
                         <RatingBadge rating={r.new_rating} />
-                        {r.fallback && (
+                        {r.api_error ? (
+                          <span
+                            className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium text-red-700 bg-red-500/10 border border-red-500/20 dark:text-red-400 cursor-default max-w-48 truncate"
+                            title={r.api_error}
+                          >
+                            error: {r.api_error}
+                          </span>
+                        ) : r.fallback ? (
                           <span
                             className="text-xs text-muted-foreground"
-                            title="AI failed — kept existing rating"
+                            title="Response unparseable — kept existing rating"
                           >
-                            ↩
+                            ↩ unparseable
                           </span>
-                        )}
+                        ) : null}
                       </span>
                     </td>
                     <td className="px-4 py-3">
