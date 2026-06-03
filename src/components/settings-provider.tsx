@@ -17,7 +17,7 @@ export interface Settings {
 
 const defaults: Settings = {
   autoSave: "on",
-  theme: "dark",
+  theme: "light",
   language: "English",
 };
 
