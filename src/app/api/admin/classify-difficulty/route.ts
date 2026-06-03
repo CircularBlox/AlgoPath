@@ -189,9 +189,9 @@ export async function POST(request: NextRequest) {
   }
 
   const dryRun = body.dry_run === true;
-  // force=true: classify problems with any non-numeric difficulty (e.g. a stale label)
-  // force=false (default): only classify problems with no difficulty at all
-  // Either way, existing numeric ratings are ALWAYS preserved — they are official CF ratings.
+  // force=false (default): only classify problems with no difficulty set.
+  // force=true: reclassify ALL non-LeetCode problems, including those with
+  //   existing numeric ratings (e.g. placeholder 800/1200/2000 from the dropdown).
   const force = body.force === true;
 
   const supabase = await createClient();
@@ -212,13 +212,12 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Targets: non-LeetCode problems without a numeric rating.
-  // Numeric ratings are always preserved (they are official CF/USACO ratings).
-  // force=false: only classify problems with no difficulty set.
-  // force=true: also classify problems that have a non-numeric difficulty label.
+  // Targets: non-LeetCode problems to classify.
+  // force=false: only problems with no difficulty set.
+  // force=true: all non-LeetCode problems, including those with existing numeric
+  //   ratings (e.g. placeholder 800/1200/2000 chosen from the dropdown on add).
   const targets = problems.filter((p) => {
     if (isLeetCode(p.platform as string | null)) return false;
-    if (isNumericRating(p.difficulty as string | null)) return false;
     if (!force && p.difficulty != null) return false;
     return true;
   });

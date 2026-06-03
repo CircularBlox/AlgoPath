@@ -290,10 +290,10 @@ export default function ClassifyDifficultyPage() {
         </h1>
         <p className="text-sm text-muted-foreground">
           AI assigns a numeric Codeforces-style rating (400–3500, multiples of
-          100) to non-LeetCode problems that lack one. Existing numeric ratings
-          are always preserved — they are official CF/USACO ratings. LeetCode
-          Easy/Medium/Hard are included as calibration anchors. Solutions are
-          included when available.
+          100) to non-LeetCode problems. Use "Re-classify all" to also
+          reclassify problems with placeholder ratings (e.g. 800 / 1200 / 2000
+          from the difficulty dropdown). LeetCode problems are used as
+          calibration anchors. Solutions are included when available.
         </p>
       </div>
 
@@ -318,11 +318,11 @@ export default function ClassifyDifficultyPage() {
             <Toggle id="force" checked={force} onChange={setForce} />
             <div>
               <Label htmlFor="force" className="cursor-pointer">
-                Include non-null unrated
+                Re-classify all
               </Label>
               <p className="text-xs text-muted-foreground">
-                Also classify problems with a non-numeric label (e.g. stale
-                text)
+                Include problems that already have a rating (e.g. placeholder
+                800 / 1200 / 2000 from the dropdown)
               </p>
             </div>
           </div>
