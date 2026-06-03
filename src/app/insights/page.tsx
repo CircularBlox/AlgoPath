@@ -38,6 +38,45 @@ export default async function InsightsPage() {
         .eq("user_id", user.id),
     ]);
 
+  const plan = profile?.plan ?? "free";
+
+  if (plan === "free") {
+    return (
+      <main className="mx-auto max-w-2xl px-6 py-20 flex flex-col items-center gap-6 text-center">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+          <svg
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="text-primary"
+            aria-hidden="true"
+          >
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+          </svg>
+        </div>
+        <div className="flex flex-col gap-2">
+          <h1 className="text-2xl font-bold">Insights Dashboard</h1>
+          <p className="text-muted-foreground text-sm max-w-sm">
+            The Insights dashboard is available on Pro and Elite plans. Track
+            your weak topics, solve rate by difficulty, XP trends, and more.
+          </p>
+        </div>
+        <Link
+          href="/pricing"
+          className="rounded-full bg-primary px-5 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-80"
+        >
+          Upgrade to Pro →
+        </Link>
+      </main>
+    );
+  }
+
   const solveList = solves ?? [];
   const totalSolves = solveList.length;
 
