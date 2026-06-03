@@ -2,6 +2,7 @@ import * as Sentry from "@sentry/nextjs";
 import { type NextRequest, NextResponse } from "next/server";
 import { env } from "~/env";
 import { isAdmin } from "~/lib/is-admin";
+import { routedCompletion } from "~/lib/model-router";
 import { createClient, getUser } from "~/lib/supabase/server";
 
 type AnchorProblem = {
@@ -98,50 +99,31 @@ Reply in this exact format — no other text:
 ANALYSIS: <2–3 sentences: what algorithm or data structure solves this optimally, the key non-obvious insight (if any), and why it belongs at its difficulty level>
 RATING: <integer multiple of 100, 400–3500>`;
 
-  const response = await fetch(
-    "https://openrouter.ai/api/v1/chat/completions",
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "openai/gpt-4o-mini",
-        messages: [{ role: "user", content: prompt }],
-        max_tokens: 300,
-        temperature: 0,
-      }),
-    },
-  );
+  const completion = await routedCompletion({
+    messages: [{ role: "user", content: prompt }],
+    taskType: "reasoning",
+    apiKey,
+    timeoutMs: 60000,
+  });
 
-  if (!response.ok) {
-    const errText = await response.text().catch(() => "");
-    const apiError = `HTTP ${response.status}: ${errText.slice(0, 200)}`;
+  if (!completion.ok) {
     Sentry.captureMessage(
-      `OpenRouter error in classify-difficulty: ${response.status}`,
+      `classify-difficulty model error: ${completion.error}`,
       {
         level: "error",
-        extra: {
-          problemNumber: problem.problem_number,
-          body: errText.slice(0, 500),
-        },
+        extra: { problemNumber: problem.problem_number },
       },
     );
     return {
       problem_number: problem.problem_number,
       rating: existingRating,
       analysis: null,
-      apiError,
+      apiError: completion.error,
       usedFallback: true,
     };
   }
 
-  const data = (await response.json()) as {
-    choices?: { message?: { content?: string } }[];
-  };
-
-  const raw = data.choices?.[0]?.message?.content?.trim() ?? "";
+  const raw = completion.content.trim();
   console.log(
     `classify #${problem.problem_number} "${problem.title}":\n${raw}`,
   );
@@ -207,8 +189,10 @@ export async function POST(request: NextRequest) {
   }
 
   const dryRun = body.dry_run === true;
-  // force=false only skips problems that already have a valid numeric CF rating
-  const force = body.force !== false; // default true
+  // force=true: classify problems with any non-numeric difficulty (e.g. a stale label)
+  // force=false (default): only classify problems with no difficulty at all
+  // Either way, existing numeric ratings are ALWAYS preserved — they are official CF ratings.
+  const force = body.force === true;
 
   const supabase = await createClient();
 
@@ -228,10 +212,14 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Targets: all non-LeetCode problems (force=true), or just those missing a numeric rating
+  // Targets: non-LeetCode problems without a numeric rating.
+  // Numeric ratings are always preserved (they are official CF/USACO ratings).
+  // force=false: only classify problems with no difficulty set.
+  // force=true: also classify problems that have a non-numeric difficulty label.
   const targets = problems.filter((p) => {
     if (isLeetCode(p.platform as string | null)) return false;
-    if (!force && isNumericRating(p.difficulty as string | null)) return false;
+    if (isNumericRating(p.difficulty as string | null)) return false;
+    if (!force && p.difficulty != null) return false;
     return true;
   });
 
@@ -266,22 +254,45 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // Build calibration anchors from ALL non-LeetCode problems that already have
-  // a valid numeric rating. When force=true every problem is being reclassified,
-  // but old ratings still anchor the scale for the first batch; anchors are
-  // updated incrementally after each batch so later problems benefit from the
-  // newly-assigned ratings.
+  // LeetCode Easy/Medium/Hard mapped to approximate numeric equivalents so they
+  // contribute to the AI's calibration scale alongside CF numeric ratings.
+  const LC_DIFFICULTY_MAP: Record<string, number> = {
+    easy: 1000,
+    medium: 1600,
+    hard: 2300,
+  };
+
+  // Build calibration anchors from:
+  // 1. All non-LeetCode problems with existing numeric ratings (official CF/USACO)
+  // 2. LeetCode problems with Easy/Medium/Hard converted to numeric approximations
+  // Anchors are updated incrementally after each batch so later problems benefit
+  // from newly-assigned ratings.
   const anchors: AnchorProblem[] = problems
-    .filter(
-      (p) =>
-        !isLeetCode(p.platform as string | null) &&
-        isNumericRating(p.difficulty as string | null),
-    )
-    .map((p) => ({
-      title: p.title as string,
-      cf_rating: parseInt(p.difficulty as string, 10),
-      tags: ((p.tags as string[] | null) ?? []).join(", ") || "none",
-    }))
+    .flatMap((p) => {
+      const diff = (p.difficulty as string | null)?.trim() ?? null;
+      if (!isLeetCode(p.platform as string | null) && isNumericRating(diff)) {
+        return [
+          {
+            title: p.title as string,
+            cf_rating: parseInt(diff as string, 10),
+            tags: ((p.tags as string[] | null) ?? []).join(", ") || "none",
+          },
+        ];
+      }
+      if (isLeetCode(p.platform as string | null) && diff) {
+        const mapped = LC_DIFFICULTY_MAP[diff.toLowerCase()];
+        if (mapped) {
+          return [
+            {
+              title: p.title as string,
+              cf_rating: mapped,
+              tags: ((p.tags as string[] | null) ?? []).join(", ") || "none",
+            },
+          ];
+        }
+      }
+      return [];
+    })
     .sort((a, b) => a.cf_rating - b.cf_rating);
 
   const apiKey = env.OPENROUTER_API_KEY;
