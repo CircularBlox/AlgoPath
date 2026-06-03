@@ -294,6 +294,7 @@ export async function POST(request: NextRequest) {
     analysis: string | null;
     had_solution: boolean;
     fallback: boolean;
+    api_error: string | null;
   }[] = [];
   let firstApiError: string | null = null;
 
