@@ -13,12 +13,17 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
+import {
+  extractSamples,
+  normalizeOutput,
+  type Sample,
+} from "~/lib/extract-samples";
 import { processHtmlLatex } from "~/lib/latex";
 import { highlight, languages } from "~/lib/prism-setup";
 import { timeAgo } from "~/lib/time";
 import { levelTitle, rankConfig, xpProgress } from "~/lib/xp";
 import { FormattedText } from "./formatting";
-import { SidePanel } from "./side-panel";
+import { SidePanel, type TestResult } from "./side-panel";
 import type {
   ChatMessage,
   Hints,
@@ -246,9 +251,10 @@ export function ProblemViewer({
   const hintNudgeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showSolveConfirm, setShowSolveConfirm] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<"notes" | "code" | "ai" | null>(
-    null,
-  );
+  const [activeTab, setActiveTab] = useState<"code" | "ai" | null>("code");
+  const [samples, setSamples] = useState<Sample[]>([]);
+  const [testResults, setTestResults] = useState<TestResult[] | null>(null);
+  const [testRunning, setTestRunning] = useState(false);
   const [problemNotes, setProblemNotes] = useState<
     {
       id: string;
@@ -503,7 +509,10 @@ export function ProblemViewer({
     setChatInput("");
     setReviewCode("");
     setReviewLanguage("C++");
-    setActiveTab(null);
+    setActiveTab("code");
+    setSamples([]);
+    setTestResults(null);
+    setTestRunning(false);
     setProblemNotes([]);
     setNotesLoaded(false);
     setNotesLoading(false);
@@ -521,6 +530,78 @@ export function ProblemViewer({
     setShowSolveConfirm(false);
     setHintHistorySessions([]);
     if (hintNudgeTimer.current) clearTimeout(hintNudgeTimer.current);
+  }
+
+  // Extract sample test cases whenever a new problem loads.
+  // loadedProblemNumber already tracks the loaded problem number.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional — only re-run on problem change
+  useEffect(() => {
+    if (state.status !== "loaded") return;
+    setSamples(extractSamples(state.problem.content));
+    setTestResults(null);
+  }, [loadedProblemNumber]);
+
+  async function handleRunTests() {
+    if (!samples.length || !reviewCode.trim()) return;
+    setTestRunning(true);
+    setTestResults(null);
+    try {
+      const results = await Promise.all(
+        samples.map(async (sample) => {
+          try {
+            const res = await fetch("/api/run-code", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                code: reviewCode,
+                language: reviewLanguage,
+                stdin: sample.input,
+              }),
+            });
+            const data = (await res.json()) as {
+              stdout?: string;
+              stderr?: string;
+              exit_code?: number;
+              error?: string;
+            };
+            if (!res.ok || data.error) {
+              return {
+                input: sample.input,
+                expected: sample.output,
+                actual: "",
+                passed: false,
+                error: data.error ?? "Execution failed",
+              } satisfies TestResult;
+            }
+            const actual = data.stdout ?? "";
+            const stderr = data.stderr ?? "";
+            const exitCode = data.exit_code ?? 0;
+            const hasError = exitCode !== 0 || stderr.trim().length > 0;
+            const passed =
+              !hasError &&
+              normalizeOutput(actual) === normalizeOutput(sample.output);
+            return {
+              input: sample.input,
+              expected: sample.output,
+              actual,
+              passed,
+              error: hasError ? stderr || `Exit code ${exitCode}` : undefined,
+            } satisfies TestResult;
+          } catch {
+            return {
+              input: sample.input,
+              expected: sample.output,
+              actual: "",
+              passed: false,
+              error: "Network error",
+            } satisfies TestResult;
+          }
+        }),
+      );
+      setTestResults(results);
+    } finally {
+      setTestRunning(false);
+    }
   }
 
   async function startDrill(tag: string) {
@@ -2813,6 +2894,10 @@ export function ProblemViewer({
           setCodeFullscreen={setCodeFullscreen}
           editorSaveStatus={editorSaveStatus}
           onSaveCodeAsNote={saveCodeAsNote}
+          samples={samples}
+          testResults={testResults}
+          testRunning={testRunning}
+          onRunTests={() => void handleRunTests()}
           problemNotes={problemNotes}
           notesLoading={notesLoading}
           notesLoaded={notesLoaded}

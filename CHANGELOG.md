@@ -8,6 +8,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) conventi
 ## [Unreleased]
 
 ### Added
+- **Code editor auto-opens**: The side panel opens automatically to the Code Editor tab whenever a problem loads — no manual click needed.
+- **Sample test runner** (free): Code panel now has a "Run Tests (N)" button that runs your code against the problem's sample I/O using the Piston execution engine. Shows per-test pass/fail with expandable input/expected/got details. Supports C++, Python, Java, and JavaScript. (`POST /api/run-code`, `src/lib/extract-samples.ts`)
+- **Codeforces account linking**: Profile page has a new "Codeforces Account" section — enter your CF handle to verify it against the CF API and store your rating, max rating, and rank. (`POST /api/profiles/cf-link`, `supabase/migrations/20260603161021`)
+- **Contests page** (`/contests`): Shows upcoming Codeforces contests with name, start time, duration, and countdown. If you've linked your CF account, also shows your recent contest history with rank and rating delta.
 - **XP gain notification**: After marking a problem as done, a prominent card shows `+X XP`, current rank level in rank color, a progress bar to the next level, and a "Level Up!" badge when crossing a rank boundary. (`problem-viewer.tsx`, `solve/route.ts` now returns `old_level`)
 - **Monetization infrastructure**: `plan` column on profiles (free/pro/elite), `hint_sessions` table for per-user per-day dedup. Free tier enforced server-side. (`supabase/migrations/20260517000000`, `src/lib/plan.ts`)
 - **Hint gating (free tier)**: After 3 unique-problem hint sessions per day, hints 2 & 3 are blurred with a lock overlay and quiet "Resets tomorrow / Upgrade to Pro" CTA. No modal. (`GET /api/problems/[number]/hints`, `problem-viewer.tsx`)
@@ -27,6 +31,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) conventi
 - **Hint gating bypass**: Free-tier hints 2 & 3 were nulled on the frontend only (CSS blur); the raw API response still contained the full text. API now strips `hint_2`/`hint_3` from the response when `gated = true`; the blurred placeholder relies on `hint_1` as the existence check instead.
 
 ### Changed
+- **Side panel reduced to 2 tabs**: Notes tab removed from the tab bar; notes are now accessible via a collapsible accordion inside the Code Editor panel. Panel opens to Code Editor by default.
+- **Contests added to navbar**: New "Contests" link in the authenticated nav.
 - **Skill level resets rating**: Changing skill level on the profile page now also resets the user's rating (Beginner → 1,000 · Intermediate → 1,200 · Advanced → 1,600) and shows a confirmation step explaining the change before saving.
 - **Search merged into Problems**: `/search` page removed. The Problems page (`/display-problem`) already has full title search + platform/difficulty filter. Navbar "Search" link replaced by "Pricing". Page heading updated to "Problems" with a descriptive subtitle.
 - **Landing page rank section**: Redesigned with a horizontal scrollable progression chart showing each rank in order with XP thresholds and connecting arrows. Rank grid below also shows XP requirement per tier.

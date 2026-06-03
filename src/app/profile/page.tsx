@@ -10,6 +10,7 @@ import { effectiveStreak, streakStatus } from "~/lib/streak";
 import { createClient, getUser } from "~/lib/supabase/server";
 import { displayTag } from "~/lib/tags";
 import { levelFromXp, levelTitle, rankConfig, xpProgress } from "~/lib/xp";
+import { CfLinkSection } from "./cf-link-section";
 import { ManageSubscriptionButton } from "./manage-subscription-button";
 import { SkillLevelEditor } from "./skill-level-editor";
 import { SolveHeatmap } from "./solve-heatmap";
@@ -33,6 +34,10 @@ type Profile = {
   stripe_customer_id: string | null;
   streak_frozen: boolean | null;
   streak_freeze_used_at: string | null;
+  cf_handle: string | null;
+  cf_rating: number | null;
+  cf_max_rating: number | null;
+  cf_rank: string | null;
 };
 
 type Problem = {
@@ -395,7 +400,7 @@ export default async function ProfilePage() {
     supabase
       .from("profiles")
       .select(
-        "username, rating, xp, level, skill_level, solved_problems, streak, last_solved_date, created_at, recommended_problem_number, focus, plan, stripe_customer_id, streak_frozen, streak_freeze_used_at",
+        "username, rating, xp, level, skill_level, solved_problems, streak, last_solved_date, created_at, recommended_problem_number, focus, plan, stripe_customer_id, streak_frozen, streak_freeze_used_at, cf_handle, cf_rating, cf_max_rating, cf_rank",
       )
       .eq("id", user.id)
       .single<Profile>(),
@@ -429,6 +434,10 @@ export default async function ProfilePage() {
   const focus = profile?.focus ?? null;
   const plan = profile?.plan ?? "free";
   const hasStripeCustomer = !!profile?.stripe_customer_id;
+  const cfHandle = profile?.cf_handle ?? null;
+  const cfRating = profile?.cf_rating ?? null;
+  const cfMaxRating = profile?.cf_max_rating ?? null;
+  const cfRank = profile?.cf_rank ?? null;
   const streakFrozen = profile?.streak_frozen ?? false;
   const streakFreezeUsedAt = profile?.streak_freeze_used_at ?? null;
   const freezeUsedThisMonth = streakFreezeUsedAt
@@ -711,6 +720,30 @@ export default async function ProfilePage() {
         >
           <TopicRecommendation />
         </Suspense>
+      </section>
+
+      {/* ── Codeforces Account ───────────────────────────────── */}
+      <section>
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+          Codeforces Account
+        </h2>
+        <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+          <CfLinkSection
+            initialHandle={cfHandle}
+            initialRating={cfRating}
+            initialMaxRating={cfMaxRating}
+            initialRank={cfRank}
+          />
+          {cfHandle && (
+            <p className="mt-2 text-[11px] text-muted-foreground">
+              View your contest history on the{" "}
+              <Link href="/contests" className="text-primary hover:underline">
+                Contests page
+              </Link>
+              .
+            </p>
+          )}
+        </div>
       </section>
 
       {/* ── Solve Activity Heatmap ────────────────────────────── */}

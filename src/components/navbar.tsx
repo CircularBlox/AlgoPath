@@ -8,6 +8,7 @@ import { createClient, getUser } from "~/lib/supabase/server";
 
 const navLinks = [
   { href: "/display-problem", label: "Problems" },
+  { href: "/contests", label: "Contests" },
   { href: "/notes", label: "Notes" },
   { href: "/activity", label: "Activity" },
   { href: "/insights", label: "Insights" },
