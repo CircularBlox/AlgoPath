@@ -54,6 +54,7 @@ export default function AddProblemPage() {
           >
             <option value="codeforces">Codeforces</option>
             <option value="leetcode">LeetCode</option>
+            <option value="usaco">USACO</option>
           </select>
         </div>
 

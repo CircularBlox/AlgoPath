@@ -44,7 +44,7 @@ const MODELS: ModelDef[] = [
 ];
 
 // Status codes that mean "this model is unavailable right now"
-const UNAVAILABLE_STATUSES = new Set([429, 503, 529]);
+const UNAVAILABLE_STATUSES = new Set([404, 429, 503, 529]);
 
 export type RouterResult = {
   selected_model: string;

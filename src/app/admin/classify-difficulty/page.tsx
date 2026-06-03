@@ -13,6 +13,7 @@ interface ClassificationResult {
   analysis: string | null;
   had_solution: boolean;
   fallback: boolean;
+  api_error: string | null;
 }
 
 function ratingLabel(r: number): { label: string; cls: string } {
@@ -127,14 +128,21 @@ function ResultsTable({ results }: { results: ClassificationResult[] }) {
                     <td className="px-4 py-3">
                       <span className="flex items-center gap-1.5">
                         <RatingBadge rating={r.new_rating} />
-                        {r.fallback && (
+                        {r.api_error ? (
+                          <span
+                            className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium text-red-700 bg-red-500/10 border border-red-500/20 dark:text-red-400 cursor-default max-w-48 truncate"
+                            title={r.api_error}
+                          >
+                            error: {r.api_error}
+                          </span>
+                        ) : r.fallback ? (
                           <span
                             className="text-xs text-muted-foreground"
-                            title="AI failed — kept existing rating"
+                            title="Response unparseable — kept existing rating"
                           >
-                            ↩
+                            ↩ unparseable
                           </span>
-                        )}
+                        ) : null}
                       </span>
                     </td>
                     <td className="px-4 py-3">
@@ -282,9 +290,10 @@ export default function ClassifyDifficultyPage() {
         </h1>
         <p className="text-sm text-muted-foreground">
           AI assigns a numeric Codeforces-style rating (400–3500, multiples of
-          100) to every non-LeetCode problem without one. Existing numeric-rated
-          problems are used as calibration anchors. Solutions are included when
-          available.
+          100) to all problems — including LeetCode (converting Easy/Medium/Hard
+          to a numeric equivalent). Use "Re-classify all" to reclassify problems
+          that already have a rating, such as placeholder 800 / 1200 / 2000 or
+          text labels. Solutions are included when available.
         </p>
       </div>
 
@@ -312,7 +321,8 @@ export default function ClassifyDifficultyPage() {
                 Re-classify all
               </Label>
               <p className="text-xs text-muted-foreground">
-                Include problems that already have a numeric rating
+                Include problems that already have a rating (e.g. placeholder
+                800 / 1200 / 2000 from the dropdown)
               </p>
             </div>
           </div>

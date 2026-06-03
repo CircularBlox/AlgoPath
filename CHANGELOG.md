@@ -15,6 +15,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) conventi
 - **Pricing page** (`/pricing`): Static Free / Pro / Elite comparison with feature lists, yearly discount, and FAQ. Linked from navbar for all users.
 - **Public profiles** (`/profile/[username]`): Any user's profile is publicly viewable.
 - **Rank color system** (`lib/xp.ts`): `rankConfig()` and `RANK_CONFIGS` — 8 ranks each with color, gradient, and icon.
+- **USACO platform**: USACO problems are now a first-class category throughout the app — platform filter button in the Problems page, correct badge display everywhere (problem cards, loaded problem header, profile solved list, recommended problem), USACO option in the Add Problem form, and USACO weighted alongside Codeforces for the `comp_programming` focus bias in random problem selection.
+
+### Fixed
+- **Bug report 500 errors**: `bug_reports` migration was not applied to the remote database; pushed `20260518160000` and `20260519000000`.
+- **Hint gating bypass**: Free-tier hints 2 & 3 were nulled on the frontend only (CSS blur); the raw API response still contained the full text. API now strips `hint_2`/`hint_3` from the response when `gated = true`; the blurred placeholder relies on `hint_1` as the existence check instead.
+- **Classify difficulty — empty anchors**: When "Re-classify all" was enabled, every non-LeetCode problem landed in the target set, leaving the calibration anchor list empty — the AI had no reference scale. Anchors now include all existing rated problems regardless of the target set, and are updated incrementally after each batch so later batches benefit from newly-assigned ratings.
 
 ### Fixed
 - **Bug report 500 errors**: `bug_reports` migration was not applied to the remote database; pushed `20260518160000` and `20260519000000`.

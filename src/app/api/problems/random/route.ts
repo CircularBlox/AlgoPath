@@ -61,10 +61,14 @@ export async function GET(request: NextRequest) {
     } else {
       const isLC = (p: Row) =>
         String(p.platform ?? "").toLowerCase() === "leetcode";
+      const isComp = (p: Row) => {
+        const pl = String(p.platform ?? "").toLowerCase();
+        return pl === "codeforces" || pl === "usaco";
+      };
       if (focus === "comp_programming") {
-        const cf = data.filter((p) => !isLC(p));
+        const comp = data.filter(isComp);
         const lc = data.filter(isLC);
-        pool = cf.length > 0 ? [...cf, ...cf, ...cf, ...lc] : data;
+        pool = comp.length > 0 ? [...comp, ...comp, ...comp, ...lc] : data;
       } else if (focus === "interviews") {
         const lc = data.filter(isLC);
         const others = data.filter((p) => !isLC(p));
