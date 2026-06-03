@@ -11,7 +11,13 @@ export function extractSamples(content: string | null): Sample[] {
   const s2 = extractByTitleDivs(content);
   if (s2.length > 0) return s2;
 
-  // Strategy 3: LC/generic — "Example N: Input: ... Output: ..." text patterns
+  // Strategy 3: context lookback — strip tags from the 300 chars before each
+  // <pre> and check if the last word is "input" or "output". Works regardless
+  // of div class names or wrapping structure.
+  const s3 = extractByPreContext(content);
+  if (s3.length > 0) return s3;
+
+  // Strategy 4: LC/generic — "Example N: Input: ... Output: ..." text patterns
   return extractLCSamples(content);
 }
 
@@ -122,6 +128,43 @@ function extractByTitleDivs(html: string): Sample[] {
       }
     }
     pos = titleEnd + 6;
+  }
+
+  const count = Math.min(inputs.length, outputs.length);
+  return Array.from({ length: count }, (_, i) => ({
+    input: inputs[i] ?? "",
+    output: outputs[i] ?? "",
+  }));
+}
+
+// Strategy 3: for each <pre> block, strip tags from the 300 chars before it
+// and check if the last word is "input" or "output".
+function extractByPreContext(html: string): Sample[] {
+  const inputs: string[] = [];
+  const outputs: string[] = [];
+  let pos = 0;
+
+  for (;;) {
+    const preStart = html.indexOf("<pre", pos);
+    if (preStart === -1) break;
+
+    const innerStart = html.indexOf(">", preStart) + 1;
+    const innerEnd = html.indexOf("</pre>", innerStart);
+    if (innerEnd === -1) break;
+
+    const text = stripTags(html.slice(innerStart, innerEnd)).trim();
+    if (text) {
+      const before = stripTags(
+        html.slice(Math.max(0, preStart - 300), preStart),
+      )
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
+
+      if (/\binput$/.test(before)) inputs.push(text);
+      else if (/\boutput$/.test(before)) outputs.push(text);
+    }
+    pos = innerEnd + 6;
   }
 
   const count = Math.min(inputs.length, outputs.length);
