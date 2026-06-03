@@ -23,7 +23,19 @@ const ROWS: FeatureRow[] = [
     elite: true,
   },
   {
-    label: "LeetCode + Codeforces problems",
+    label: "LeetCode, Codeforces & USACO problems",
+    free: true,
+    pro: true,
+    elite: true,
+  },
+  {
+    label: "Code editor with sample test runner",
+    free: true,
+    pro: true,
+    elite: true,
+  },
+  {
+    label: "Codeforces account linking & contests",
     free: true,
     pro: true,
     elite: true,
@@ -95,9 +107,9 @@ const ROWS: FeatureRow[] = [
     elite: "Unlimited",
   },
   {
-    label: "Insights dashboard (weak topics, solve rate)",
+    label: "Insights dashboard (weak topics, solve rate, trends)",
     free: false,
-    pro: false,
+    pro: true,
     elite: true,
   },
 

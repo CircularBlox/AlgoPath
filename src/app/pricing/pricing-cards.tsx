@@ -14,9 +14,12 @@ type Props = {
 };
 
 const FREE_FEATURES = [
+  "LeetCode, Codeforces & USACO problems",
   "3 complete hint sessions / day",
   "All 3 hints visible per session",
   "3 notes / day",
+  "Code editor with sample test runner",
+  "Codeforces account linking & contests",
   "XP, levels & rank progression",
   "Streak tracking",
   "Drill mode (tag-based sessions)",
@@ -31,6 +34,7 @@ const PRO_FEATURES = [
   "Model selection for hints",
   "Full activity history",
   "AI code review",
+  "Insights dashboard",
   "Streak freeze (1 / month)",
   "Export notes as Markdown",
 ];
@@ -41,7 +45,6 @@ const ELITE_FEATURES = [
   "Adaptive difficulty",
   "Socratic / Minimal hint style",
   "Hint history across attempts",
-  "Insights dashboard",
 ];
 
 export function PricingCards({
