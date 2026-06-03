@@ -351,17 +351,17 @@ export async function POST(request: NextRequest) {
       // Update anchors with newly assigned ratings so subsequent batches
       // have better calibration (comparative rating).
       if (result.rating !== null && !result.usedFallback && target) {
+        const newRating = result.rating;
         const idx = anchors.findIndex(
           (a) => a.title === (target.title as string),
         );
         if (idx >= 0) {
-          anchors[idx].cf_rating = result.rating!;
+          anchors[idx].cf_rating = newRating;
         } else {
           anchors.push({
             title: target.title as string,
-            cf_rating: result.rating!,
-            tags:
-              ((target.tags as string[] | null) ?? []).join(", ") || "none",
+            cf_rating: newRating,
+            tags: ((target.tags as string[] | null) ?? []).join(", ") || "none",
           });
         }
       }
