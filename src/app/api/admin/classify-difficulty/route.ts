@@ -264,13 +264,14 @@ export async function POST(request: NextRequest) {
 
   // Build calibration anchors from:
   // 1. All non-LeetCode problems with existing numeric ratings (official CF/USACO)
-  // 2. LeetCode problems with Easy/Medium/Hard converted to numeric approximations
+  // 2. LeetCode problems with a numeric rating (can reach 3600 for elite problems)
+  // 3. LeetCode problems with Easy/Medium/Hard converted to approximate numerics
   // Anchors are updated incrementally after each batch so later problems benefit
   // from newly-assigned ratings.
   const anchors: AnchorProblem[] = problems
     .flatMap((p) => {
       const diff = (p.difficulty as string | null)?.trim() ?? null;
-      if (!isLeetCode(p.platform as string | null) && isNumericRating(diff)) {
+      if (isNumericRating(diff)) {
         return [
           {
             title: p.title as string,
