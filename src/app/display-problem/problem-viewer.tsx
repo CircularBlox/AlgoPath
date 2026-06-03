@@ -2489,7 +2489,7 @@ export function ProblemViewer({
                             })}
                             {/* Gated hint placeholders for hints 2 & 3 */}
                             {isGated &&
-                              (hints.hint_2 || hints.hint_3) &&
+                              hints.hint_1 &&
                               [2, 3].map((n) => (
                                 <div
                                   key={`gated-${n}`}

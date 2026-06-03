@@ -139,8 +139,14 @@ export async function GET(
     }
   }
 
+  // Strip gated hints server-side — never send hint_2/hint_3 to free users over the limit.
+  // The frontend blur is cosmetic only; enforcement must happen here.
+  const safePayload = gated
+    ? { ...hintsPayload, hint_2: null, hint_3: null }
+    : hintsPayload;
+
   return NextResponse.json({
-    ...hintsPayload,
+    ...safePayload,
     gated,
     sessions_used: sessionsUsed,
     sessions_limit: sessionsLimit,

@@ -16,7 +16,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) conventi
 - **Public profiles** (`/profile/[username]`): Any user's profile is publicly viewable.
 - **Rank color system** (`lib/xp.ts`): `rankConfig()` and `RANK_CONFIGS` — 8 ranks each with color, gradient, and icon.
 
+### Fixed
+- **Bug report 500 errors**: `bug_reports` migration was not applied to the remote database; pushed `20260518160000` and `20260519000000`.
+- **Hint gating bypass**: Free-tier hints 2 & 3 were nulled on the frontend only (CSS blur); the raw API response still contained the full text. API now strips `hint_2`/`hint_3` from the response when `gated = true`; the blurred placeholder relies on `hint_1` as the existence check instead.
+
 ### Changed
+- **Skill level resets rating**: Changing skill level on the profile page now also resets the user's rating (Beginner → 1,000 · Intermediate → 1,200 · Advanced → 1,600) and shows a confirmation step explaining the change before saving.
 - **Search merged into Problems**: `/search` page removed. The Problems page (`/display-problem`) already has full title search + platform/difficulty filter. Navbar "Search" link replaced by "Pricing". Page heading updated to "Problems" with a descriptive subtitle.
 - **Landing page rank section**: Redesigned with a horizontal scrollable progression chart showing each rank in order with XP thresholds and connecting arrows. Rank grid below also shows XP requirement per tier.
 - **Profile hero**: Rank badge and XP progress bar now use rank-specific color and gradient.

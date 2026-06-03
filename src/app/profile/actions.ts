@@ -4,6 +4,11 @@ import * as Sentry from "@sentry/nextjs";
 import { createClient, getUser } from "~/lib/supabase/server";
 
 const VALID_LEVELS = ["beginner", "intermediate", "advanced"] as const;
+const LEVEL_RATINGS: Record<string, number> = {
+  beginner: 1000,
+  intermediate: 1200,
+  advanced: 1600,
+};
 
 export async function updateSkillLevel(
   level: string,
@@ -20,7 +25,7 @@ export async function updateSkillLevel(
 
   const { error } = await supabase
     .from("profiles")
-    .update({ skill_level: level })
+    .update({ skill_level: level, rating: LEVEL_RATINGS[level] })
     .eq("id", user.id);
 
   if (error) {
