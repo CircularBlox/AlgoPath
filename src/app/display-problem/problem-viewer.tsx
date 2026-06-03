@@ -251,7 +251,9 @@ export function ProblemViewer({
   const hintNudgeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showSolveConfirm, setShowSolveConfirm] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<"code" | "ai" | null>("code");
+  const [activeTab, setActiveTab] = useState<"notes" | "code" | "ai" | null>(
+    "code",
+  );
   const [samples, setSamples] = useState<Sample[]>([]);
   const [testResults, setTestResults] = useState<TestResult[] | null>(null);
   const [testRunning, setTestRunning] = useState(false);

@@ -20,8 +20,29 @@ const LANG_GRAMMARS: Record<string, Prism.Grammar> = {
   Python: languages.python,
 };
 
-// 2 tabs only — Notes merged into Code panel
 const TABS = [
+  {
+    id: "notes" as const,
+    label: "Notes",
+    icon: (
+      <svg
+        width="13"
+        height="13"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+        <polyline points="14 2 14 8 20 8" />
+        <line x1="16" y1="13" x2="8" y2="13" />
+        <line x1="16" y1="17" x2="8" y2="17" />
+      </svg>
+    ),
+  },
   {
     id: "code" as const,
     label: "Code",
@@ -73,8 +94,8 @@ export type TestResult = {
 
 export interface SidePanelProps {
   // panel
-  activeTab: "code" | "ai" | null;
-  setActiveTab: (tab: "code" | "ai" | null) => void;
+  activeTab: "notes" | "code" | "ai" | null;
+  setActiveTab: (tab: "notes" | "code" | "ai" | null) => void;
   panelWidth: number;
   setPanelWidth: (w: number) => void;
   startDrag: (e: React.MouseEvent) => void;
@@ -166,7 +187,6 @@ export function SidePanel({
   onChat,
 }: SidePanelProps) {
   const isOpen = activeTab !== null;
-  const [notesOpen, setNotesOpen] = useState(false);
   const [expandedTest, setExpandedTest] = useState<number | null>(null);
 
   function handleEditorKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -218,7 +238,14 @@ export function SidePanel({
           <button
             key={id}
             type="button"
-            onClick={() => setActiveTab(activeTab === id ? null : id)}
+            onClick={() => {
+              if (activeTab === id) {
+                setActiveTab(null);
+                return;
+              }
+              if (id === "notes" && !notesLoaded) onLoadNotes();
+              setActiveTab(id);
+            }}
             className={`flex flex-col items-center gap-2 rounded-l-md border-2 border-r-0 px-3 py-4 text-xs font-semibold transition-colors shadow-md ${
               activeTab === id
                 ? "border-primary bg-primary text-primary-foreground"
@@ -273,11 +300,14 @@ export function SidePanel({
 
         {/* Panel header */}
         <div className="flex shrink-0 items-center gap-1 border-b border-border px-2 py-2">
-          {TABS.map(({ id, icon }) => (
+          {TABS.map(({ id, label, icon }) => (
             <button
               key={id}
               type="button"
-              onClick={() => setActiveTab(id)}
+              onClick={() => {
+                if (id === "notes" && !notesLoaded) onLoadNotes();
+                setActiveTab(id);
+              }}
               className={`flex items-center gap-1.5 rounded px-2.5 py-1.5 text-xs font-medium transition-colors ${
                 activeTab === id
                   ? "bg-primary/10 text-primary"
@@ -285,7 +315,11 @@ export function SidePanel({
               }`}
             >
               {icon}
-              {id === "code" ? "Code Editor" : "AI Review"}
+              {id === "code"
+                ? "Code Editor"
+                : id === "ai"
+                  ? "AI Review"
+                  : label}
             </button>
           ))}
           <button
@@ -571,145 +605,6 @@ export function SidePanel({
               </div>
             )}
 
-            {/* Notes accordion */}
-            <div className="shrink-0 border-t border-border">
-              <button
-                type="button"
-                onClick={() => {
-                  if (!notesOpen && !notesLoaded) onLoadNotes();
-                  setNotesOpen((v) => !v);
-                }}
-                className="flex w-full items-center justify-between px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <span>
-                  Notes
-                  {problemNotes.length > 0 ? ` (${problemNotes.length})` : ""}
-                </span>
-                <svg
-                  viewBox="0 0 12 12"
-                  fill="none"
-                  className={`h-3 w-3 transition-transform ${notesOpen ? "rotate-90" : ""}`}
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M4 2l4 4-4 4"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </button>
-
-              {notesOpen && (
-                <div className="max-h-64 overflow-y-auto border-t border-border/50">
-                  {problemNotes.length > 0 && (
-                    <div className="flex justify-end px-3 py-1.5 border-b border-border/50">
-                      <button
-                        type="button"
-                        onClick={onExportNotes}
-                        className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        <svg
-                          width="10"
-                          height="10"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          aria-hidden="true"
-                        >
-                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                          <polyline points="7 10 12 15 17 10" />
-                          <line x1="12" y1="15" x2="12" y2="3" />
-                        </svg>
-                        Export .md
-                      </button>
-                    </div>
-                  )}
-                  <div className="flex flex-col gap-2 p-3">
-                    {notesLoading && (
-                      <p className="text-xs text-muted-foreground">Loading…</p>
-                    )}
-                    {!notesLoading && problemNotes.length === 0 && (
-                      <p className="py-2 text-center text-xs text-muted-foreground">
-                        No notes yet.
-                      </p>
-                    )}
-                    {problemNotes.map((note) => (
-                      <div
-                        key={note.id}
-                        className="flex flex-col gap-1 rounded-lg border border-border bg-muted/30 px-2.5 py-2"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <span className="text-xs font-medium leading-snug">
-                            {note.title}
-                          </span>
-                          <span className="shrink-0 text-[10px] text-muted-foreground">
-                            {new Date(note.updated_at).toLocaleDateString()}
-                          </span>
-                        </div>
-                        {note.content && (
-                          <p className="line-clamp-2 text-[11px] leading-relaxed text-muted-foreground">
-                            {note.content}
-                          </p>
-                        )}
-                        <a
-                          href="/notes"
-                          className="mt-0.5 self-start text-[10px] text-primary hover:underline"
-                        >
-                          Open in Notes ↗
-                        </a>
-                      </div>
-                    ))}
-                    {/* Quick new note */}
-                    <div className="flex flex-col gap-1.5 pt-1">
-                      <input
-                        type="text"
-                        value={quickTitle}
-                        onChange={(e) => setQuickTitle(e.target.value)}
-                        placeholder="Note title…"
-                        maxLength={200}
-                        className="w-full rounded border border-input bg-background px-2 py-1 text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                      />
-                      <textarea
-                        value={quickContent}
-                        onChange={(e) => setQuickContent(e.target.value)}
-                        placeholder="Write a note…"
-                        rows={2}
-                        maxLength={10000}
-                        className="w-full resize-none rounded border border-input bg-background px-2 py-1 text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                      />
-                      <Button
-                        size="sm"
-                        className="self-start"
-                        onClick={onSaveQuickNote}
-                        disabled={
-                          quickSaving ||
-                          (!quickTitle.trim() && !quickContent.trim())
-                        }
-                      >
-                        {quickSaving ? "Saving…" : "Save Note"}
-                      </Button>
-                      {notesLimitError && (
-                        <p className="text-[11px] text-muted-foreground">
-                          {notesLimitError}{" "}
-                          <Link
-                            href="/pricing"
-                            className="text-primary underline underline-offset-2"
-                          >
-                            Upgrade →
-                          </Link>
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
             {/* Footer */}
             <div className="flex shrink-0 items-center gap-2 border-t border-border px-3 py-2.5">
               <Button
@@ -730,6 +625,124 @@ export function SidePanel({
               <span className="ml-auto text-[11px] text-muted-foreground">
                 Tab · Enter auto-indents
               </span>
+            </div>
+          </div>
+        )}
+
+        {/* ── Notes panel ── */}
+        {activeTab === "notes" && (
+          <div className="flex flex-1 flex-col overflow-hidden">
+            {problemNotes.length > 0 && (
+              <div className="flex shrink-0 items-center justify-end border-b border-border px-3 py-1.5">
+                <button
+                  type="button"
+                  onClick={onExportNotes}
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  title="Export notes as Markdown"
+                >
+                  <svg
+                    width="11"
+                    height="11"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
+                  </svg>
+                  Export .md
+                </button>
+              </div>
+            )}
+            <div className="flex flex-1 flex-col gap-2 overflow-y-auto p-3">
+              {notesLoading && (
+                <p className="text-sm text-muted-foreground">Loading…</p>
+              )}
+              {!notesLoading && problemNotes.length === 0 && (
+                <p className="py-6 text-center text-xs text-muted-foreground">
+                  No notes for this problem yet.
+                </p>
+              )}
+              {problemNotes.map((note) => (
+                <div
+                  key={note.id}
+                  className="flex flex-col gap-1 rounded-lg border border-border bg-muted/30 px-3 py-2.5"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="text-sm font-medium leading-snug">
+                      {note.title}
+                    </span>
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      {note.code && (
+                        <span className="rounded bg-muted px-1.5 py-px font-mono text-[10px] text-muted-foreground">
+                          {note.code_language}
+                        </span>
+                      )}
+                      <span className="text-[10px] text-muted-foreground">
+                        {new Date(note.updated_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                  {note.content && (
+                    <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+                      {note.content}
+                    </p>
+                  )}
+                  <a
+                    href="/notes"
+                    className="mt-0.5 self-start text-[11px] text-primary hover:underline"
+                  >
+                    Open in Notes ↗
+                  </a>
+                </div>
+              ))}
+            </div>
+            <div className="flex shrink-0 flex-col gap-2 border-t border-border p-3">
+              <p className="text-xs font-medium text-muted-foreground">
+                New Note
+              </p>
+              <input
+                type="text"
+                value={quickTitle}
+                onChange={(e) => setQuickTitle(e.target.value)}
+                placeholder="Title…"
+                maxLength={200}
+                className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+              <textarea
+                value={quickContent}
+                onChange={(e) => setQuickContent(e.target.value)}
+                placeholder="Write a note…"
+                rows={3}
+                maxLength={10000}
+                className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+              <Button
+                size="sm"
+                className="self-start"
+                onClick={onSaveQuickNote}
+                disabled={
+                  quickSaving || (!quickTitle.trim() && !quickContent.trim())
+                }
+              >
+                {quickSaving ? "Saving…" : "Save Note"}
+              </Button>
+              {notesLimitError && (
+                <p className="text-xs text-muted-foreground">
+                  {notesLimitError}{" "}
+                  <Link
+                    href="/pricing"
+                    className="text-primary underline underline-offset-2"
+                  >
+                    Upgrade →
+                  </Link>
+                </p>
+              )}
             </div>
           </div>
         )}
