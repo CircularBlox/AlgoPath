@@ -101,7 +101,7 @@ RATING: <integer multiple of 100, 400–3500>`;
 
   const completion = await routedCompletion({
     messages: [{ role: "user", content: prompt }],
-    taskType: "reasoning",
+    taskType: "balanced",
     apiKey,
     timeoutMs: 60000,
   });
