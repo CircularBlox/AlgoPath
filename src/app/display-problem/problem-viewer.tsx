@@ -1251,7 +1251,11 @@ export function ProblemViewer({
                       </Badge>
                     )}
                     <Badge variant="secondary" className="text-xs">
-                      {problem.platform === "codeforces" ? "CF" : problem.platform === "usaco" ? "USACO" : "LC"}
+                      {problem.platform === "codeforces"
+                        ? "CF"
+                        : problem.platform === "usaco"
+                          ? "USACO"
+                          : "LC"}
                     </Badge>
                   </div>
                 </button>
@@ -1543,7 +1547,11 @@ export function ProblemViewer({
                         </Badge>
                       )}
                       <Badge variant="secondary" className="text-xs">
-                        {problem.platform === "codeforces" ? "CF" : problem.platform === "usaco" ? "USACO" : "LC"}
+                        {problem.platform === "codeforces"
+                          ? "CF"
+                          : problem.platform === "usaco"
+                            ? "USACO"
+                            : "LC"}
                       </Badge>
                     </div>
                   </div>

@@ -71,7 +71,7 @@ export const CHANGELOG: ChangelogEntry[] = [
       },
       {
         type: "fix",
-        text: 'Export as Markdown now correctly triggers a download in all browsers (anchor was not attached to DOM before click; revoke was racing the download).',
+        text: "Export as Markdown now correctly triggers a download in all browsers (anchor was not attached to DOM before click; revoke was racing the download).",
       },
       {
         type: "fix",

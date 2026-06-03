@@ -206,10 +206,10 @@ async function RecommendedProblem({
           </div>
           <Badge variant="secondary" className="shrink-0 text-xs">
             {recommended.platform === "codeforces"
-                ? "Codeforces"
-                : recommended.platform === "usaco"
-                  ? "USACO"
-                  : "LeetCode"}
+              ? "Codeforces"
+              : recommended.platform === "usaco"
+                ? "USACO"
+                : "LeetCode"}
           </Badge>
         </div>
       </CardHeader>
@@ -368,7 +368,11 @@ async function SkillAndSolvedSection({
                   </Badge>
                 )}
                 <Badge variant="secondary" className="text-xs">
-                  {problem.platform === "codeforces" ? "CF" : problem.platform === "usaco" ? "USACO" : "LC"}
+                  {problem.platform === "codeforces"
+                    ? "CF"
+                    : problem.platform === "usaco"
+                      ? "USACO"
+                      : "LC"}
                 </Badge>
               </div>
               <ChevronRightIcon />
