@@ -1,11 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { getUser } from "~/lib/supabase/server";
 
-const LANG_MAP: Record<string, string> = {
-  "C++": "c++",
-  Python: "python",
-  Java: "java",
-  JavaScript: "javascript",
+// Judge0 CE language IDs
+const LANG_MAP: Record<string, number> = {
+  "C++": 54,
+  Python: 71,
+  Java: 62,
+  JavaScript: 63,
 };
 
 export const maxDuration = 30;
@@ -31,8 +32,8 @@ export async function POST(request: NextRequest) {
       { status: 400 },
     );
   }
-  const pistonLang = language ? LANG_MAP[language] : null;
-  if (!pistonLang) {
+  const langId = language ? LANG_MAP[language] : null;
+  if (!langId) {
     return NextResponse.json(
       { error: "Unsupported language" },
       { status: 400 },
@@ -43,19 +44,21 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const res = await fetch("https://emkc.org/api/v2/piston/execute", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        language: pistonLang,
-        version: "*",
-        files: [{ content: code }],
-        stdin: stdin ?? "",
-        run_timeout: 5000,
-        compile_timeout: 10000,
-      }),
-      signal: AbortSignal.timeout(25000),
-    });
+    const res = await fetch(
+      "https://ce.judge0.com/submissions/?base64_encoded=false&wait=true",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          source_code: code,
+          language_id: langId,
+          stdin: stdin ?? "",
+          cpu_time_limit: 5,
+          wall_time_limit: 10,
+        }),
+        signal: AbortSignal.timeout(25000),
+      },
+    );
 
     if (!res.ok) {
       const text = await res.text();
@@ -66,22 +69,27 @@ export async function POST(request: NextRequest) {
     }
 
     const data = (await res.json()) as {
-      run?: { stdout: string; stderr: string; code: number };
-      compile?: { stderr: string; code: number };
+      stdout: string | null;
+      stderr: string | null;
+      compile_output: string | null;
+      message: string | null;
+      status: { id: number; description: string };
     };
 
-    const compileStderr = data.compile?.stderr ?? "";
-    const runStderr = data.run?.stderr ?? "";
-    const stderr = [compileStderr, runStderr].filter(Boolean).join("\n");
-    const exitCode =
-      data.compile?.code != null && data.compile.code !== 0
-        ? data.compile.code
-        : (data.run?.code ?? -1);
+    const stderr =
+      data.compile_output?.trim() ||
+      data.stderr?.trim() ||
+      data.message?.trim() ||
+      "";
+
+    // status id 3 = Accepted; anything else is an error
+    const exit_code = data.status.id === 3 ? 0 : 1;
 
     return NextResponse.json({
-      stdout: data.run?.stdout ?? "",
+      stdout: data.stdout ?? "",
       stderr,
-      exit_code: exitCode,
+      exit_code,
+      status: data.status.description,
     });
   } catch (err) {
     return NextResponse.json(

@@ -18,24 +18,50 @@ function stripTags(html: string): string {
     .replace(/<[^>]+>/g, "");
 }
 
+// Uses the same string-position approach as the admin refetch tool —
+// regex alternatives consistently fail on nested CF HTML.
 function extractCFSamples(html: string): Sample[] {
-  const blockMatch = html.match(
-    /<div[^>]+class="[^"]*sample-test[^"]*"[^>]*>([\s\S]+)/i,
-  );
-  if (!blockMatch) return [];
-  const block = blockMatch[1];
+  const sampleIdx = html.indexOf('class="sample-test"');
+  if (sampleIdx === -1) return [];
 
-  const inputRe =
-    /<div[^>]+class="[^"]*\binput\b[^"]*"[^>]*>[\s\S]*?<pre[^>]*>([\s\S]*?)<\/pre>/gi;
-  const outputRe =
-    /<div[^>]+class="[^"]*\boutput\b[^"]*"[^>]*>[\s\S]*?<pre[^>]*>([\s\S]*?)<\/pre>/gi;
+  const noteIdx = html.indexOf('class="note"', sampleIdx);
+  const section =
+    noteIdx !== -1
+      ? html.slice(sampleIdx, noteIdx)
+      : html.slice(sampleIdx, sampleIdx + 30000);
 
-  const inputs = [...block.matchAll(inputRe)].map((m) =>
-    stripTags(m[1]).trim(),
-  );
-  const outputs = [...block.matchAll(outputRe)].map((m) =>
-    stripTags(m[1]).trim(),
-  );
+  const inputs: string[] = [];
+  const outputs: string[] = [];
+  let pos = 0;
+
+  for (;;) {
+    const nextInput = section.indexOf('<div class="input">', pos);
+    const nextOutput = section.indexOf('<div class="output">', pos);
+    if (nextInput === -1 && nextOutput === -1) break;
+
+    const isInput =
+      nextInput !== -1 && (nextOutput === -1 || nextInput < nextOutput);
+    const divStart = isInput ? nextInput : nextOutput;
+
+    const preStart = section.indexOf("<pre", divStart);
+    if (preStart === -1) {
+      pos = divStart + 1;
+      continue;
+    }
+    const innerStart = section.indexOf(">", preStart) + 1;
+    const innerEnd = section.indexOf("</pre>", innerStart);
+    if (innerEnd === -1) {
+      pos = preStart + 4;
+      continue;
+    }
+
+    const text = stripTags(section.slice(innerStart, innerEnd)).trim();
+    if (text) {
+      if (isInput) inputs.push(text);
+      else outputs.push(text);
+    }
+    pos = innerEnd + 6;
+  }
 
   const count = Math.min(inputs.length, outputs.length);
   return Array.from({ length: count }, (_, i) => ({
