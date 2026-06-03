@@ -212,12 +212,11 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Targets: non-LeetCode problems to classify.
-  // force=false: only problems with no difficulty set.
-  // force=true: all non-LeetCode problems, including those with existing numeric
-  //   ratings (e.g. placeholder 800/1200/2000 chosen from the dropdown on add).
+  // Targets: all problems that need a numeric rating assigned.
+  // force=false: only problems with no difficulty set (null).
+  // force=true: all problems, including those with existing ratings such as
+  //   placeholder 800/1200/2000 from the dropdown, or LeetCode Easy/Medium/Hard.
   const targets = problems.filter((p) => {
-    if (isLeetCode(p.platform as string | null)) return false;
     if (!force && p.difficulty != null) return false;
     return true;
   });

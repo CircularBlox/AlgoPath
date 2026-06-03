@@ -290,10 +290,10 @@ export default function ClassifyDifficultyPage() {
         </h1>
         <p className="text-sm text-muted-foreground">
           AI assigns a numeric Codeforces-style rating (400–3500, multiples of
-          100) to non-LeetCode problems. Use "Re-classify all" to also
-          reclassify problems with placeholder ratings (e.g. 800 / 1200 / 2000
-          from the difficulty dropdown). LeetCode problems are used as
-          calibration anchors. Solutions are included when available.
+          100) to all problems — including LeetCode (converting Easy/Medium/Hard
+          to a numeric equivalent). Use "Re-classify all" to reclassify problems
+          that already have a rating, such as placeholder 800 / 1200 / 2000 or
+          text labels. Solutions are included when available.
         </p>
       </div>
 
