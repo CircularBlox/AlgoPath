@@ -266,16 +266,16 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // Build calibration anchors: ALL non-LeetCode problems not in this batch
-  // that already carry a valid numeric CF rating, sorted ascending.
-  // This gives the AI the full difficulty spectrum to compare against.
-  const targetSet = new Set(targetNums);
+  // Build calibration anchors from ALL non-LeetCode problems that already have
+  // a valid numeric rating. When force=true every problem is being reclassified,
+  // but old ratings still anchor the scale for the first batch; anchors are
+  // updated incrementally after each batch so later problems benefit from the
+  // newly-assigned ratings.
   const anchors: AnchorProblem[] = problems
     .filter(
       (p) =>
         !isLeetCode(p.platform as string | null) &&
-        isNumericRating(p.difficulty as string | null) &&
-        !targetSet.has(p.problem_number as number),
+        isNumericRating(p.difficulty as string | null),
     )
     .map((p) => ({
       title: p.title as string,
@@ -347,7 +347,26 @@ export async function POST(request: NextRequest) {
         had_solution: solutionMap.has(result.problem_number),
         fallback: result.usedFallback,
       });
+
+      // Update anchors with newly assigned ratings so subsequent batches
+      // have better calibration (comparative rating).
+      if (result.rating !== null && !result.usedFallback && target) {
+        const idx = anchors.findIndex(
+          (a) => a.title === (target.title as string),
+        );
+        if (idx >= 0) {
+          anchors[idx].cf_rating = result.rating!;
+        } else {
+          anchors.push({
+            title: target.title as string,
+            cf_rating: result.rating!,
+            tags:
+              ((target.tags as string[] | null) ?? []).join(", ") || "none",
+          });
+        }
+      }
     }
+    anchors.sort((a, b) => a.cf_rating - b.cf_rating);
 
     if (!dryRun) {
       await Promise.all(

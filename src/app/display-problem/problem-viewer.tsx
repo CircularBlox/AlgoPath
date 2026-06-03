@@ -224,7 +224,7 @@ export function ProblemViewer({
   const [suggestQuery, setSuggestQuery] = useState("");
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [filterPlatform, setFilterPlatform] = useState<
-    "all" | "codeforces" | "leetcode"
+    "all" | "codeforces" | "leetcode" | "usaco"
   >("all");
   const [filterTag, setFilterTag] = useState("");
   const [filterDifficulty, setFilterDifficulty] = useState("");
@@ -1251,7 +1251,7 @@ export function ProblemViewer({
                       </Badge>
                     )}
                     <Badge variant="secondary" className="text-xs">
-                      {problem.platform === "codeforces" ? "CF" : "LC"}
+                      {problem.platform === "codeforces" ? "CF" : problem.platform === "usaco" ? "USACO" : "LC"}
                     </Badge>
                   </div>
                 </button>
@@ -1275,6 +1275,7 @@ export function ProblemViewer({
               { v: "all" as const, label: "All" },
               { v: "codeforces" as const, label: "CF" },
               { v: "leetcode" as const, label: "LC" },
+              { v: "usaco" as const, label: "USACO" },
             ] as const
           ).map(({ v, label }) => (
             <button
@@ -1542,7 +1543,7 @@ export function ProblemViewer({
                         </Badge>
                       )}
                       <Badge variant="secondary" className="text-xs">
-                        {problem.platform === "codeforces" ? "CF" : "LC"}
+                        {problem.platform === "codeforces" ? "CF" : problem.platform === "usaco" ? "USACO" : "LC"}
                       </Badge>
                     </div>
                   </div>
@@ -1610,7 +1611,11 @@ export function ProblemViewer({
         (() => {
           const { problem, contentOpen } = state;
           const platformLabel =
-            problem.platform === "codeforces" ? "Codeforces" : "LeetCode";
+            problem.platform === "codeforces"
+              ? "Codeforces"
+              : problem.platform === "usaco"
+                ? "USACO"
+                : "LeetCode";
           const solutionOpen = solutionState.status === "open";
           const solutionLoading = solutionState.status === "loading";
           const solutionViewed =
