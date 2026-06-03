@@ -273,7 +273,7 @@ export function SidePanel({
 
         {/* Panel header */}
         <div className="flex shrink-0 items-center gap-1 border-b border-border px-2 py-2">
-          {TABS.map(({ id, label, icon }) => (
+          {TABS.map(({ id, icon }) => (
             <button
               key={id}
               type="button"
