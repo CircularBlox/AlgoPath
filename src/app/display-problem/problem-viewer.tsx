@@ -606,57 +606,6 @@ export function ProblemViewer({
     }
   }
 
-  async function handleRunManual(stdin: string) {
-    if (!reviewCode.trim()) return;
-    setTestRunning(true);
-    setTestResults(null);
-    try {
-      const res = await fetch("/api/run-code", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          code: reviewCode,
-          language: reviewLanguage,
-          stdin,
-        }),
-      });
-      const data = (await res.json()) as {
-        stdout?: string;
-        stderr?: string;
-        exit_code?: number;
-        error?: string;
-      };
-      const actual = data.stdout ?? "";
-      const stderr = data.stderr ?? "";
-      const exitCode = data.exit_code ?? 0;
-      const hasError =
-        !res.ok || !!data.error || exitCode !== 0 || stderr.trim().length > 0;
-      setTestResults([
-        {
-          input: stdin,
-          expected: "",
-          actual,
-          passed: !hasError,
-          error:
-            data.error ??
-            (hasError ? stderr || `Exit code ${exitCode}` : undefined),
-        },
-      ]);
-    } catch {
-      setTestResults([
-        {
-          input: stdin,
-          expected: "",
-          actual: "",
-          passed: false,
-          error: "Network error",
-        },
-      ]);
-    } finally {
-      setTestRunning(false);
-    }
-  }
-
   async function startDrill(tag: string) {
     setDrillLoading(true);
     setDrillComplete(null);
@@ -2951,7 +2900,6 @@ export function ProblemViewer({
           testResults={testResults}
           testRunning={testRunning}
           onRunTests={() => void handleRunTests()}
-          onRunManual={(stdin) => void handleRunManual(stdin)}
           problemNotes={problemNotes}
           notesLoading={notesLoading}
           notesLoaded={notesLoaded}

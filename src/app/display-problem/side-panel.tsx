@@ -113,7 +113,6 @@ export interface SidePanelProps {
   testResults: TestResult[] | null;
   testRunning: boolean;
   onRunTests: () => void;
-  onRunManual: (stdin: string) => void;
   // notes
   problemNotes: NoteItem[];
   notesLoading: boolean;
@@ -161,7 +160,6 @@ export function SidePanel({
   testResults,
   testRunning,
   onRunTests,
-  onRunManual,
   problemNotes,
   notesLoading,
   notesLoaded,
@@ -191,6 +189,44 @@ export function SidePanel({
   const isOpen = activeTab !== null;
   const [expandedTest, setExpandedTest] = useState<number | null>(null);
   const [manualStdin, setManualStdin] = useState("");
+  const [manualOutput, setManualOutput] = useState<string | null>(null);
+  const [manualError, setManualError] = useState<string | null>(null);
+  const [manualRunning, setManualRunning] = useState(false);
+
+  async function runManual() {
+    if (!reviewCode.trim() || manualRunning) return;
+    setManualRunning(true);
+    setManualOutput(null);
+    setManualError(null);
+    try {
+      const res = await fetch("/api/run-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: reviewCode,
+          language: reviewLanguage,
+          stdin: manualStdin,
+        }),
+      });
+      const data = (await res.json()) as {
+        stdout?: string;
+        stderr?: string;
+        exit_code?: number;
+        error?: string;
+      };
+      if (!res.ok || data.error) {
+        setManualError(data.error ?? "Execution failed");
+      } else if (data.exit_code !== 0 || data.stderr?.trim()) {
+        setManualError(data.stderr?.trim() || `Exit code ${data.exit_code}`);
+      } else {
+        setManualOutput(data.stdout ?? "");
+      }
+    } catch {
+      setManualError("Network error");
+    } finally {
+      setManualRunning(false);
+    }
+  }
 
   function handleEditorKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Tab") {
@@ -472,9 +508,10 @@ export function SidePanel({
 
             {/* Test runner — always visible */}
             <div className="shrink-0 border-t border-border">
-              {samples.length > 0 ? (
-                <>
-                  <div className="flex items-center gap-2 px-3 py-2">
+              {/* Sample tests row */}
+              <div className="flex items-center gap-2 px-3 py-2 border-b border-border/50">
+                {samples.length > 0 ? (
+                  <>
                     <button
                       type="button"
                       onClick={onRunTests}
@@ -506,181 +543,167 @@ export function SidePanel({
                           Running…
                         </>
                       ) : (
-                        <>▶ Run Tests ({samples.length})</>
+                        <>▶ Run Samples ({samples.length})</>
                       )}
                     </button>
                     {testResults && !testRunning && (
                       <span
-                        className={`text-xs font-semibold ${
-                          passedCount === totalCount
-                            ? "text-emerald-600 dark:text-emerald-400"
-                            : "text-red-600 dark:text-red-400"
-                        }`}
+                        className={`text-xs font-semibold ${passedCount === totalCount ? "text-emerald-600" : "text-red-600"}`}
                       >
                         {passedCount}/{totalCount} passed
                       </span>
                     )}
-                  </div>
-                  {testResults && testResults.length > 0 && (
-                    <div className="max-h-52 overflow-y-auto border-t border-border/50">
-                      {testResults.map((r, i) => (
-                        <div
-                          key={`${r.input.slice(0, 30)}__${r.expected.slice(0, 20)}`}
-                          className="border-b border-border/40 last:border-b-0"
+                  </>
+                ) : (
+                  <span className="text-[11px] text-muted-foreground">
+                    No samples detected in problem
+                  </span>
+                )}
+              </div>
+
+              {/* Sample test results */}
+              {testResults && testResults.length > 0 && samples.length > 0 && (
+                <div className="max-h-48 overflow-y-auto border-b border-border/50">
+                  {testResults.map((r, i) => (
+                    <div
+                      key={`${r.input.slice(0, 30)}__${r.expected.slice(0, 20)}`}
+                      className="border-b border-border/40 last:border-b-0"
+                    >
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setExpandedTest(expandedTest === i ? null : i)
+                        }
+                        className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-muted/20 transition-colors"
+                      >
+                        <span
+                          className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${r.passed ? "bg-emerald-500/20 text-emerald-600" : "bg-red-500/20 text-red-600"}`}
                         >
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setExpandedTest(expandedTest === i ? null : i)
-                            }
-                            className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-muted/20 transition-colors"
-                          >
-                            <span
-                              className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
-                                r.passed
-                                  ? "bg-emerald-500/20 text-emerald-600"
-                                  : "bg-red-500/20 text-red-600"
-                              }`}
-                            >
-                              {r.passed ? "✓" : "✗"}
+                          {r.passed ? "✓" : "✗"}
+                        </span>
+                        <span className="text-xs font-medium">
+                          Test {i + 1}
+                        </span>
+                        {!r.passed && r.error && (
+                          <span className="truncate text-[10px] text-muted-foreground">
+                            {r.error.slice(0, 50)}
+                          </span>
+                        )}
+                        <svg
+                          viewBox="0 0 12 12"
+                          fill="none"
+                          className={`ml-auto h-3 w-3 shrink-0 text-muted-foreground transition-transform ${expandedTest === i ? "rotate-90" : ""}`}
+                          aria-hidden="true"
+                        >
+                          <path
+                            d="M4 2l4 4-4 4"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </button>
+                      {expandedTest === i && (
+                        <div className="flex flex-col gap-1.5 bg-muted/10 px-3 pb-2.5 text-[11px]">
+                          <div>
+                            <span className="font-semibold text-muted-foreground">
+                              Input
                             </span>
-                            <span className="text-xs font-medium">
-                              Test {i + 1}
+                            <pre className="mt-0.5 whitespace-pre-wrap rounded bg-muted px-2 py-1 font-mono text-foreground">
+                              {r.input || "(empty)"}
+                            </pre>
+                          </div>
+                          <div>
+                            <span className="font-semibold text-muted-foreground">
+                              Expected
                             </span>
-                            {!r.passed && r.error && (
-                              <span className="truncate text-[10px] text-muted-foreground">
-                                {r.error.slice(0, 60)}
+                            <pre className="mt-0.5 whitespace-pre-wrap rounded bg-emerald-500/10 px-2 py-1 font-mono text-foreground">
+                              {r.expected || "(empty)"}
+                            </pre>
+                          </div>
+                          {!r.passed && (
+                            <div>
+                              <span className="font-semibold text-muted-foreground">
+                                Got
                               </span>
-                            )}
-                            <svg
-                              viewBox="0 0 12 12"
-                              fill="none"
-                              className={`ml-auto h-3 w-3 shrink-0 text-muted-foreground transition-transform ${
-                                expandedTest === i ? "rotate-90" : ""
-                              }`}
-                              aria-hidden="true"
-                            >
-                              <path
-                                d="M4 2l4 4-4 4"
-                                stroke="currentColor"
-                                strokeWidth="1.5"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                            </svg>
-                          </button>
-                          {expandedTest === i && (
-                            <div className="flex flex-col gap-1.5 bg-muted/10 px-3 pb-2.5 text-[11px]">
-                              <div>
-                                <span className="font-semibold text-muted-foreground">
-                                  Input
-                                </span>
-                                <pre className="mt-0.5 whitespace-pre-wrap rounded bg-muted px-2 py-1 font-mono text-foreground">
-                                  {r.input || "(empty)"}
-                                </pre>
-                              </div>
-                              <div>
-                                <span className="font-semibold text-muted-foreground">
-                                  Expected
-                                </span>
-                                <pre className="mt-0.5 whitespace-pre-wrap rounded bg-emerald-500/10 px-2 py-1 font-mono text-foreground">
-                                  {r.expected || "(empty)"}
-                                </pre>
-                              </div>
-                              {!r.passed && (
-                                <div>
-                                  <span className="font-semibold text-muted-foreground">
-                                    Got
-                                  </span>
-                                  <pre className="mt-0.5 whitespace-pre-wrap rounded bg-red-500/10 px-2 py-1 font-mono text-foreground">
-                                    {r.error
-                                      ? r.error
-                                      : r.actual || "(no output)"}
-                                  </pre>
-                                </div>
-                              )}
+                              <pre className="mt-0.5 whitespace-pre-wrap rounded bg-red-500/10 px-2 py-1 font-mono text-foreground">
+                                {r.error ? r.error : r.actual || "(no output)"}
+                              </pre>
                             </div>
                           )}
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </>
-              ) : (
-                /* No samples detected — manual stdin mode */
-                <div className="flex flex-col gap-2 px-3 py-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-muted-foreground">
-                      Run Code
-                    </span>
-                    <span className="text-[10px] text-muted-foreground">
-                      No samples detected
-                    </span>
-                  </div>
-                  <textarea
-                    value={manualStdin}
-                    onChange={(e) => setManualStdin(e.target.value)}
-                    placeholder="stdin (optional)…"
-                    rows={2}
-                    spellCheck={false}
-                    style={{ fontFamily: EDITOR_FONT, fontSize: 12 }}
-                    className="w-full resize-none rounded border border-input bg-muted/30 px-2 py-1.5 text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                  />
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => onRunManual(manualStdin)}
-                      disabled={testRunning || !reviewCode.trim()}
-                      className="flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 transition-colors"
-                    >
-                      {testRunning ? (
-                        <>
-                          <svg
-                            className="h-3 w-3 animate-spin"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            aria-hidden="true"
-                          >
-                            <circle
-                              className="opacity-25"
-                              cx="12"
-                              cy="12"
-                              r="10"
-                              stroke="currentColor"
-                              strokeWidth="4"
-                            />
-                            <path
-                              className="opacity-75"
-                              fill="currentColor"
-                              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                            />
-                          </svg>
-                          Running…
-                        </>
-                      ) : (
-                        <>▶ Run</>
                       )}
-                    </button>
-                  </div>
-                  {testResults?.[0] && !testRunning && (
-                    <div className="flex flex-col gap-1 text-[11px]">
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Custom stdin — always visible */}
+              <div className="flex flex-col gap-1.5 px-3 py-2">
+                <span className="text-[11px] font-medium text-muted-foreground">
+                  Custom Input
+                </span>
+                <textarea
+                  value={manualStdin}
+                  onChange={(e) => setManualStdin(e.target.value)}
+                  placeholder="stdin…"
+                  rows={2}
+                  spellCheck={false}
+                  style={{ fontFamily: EDITOR_FONT, fontSize: 12 }}
+                  className="w-full resize-none rounded border border-input bg-muted/30 px-2 py-1.5 text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void runManual()}
+                    disabled={manualRunning || !reviewCode.trim()}
+                    className="flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                  >
+                    {manualRunning ? (
+                      <>
+                        <svg
+                          className="h-3 w-3 animate-spin"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          aria-hidden="true"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          />
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                          />
+                        </svg>
+                        Running…
+                      </>
+                    ) : (
+                      <>▶ Run</>
+                    )}
+                  </button>
+                </div>
+                {(manualOutput !== null || manualError !== null) &&
+                  !manualRunning && (
+                    <div className="text-[11px]">
                       <span className="font-semibold text-muted-foreground">
-                        Output
+                        {manualError ? "Error" : "Output"}
                       </span>
                       <pre
-                        className={`whitespace-pre-wrap rounded px-2 py-1.5 font-mono text-foreground ${
-                          testResults[0].error ? "bg-red-500/10" : "bg-muted"
-                        }`}
+                        className={`mt-0.5 max-h-32 overflow-y-auto whitespace-pre-wrap rounded px-2 py-1.5 font-mono text-foreground ${manualError ? "bg-red-500/10" : "bg-muted"}`}
                         style={{ fontFamily: EDITOR_FONT, fontSize: 11 }}
                       >
-                        {testResults[0].error
-                          ? testResults[0].error
-                          : testResults[0].actual || "(no output)"}
+                        {manualError ?? manualOutput ?? "(no output)"}
                       </pre>
                     </div>
                   )}
-                </div>
-              )}
+              </div>
             </div>
 
             {/* Footer */}

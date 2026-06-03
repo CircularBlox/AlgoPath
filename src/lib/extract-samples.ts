@@ -2,8 +2,16 @@ export type Sample = { input: string; output: string };
 
 export function extractSamples(content: string | null): Sample[] {
   if (!content) return [];
-  const cfSamples = extractCFSamples(content);
-  if (cfSamples.length > 0) return cfSamples;
+
+  // Strategy 1: CF — sample-test section with class="input"/"output" wrapper divs
+  const s1 = extractByClassDivs(content);
+  if (s1.length > 0) return s1;
+
+  // Strategy 2: CF — sample-test section with class="title" divs directly inside
+  const s2 = extractByTitleDivs(content);
+  if (s2.length > 0) return s2;
+
+  // Strategy 3: LC/generic — "Example N: Input: ... Output: ..." text patterns
   return extractLCSamples(content);
 }
 
@@ -18,17 +26,34 @@ function stripTags(html: string): string {
     .replace(/<[^>]+>/g, "");
 }
 
-// Uses the same string-position approach as the admin refetch tool —
-// regex alternatives consistently fail on nested CF HTML.
-function extractCFSamples(html: string): Sample[] {
+function sampleSection(html: string): string {
   const sampleIdx = html.indexOf('class="sample-test"');
-  if (sampleIdx === -1) return [];
-
+  if (sampleIdx === -1) return "";
   const noteIdx = html.indexOf('class="note"', sampleIdx);
-  const section =
-    noteIdx !== -1
-      ? html.slice(sampleIdx, noteIdx)
-      : html.slice(sampleIdx, sampleIdx + 30000);
+  return noteIdx !== -1
+    ? html.slice(sampleIdx, noteIdx)
+    : html.slice(sampleIdx, sampleIdx + 30000);
+}
+
+function extractPreAfterPos(
+  section: string,
+  pos: number,
+): { text: string; end: number } | null {
+  const preStart = section.indexOf("<pre", pos);
+  if (preStart === -1) return null;
+  const innerStart = section.indexOf(">", preStart) + 1;
+  const innerEnd = section.indexOf("</pre>", innerStart);
+  if (innerEnd === -1) return null;
+  return {
+    text: stripTags(section.slice(innerStart, innerEnd)).trim(),
+    end: innerEnd + 6,
+  };
+}
+
+// Strategy 1: looks for <div class="input"> / <div class="output"> wrappers
+function extractByClassDivs(html: string): Sample[] {
+  const section = sampleSection(html);
+  if (!section) return [];
 
   const inputs: string[] = [];
   const outputs: string[] = [];
@@ -43,24 +68,60 @@ function extractCFSamples(html: string): Sample[] {
       nextInput !== -1 && (nextOutput === -1 || nextInput < nextOutput);
     const divStart = isInput ? nextInput : nextOutput;
 
-    const preStart = section.indexOf("<pre", divStart);
-    if (preStart === -1) {
+    const result = extractPreAfterPos(section, divStart);
+    if (!result) {
       pos = divStart + 1;
       continue;
     }
-    const innerStart = section.indexOf(">", preStart) + 1;
-    const innerEnd = section.indexOf("</pre>", innerStart);
-    if (innerEnd === -1) {
-      pos = preStart + 4;
-      continue;
-    }
 
-    const text = stripTags(section.slice(innerStart, innerEnd)).trim();
-    if (text) {
-      if (isInput) inputs.push(text);
-      else outputs.push(text);
+    if (result.text) {
+      if (isInput) inputs.push(result.text);
+      else outputs.push(result.text);
     }
-    pos = innerEnd + 6;
+    pos = result.end;
+  }
+
+  const count = Math.min(inputs.length, outputs.length);
+  return Array.from({ length: count }, (_, i) => ({
+    input: inputs[i] ?? "",
+    output: outputs[i] ?? "",
+  }));
+}
+
+// Strategy 2: looks for <div class="title">Input</div> or <div class="title">Output</div>
+// directly before <pre> blocks (no class="input"/"output" wrapper)
+function extractByTitleDivs(html: string): Sample[] {
+  // Use sample section if available; otherwise search whole document
+  const section = sampleSection(html) || html;
+
+  const inputs: string[] = [];
+  const outputs: string[] = [];
+  let pos = 0;
+
+  for (;;) {
+    const titleStart = section.indexOf('<div class="title">', pos);
+    if (titleStart === -1) break;
+
+    const titleEnd = section.indexOf("</div>", titleStart);
+    if (titleEnd === -1) break;
+
+    const titleText = section
+      .slice(titleStart + 19, titleEnd)
+      .trim()
+      .toLowerCase();
+    const isInput = titleText === "input";
+    const isOutput = titleText === "output";
+
+    if (isInput || isOutput) {
+      const result = extractPreAfterPos(section, titleEnd);
+      if (result?.text) {
+        if (isInput) inputs.push(result.text);
+        else outputs.push(result.text);
+        pos = result.end;
+        continue;
+      }
+    }
+    pos = titleEnd + 6;
   }
 
   const count = Math.min(inputs.length, outputs.length);

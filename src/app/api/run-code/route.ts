@@ -11,6 +11,19 @@ const LANG_MAP: Record<string, number> = {
 
 export const maxDuration = 30;
 
+function b64(s: string): string {
+  return Buffer.from(s).toString("base64");
+}
+
+function fromB64(s: string | null | undefined): string {
+  if (!s) return "";
+  try {
+    return Buffer.from(s, "base64").toString("utf-8");
+  } catch {
+    return s;
+  }
+}
+
 export async function POST(request: NextRequest) {
   const user = await getUser();
   if (!user) {
@@ -45,14 +58,14 @@ export async function POST(request: NextRequest) {
 
   try {
     const res = await fetch(
-      "https://ce.judge0.com/submissions/?base64_encoded=false&wait=true",
+      "https://ce.judge0.com/submissions/?base64_encoded=true&wait=true",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          source_code: code,
+          source_code: b64(code),
           language_id: langId,
-          stdin: stdin ?? "",
+          stdin: b64(stdin ?? ""),
           cpu_time_limit: 5,
           wall_time_limit: 10,
         }),
@@ -77,8 +90,8 @@ export async function POST(request: NextRequest) {
     };
 
     const stderr =
-      data.compile_output?.trim() ||
-      data.stderr?.trim() ||
+      fromB64(data.compile_output).trim() ||
+      fromB64(data.stderr).trim() ||
       data.message?.trim() ||
       "";
 
@@ -86,7 +99,7 @@ export async function POST(request: NextRequest) {
     const exit_code = data.status.id === 3 ? 0 : 1;
 
     return NextResponse.json({
-      stdout: data.stdout ?? "",
+      stdout: fromB64(data.stdout),
       stderr,
       exit_code,
       status: data.status.description,
