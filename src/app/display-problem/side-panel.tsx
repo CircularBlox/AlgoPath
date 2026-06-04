@@ -108,6 +108,7 @@ export interface SidePanelProps {
   setCodeFullscreen: (v: boolean) => void;
   editorSaveStatus: "idle" | "saving" | "saved" | "error";
   onSaveCodeAsNote: () => void;
+  problemTitle: string;
   // test runner
   samples: Sample[];
   testResults: TestResult[] | null;
@@ -156,6 +157,7 @@ export function SidePanel({
   setCodeFullscreen,
   editorSaveStatus,
   onSaveCodeAsNote,
+  problemTitle,
   samples,
   testResults,
   testRunning,
@@ -723,6 +725,60 @@ export function SidePanel({
               {editorSaveStatus === "error" && (
                 <span className="text-xs text-destructive">Save failed</span>
               )}
+              <button
+                type="button"
+                disabled={!reviewCode.trim()}
+                onClick={() => {
+                  const EXT: Record<string, string> = {
+                    "C++": "cpp",
+                    Python: "py",
+                    Java: "java",
+                    JavaScript: "js",
+                  };
+                  const slug = problemTitle
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, "-")
+                    .replace(/^-|-$/g, "");
+                  const ext = EXT[reviewLanguage] ?? "txt";
+                  const filename = `${slug}.${ext}`;
+                  const blob = new Blob([reviewCode], { type: "text/plain" });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = filename;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  URL.revokeObjectURL(url);
+                }}
+                className="flex items-center gap-1 rounded px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-40"
+                title="Download code file"
+              >
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                .
+                {(
+                  {
+                    "C++": "cpp",
+                    Python: "py",
+                    Java: "java",
+                    JavaScript: "js",
+                  } as Record<string, string>
+                )[reviewLanguage] ?? "txt"}
+              </button>
               <span className="ml-auto text-[11px] text-muted-foreground">
                 Tab · Enter auto-indents
               </span>

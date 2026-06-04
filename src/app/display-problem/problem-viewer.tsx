@@ -2896,6 +2896,7 @@ export function ProblemViewer({
           setCodeFullscreen={setCodeFullscreen}
           editorSaveStatus={editorSaveStatus}
           onSaveCodeAsNote={saveCodeAsNote}
+          problemTitle={state.problem.title}
           samples={samples}
           testResults={testResults}
           testRunning={testRunning}
