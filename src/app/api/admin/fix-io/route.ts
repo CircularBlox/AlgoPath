@@ -79,6 +79,11 @@ function detectNoNewlinePre(content: string): boolean {
   const preRe = /<pre[^>]*>([\s\S]*?)<\/pre>/gi;
   for (let m = preRe.exec(normalized); m !== null; m = preRe.exec(normalized)) {
     const inner = m[1];
+    // CF's multi-test format wraps each line in its own block element
+    // (e.g. <div class="test-example-line ...">). Those have no literal "\n"
+    // but extraction now treats block closes as line breaks, so they are not
+    // actually broken — skip them to avoid false positives.
+    if (/<\/(?:div|p|li|tr)>/i.test(inner)) continue;
     if (!inner.includes("\n") && inner.trim().length > 15) return true;
   }
   return false;

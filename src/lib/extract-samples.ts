@@ -22,14 +22,25 @@ export function extractSamples(content: string | null): Sample[] {
 }
 
 function stripTags(html: string): string {
-  return html
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&amp;/g, "&")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<[^>]+>/g, "");
+  return (
+    html
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&amp;/g, "&")
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/<br\s*\/?>/gi, "\n")
+      // CF's newer multi-test sample format wraps each line of a single sample
+      // in its own block element (e.g. <div class="test-example-line ...">...).
+      // Visually these render as separate boxes, but in the HTML they live inside
+      // one <pre> with no <br>/newline between them. Treat the close of any
+      // line-level block as a line break so the lines aren't collapsed together.
+      .replace(/<\/(?:div|p|li|tr)>/gi, "\n")
+      .replace(/<[^>]+>/g, "")
+      // Collapse the trailing whitespace / blank lines those block tags can leave.
+      .replace(/[ \t]+\n/g, "\n")
+      .replace(/\n{3,}/g, "\n\n")
+  );
 }
 
 function sampleSection(html: string): string {
