@@ -31,9 +31,12 @@ const marqueeItems = [0, 1].flatMap((copy) =>
   topics.map((t) => ({ id: `${copy}-${t}`, t })),
 );
 
+// Streak = binary per day: an active day is full amber, only a genuinely-empty
+// day is dim. (Not an intensity heatmap — that produced a dim-amber "trail" that
+// read like the fill animation stalling.) Two early gaps, then a solid run.
 const heat = [
-  3, 2, 4, 1, 3, 4, 2, 0, 3, 4, 4, 2, 3, 1, 4, 3, 2, 4, 1, 3, 4,
-].map((lvl, i) => ({ id: `cell-${i}`, lvl }));
+  1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+].map((active, i) => ({ id: `cell-${i}`, active: active === 1 }));
 
 const stats = [
   { v: "3", label: "progressive hints" },
@@ -845,12 +848,9 @@ function StreakHeatmap() {
           style={
             {
               "--d": `${i * 22}ms`,
-              backgroundColor:
-                c.lvl === 0
-                  ? "var(--color-border)"
-                  : `color-mix(in oklab, var(--color-amber) ${
-                      20 + c.lvl * 20
-                    }%, transparent)`,
+              backgroundColor: c.active
+                ? "var(--color-amber)"
+                : "var(--color-border)",
             } as React.CSSProperties
           }
         />

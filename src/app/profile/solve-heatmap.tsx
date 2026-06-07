@@ -29,13 +29,14 @@ function buildGrid(solveDates: string[]): { date: string; count: number }[][] {
   return weeks;
 }
 
+// Solve activity = success → green (§1 --color-solved), ramped by intensity.
 function cellColor(count: number): string {
   if (count < 0) return "bg-transparent";
   if (count === 0) return "bg-muted";
-  if (count === 1) return "bg-primary/30";
-  if (count === 2) return "bg-primary/55";
-  if (count === 3) return "bg-primary/75";
-  return "bg-primary";
+  if (count === 1) return "bg-green/30";
+  if (count === 2) return "bg-green/55";
+  if (count === 3) return "bg-green/75";
+  return "bg-green";
 }
 
 const MONTH_LABELS = [
@@ -86,12 +87,14 @@ export async function SolveHeatmap() {
 
   return (
     <section>
-      <div className="mb-3 flex items-baseline gap-2">
-        <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+      <div className="mb-3 flex items-baseline gap-2 font-mono text-xs">
+        <span className="text-dim">{"//"}</span>
+        <h2 className="font-semibold tracking-wide text-foreground">
           Solve Activity
         </h2>
-        <span className="text-xs text-muted-foreground">
-          {totalSolves} solve{totalSolves !== 1 ? "s" : ""} in the past year
+        <span className="text-muted-foreground">
+          <span className="tabular-nums text-cyan">{totalSolves}</span> solve
+          {totalSolves !== 1 ? "s" : ""} in the past year
         </span>
       </div>
       <div className="overflow-x-auto rounded border border-border bg-card p-4">

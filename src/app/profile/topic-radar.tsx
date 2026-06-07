@@ -90,11 +90,11 @@ export function TopicRadar({
         <polygon
           points={skillPts}
           fill="currentColor"
-          fillOpacity={0.14}
+          fillOpacity={0.16}
           stroke="currentColor"
           strokeWidth="2"
-          strokeOpacity={0.85}
-          className="text-foreground"
+          strokeOpacity={0.9}
+          className="text-violet"
         />
 
         {/* Vertex dots */}
@@ -108,7 +108,7 @@ export function TopicRadar({
               cy={p.y.toFixed(2)}
               r="3.5"
               fill="currentColor"
-              className="text-foreground"
+              className="text-violet"
             />
           );
         })}

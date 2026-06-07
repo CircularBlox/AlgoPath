@@ -46,17 +46,17 @@ export function TopicRecommendation() {
   if (!rec) return null;
 
   return (
-    <div className="rounded border border-border px-5 py-4 flex flex-col gap-2.5">
+    <div className="flex flex-col gap-2.5 rounded border border-l-2 border-border border-l-violet bg-card px-5 py-4">
       <div className="flex items-center justify-between gap-3">
         <span className="text-sm font-semibold">{displayTag(rec.tag)}</span>
         <Link
           href={`/display-problem?drill=${encodeURIComponent(rec.tag)}`}
-          className="rounded-full bg-foreground px-3 py-1 text-xs font-medium text-background hover:opacity-80 transition-opacity shrink-0"
+          className="shrink-0 rounded border border-violet/40 px-3 py-1 font-mono text-xs text-violet transition-colors hover:bg-violet/10"
         >
           Drill this →
         </Link>
       </div>
-      <p className="text-xs text-muted-foreground leading-relaxed">
+      <p className="text-xs leading-relaxed text-muted-foreground">
         {rec.reason}
       </p>
     </div>

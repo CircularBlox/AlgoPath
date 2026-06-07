@@ -3,17 +3,22 @@
 import { useState } from "react";
 import { Button } from "~/components/ui/button";
 
+// Codeforces' own rank colors are a recognized external standard, so the hue
+// stays meaningful (not the site's role palette). Mapped onto §1 tokens where
+// they align — pupil→green, specialist→cyan, CM→violet, master→amber, GM→rose —
+// and brightened to read on true-black. Expert keeps a distinct blue (no §1
+// blue token) via a bright Tailwind shade.
 const CF_RANK_COLORS: Record<string, string> = {
   newbie: "text-muted-foreground",
-  pupil: "text-emerald-600",
-  specialist: "text-cyan-600",
-  expert: "text-blue-600",
-  "candidate master": "text-violet-600",
-  master: "text-amber-600",
-  "international master": "text-amber-500",
-  grandmaster: "text-red-600",
-  "international grandmaster": "text-red-500",
-  "legendary grandmaster": "text-red-500",
+  pupil: "text-green",
+  specialist: "text-cyan",
+  expert: "text-sky-400",
+  "candidate master": "text-violet",
+  master: "text-amber",
+  "international master": "text-amber",
+  grandmaster: "text-rose",
+  "international grandmaster": "text-rose",
+  "legendary grandmaster": "text-rose",
 };
 
 export function CfLinkSection({
@@ -99,24 +104,26 @@ export function CfLinkSection({
       {cfHandle && !editing ? (
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">{cfHandle}</span>
+            <span className="font-mono text-sm font-medium">{cfHandle}</span>
             {cfRank && (
               <span className={`text-xs font-semibold capitalize ${rankColor}`}>
                 {cfRank}
               </span>
             )}
           </div>
-          <div className="flex items-center gap-3 text-sm">
+          <div className="flex items-center gap-3 font-mono text-sm">
             {cfRating !== null && (
               <span>
-                <span className="text-muted-foreground text-xs">Rating </span>
-                <span className={`font-bold ${rankColor}`}>{cfRating}</span>
+                <span className="text-xs text-muted-foreground">rating </span>
+                <span className={`font-bold tabular-nums ${rankColor}`}>
+                  {cfRating}
+                </span>
               </span>
             )}
             {cfMaxRating !== null && (
               <span>
-                <span className="text-muted-foreground text-xs">Max </span>
-                <span className="font-medium">{cfMaxRating}</span>
+                <span className="text-xs text-muted-foreground">max </span>
+                <span className="font-medium tabular-nums">{cfMaxRating}</span>
               </span>
             )}
           </div>
@@ -150,7 +157,7 @@ export function CfLinkSection({
             onKeyDown={(e) => e.key === "Enter" && handle.trim() && link()}
             placeholder="Your Codeforces handle"
             maxLength={24}
-            className="flex-1 rounded-md border border-input bg-background px-3 py-1.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            className="flex-1 rounded border border-input bg-background px-3 py-1.5 font-mono text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           />
           <Button size="sm" disabled={loading || !handle.trim()} onClick={link}>
             {loading ? "Linking…" : "Link"}
