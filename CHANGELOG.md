@@ -8,6 +8,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) conventi
 ## [Unreleased]
 
 ### Added
+- **FAQ page** (`/faq`): Public, DB-backed FAQ rendered as native `<details>` accordions styled with the app's design tokens (no extra libraries). Reads from a new `faqs` table (public read via RLS). Linked from the navbar. Seeded with the first question, "Why can't I just use ChatGPT, Claude, or any other AI?". Admins manage entries at `/admin/faqs` (add / delete, with sort order) via `/api/admin/faqs` (`GET`/`POST`/`PATCH`/`DELETE`, service-role, admin-gated). (`supabase/migrations/20260606000000_add_faqs.sql`)
 - **Code editor auto-opens**: The side panel opens automatically to the Code Editor tab whenever a problem loads — no manual click needed.
 - **Sample test runner** (free): Code panel now has a "Run Tests (N)" button that runs your code against the problem's sample I/O using the Piston execution engine. Shows per-test pass/fail with expandable input/expected/got details. Supports C++, Python, Java, and JavaScript. (`POST /api/run-code`, `src/lib/extract-samples.ts`)
 - **Codeforces account linking**: Profile page has a new "Codeforces Account" section — enter your CF handle to verify it against the CF API and store your rating, max rating, and rank. (`POST /api/profiles/cf-link`, `supabase/migrations/20260603161021`)
