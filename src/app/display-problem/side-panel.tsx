@@ -287,10 +287,10 @@ export function SidePanel({
               if (id === "notes" && !notesLoaded) onLoadNotes();
               setActiveTab(id);
             }}
-            className={`flex flex-col items-center gap-2 rounded-l-md border-2 border-r-0 px-3 py-4 text-xs font-semibold transition-colors shadow-md ${
+            className={`flex flex-col items-center gap-2 rounded-l border-2 border-r-0 px-3 py-4 font-mono text-xs font-semibold transition-colors ${
               activeTab === id
                 ? "border-primary bg-primary text-primary-foreground"
-                : "border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 hover:border-primary/60"
+                : "border-primary/40 bg-primary/10 text-primary hover:border-primary/60 hover:bg-primary/20"
             }`}
           >
             <div className="scale-125">{icon}</div>
@@ -321,7 +321,7 @@ export function SidePanel({
           display: "flex",
           flexDirection: "column",
         }}
-        className="border-l border-border bg-background shadow-2xl"
+        className="border-l border-border bg-background"
       >
         {/* Drag handle */}
         <div
@@ -349,7 +349,7 @@ export function SidePanel({
                 if (id === "notes" && !notesLoaded) onLoadNotes();
                 setActiveTab(id);
               }}
-              className={`flex items-center gap-1.5 rounded px-2.5 py-1.5 text-xs font-medium transition-colors ${
+              className={`flex items-center gap-1.5 rounded px-2.5 py-1.5 font-mono text-xs font-medium transition-colors ${
                 activeTab === id
                   ? "bg-primary/10 text-primary"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -397,7 +397,7 @@ export function SidePanel({
                     key={lang}
                     type="button"
                     onClick={() => setReviewLanguage(lang)}
-                    className={`rounded px-2.5 py-0.5 text-xs font-medium transition-colors ${
+                    className={`rounded px-2.5 py-0.5 font-mono text-xs font-medium transition-colors ${
                       reviewLanguage === lang
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted text-muted-foreground hover:text-foreground"
@@ -408,8 +408,8 @@ export function SidePanel({
                 ),
               )}
               <span className="ml-auto flex items-center gap-2">
-                <span className="text-[11px] text-muted-foreground">
-                  {reviewCode.length}/50000
+                <span className="font-mono text-[11px] text-dim tabular-nums">
+                  <span className="text-cyan">{reviewCode.length}</span>/50000
                 </span>
                 <button
                   type="button"
@@ -440,10 +440,11 @@ export function SidePanel({
               </span>
             </div>
 
-            {/* Code editor */}
+            {/* Code editor — `.code-editor` scopes the §1 Prism token colors in
+                globals.css to the highlight overlay only (not the textarea). */}
             <div
-              className="relative flex-1 overflow-hidden"
-              style={{ background: "#1e1e2e" }}
+              className="code-editor relative flex-1 overflow-hidden"
+              style={{ background: "oklch(0.115 0.006 285)" }}
             >
               <pre
                 aria-hidden="true"
@@ -460,7 +461,7 @@ export function SidePanel({
                   overflowY: "auto",
                   overflowX: "hidden",
                   pointerEvents: "none",
-                  color: "#cdd6f4",
+                  color: "var(--color-foreground)",
                   background: "transparent",
                   tabSize: 2,
                 }}
@@ -500,7 +501,7 @@ export function SidePanel({
                   resize: "none",
                   background: "transparent",
                   color: "transparent",
-                  caretColor: "#cdd6f4",
+                  caretColor: "var(--color-foreground)",
                   outline: "none",
                   tabSize: 2,
                   zIndex: 1,
@@ -518,7 +519,7 @@ export function SidePanel({
                       type="button"
                       onClick={onRunTests}
                       disabled={testRunning || !reviewCode.trim()}
-                      className="flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+                      className="flex items-center gap-1.5 rounded bg-primary px-2.5 py-1 font-mono text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
                     >
                       {testRunning ? (
                         <>
@@ -550,14 +551,14 @@ export function SidePanel({
                     </button>
                     {testResults && !testRunning && (
                       <span
-                        className={`text-xs font-semibold ${passedCount === totalCount ? "text-emerald-600" : "text-red-600"}`}
+                        className={`font-mono text-xs font-semibold tabular-nums ${passedCount === totalCount ? "text-green" : "text-rose"}`}
                       >
                         {passedCount}/{totalCount} passed
                       </span>
                     )}
                   </>
                 ) : (
-                  <span className="text-[11px] text-muted-foreground">
+                  <span className="font-mono text-[11px] text-dim">
                     No samples detected in problem
                   </span>
                 )}
@@ -576,25 +577,32 @@ export function SidePanel({
                         onClick={() =>
                           setExpandedTest(expandedTest === i ? null : i)
                         }
-                        className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-muted/20 transition-colors"
+                        className={`flex w-full items-center gap-2 border-l-2 px-3 py-1.5 text-left font-mono text-xs transition-colors hover:bg-muted ${
+                          r.passed ? "border-l-green" : "border-l-rose"
+                        }`}
                       >
                         <span
-                          className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${r.passed ? "bg-emerald-500/20 text-emerald-600" : "bg-red-500/20 text-red-600"}`}
+                          className={`shrink-0 ${r.passed ? "text-green" : "text-rose"}`}
                         >
                           {r.passed ? "✓" : "✗"}
                         </span>
-                        <span className="text-xs font-medium">
-                          Test {i + 1}
+                        <span className="text-muted-foreground">
+                          test {i + 1}
                         </span>
                         {!r.passed && r.error && (
-                          <span className="truncate text-[10px] text-muted-foreground">
+                          <span className="truncate text-[10px] text-dim">
                             {r.error.slice(0, 50)}
                           </span>
                         )}
+                        <span
+                          className={`ml-auto shrink-0 ${r.passed ? "text-green" : "text-rose"}`}
+                        >
+                          {r.passed ? "OK" : "WA"}
+                        </span>
                         <svg
                           viewBox="0 0 12 12"
                           fill="none"
-                          className={`ml-auto h-3 w-3 shrink-0 text-muted-foreground transition-transform ${expandedTest === i ? "rotate-90" : ""}`}
+                          className={`h-3 w-3 shrink-0 text-dim transition-transform ${expandedTest === i ? "rotate-90" : ""}`}
                           aria-hidden="true"
                         >
                           <path
@@ -607,29 +615,29 @@ export function SidePanel({
                         </svg>
                       </button>
                       {expandedTest === i && (
-                        <div className="flex flex-col gap-1.5 bg-muted/10 px-3 pb-2.5 text-[11px]">
+                        <div className="flex flex-col gap-1.5 bg-muted/40 px-3 pb-2.5 pt-1 font-mono text-[11px]">
                           <div>
-                            <span className="font-semibold text-muted-foreground">
-                              Input
+                            <span className="font-semibold text-dim">
+                              input
                             </span>
-                            <pre className="mt-0.5 whitespace-pre-wrap rounded bg-muted px-2 py-1 font-mono text-foreground">
+                            <pre className="mt-0.5 whitespace-pre-wrap rounded border border-border bg-muted px-2 py-1 text-foreground">
                               {r.input || "(empty)"}
                             </pre>
                           </div>
                           <div>
-                            <span className="font-semibold text-muted-foreground">
-                              Expected
+                            <span className="font-semibold text-dim">
+                              expected
                             </span>
-                            <pre className="mt-0.5 whitespace-pre-wrap rounded bg-emerald-500/10 px-2 py-1 font-mono text-foreground">
+                            <pre className="mt-0.5 whitespace-pre-wrap rounded border-l-2 border-l-green bg-green/10 px-2 py-1 text-foreground">
                               {r.expected || "(empty)"}
                             </pre>
                           </div>
                           {!r.passed && (
                             <div>
-                              <span className="font-semibold text-muted-foreground">
-                                Got
+                              <span className="font-semibold text-dim">
+                                got
                               </span>
-                              <pre className="mt-0.5 whitespace-pre-wrap rounded bg-red-500/10 px-2 py-1 font-mono text-foreground">
+                              <pre className="mt-0.5 whitespace-pre-wrap rounded border-l-2 border-l-rose bg-rose/10 px-2 py-1 text-foreground">
                                 {r.error ? r.error : r.actual || "(no output)"}
                               </pre>
                             </div>
@@ -643,8 +651,8 @@ export function SidePanel({
 
               {/* Custom stdin — always visible */}
               <div className="flex flex-col gap-1.5 px-3 py-2">
-                <span className="text-[11px] font-medium text-muted-foreground">
-                  Custom Input
+                <span className="font-mono text-[11px] font-medium text-muted-foreground">
+                  custom input
                 </span>
                 <textarea
                   value={manualStdin}
@@ -693,12 +701,14 @@ export function SidePanel({
                 </div>
                 {(manualOutput !== null || manualError !== null) &&
                   !manualRunning && (
-                    <div className="text-[11px]">
-                      <span className="font-semibold text-muted-foreground">
-                        {manualError ? "Error" : "Output"}
+                    <div className="font-mono text-[11px]">
+                      <span
+                        className={`font-semibold ${manualError ? "text-rose" : "text-dim"}`}
+                      >
+                        {manualError ? "error" : "output"}
                       </span>
                       <pre
-                        className={`mt-0.5 max-h-32 overflow-y-auto whitespace-pre-wrap rounded px-2 py-1.5 font-mono text-foreground ${manualError ? "bg-red-500/10" : "bg-muted"}`}
+                        className={`mt-0.5 max-h-32 overflow-y-auto whitespace-pre-wrap rounded px-2 py-1.5 font-mono text-foreground ${manualError ? "border-l-2 border-l-rose bg-rose/10" : "bg-muted"}`}
                         style={{ fontFamily: EDITOR_FONT, fontSize: 11 }}
                       >
                         {manualError ?? manualOutput ?? "(no output)"}
@@ -779,7 +789,7 @@ export function SidePanel({
                   } as Record<string, string>
                 )[reviewLanguage] ?? "txt"}
               </button>
-              <span className="ml-auto text-[11px] text-muted-foreground">
+              <span className="ml-auto font-mono text-[11px] text-dim">
                 Tab · Enter auto-indents
               </span>
             </div>
@@ -828,19 +838,19 @@ export function SidePanel({
               {problemNotes.map((note) => (
                 <div
                   key={note.id}
-                  className="flex flex-col gap-1 rounded border border-border bg-muted/30 px-3 py-2.5"
+                  className="flex flex-col gap-1 border-l-2 border-l-border bg-card px-3 py-2.5 transition-colors hover:border-l-violet hover:bg-muted"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <span className="text-sm font-medium leading-snug">
                       {note.title}
                     </span>
-                    <div className="flex shrink-0 items-center gap-1.5">
+                    <div className="flex shrink-0 items-center gap-1.5 font-mono">
                       {note.code && (
-                        <span className="rounded bg-muted px-1.5 py-px font-mono text-[10px] text-muted-foreground">
+                        <span className="rounded bg-muted px-1.5 py-px text-[10px] text-muted-foreground">
                           {note.code_language}
                         </span>
                       )}
-                      <span className="text-[10px] text-muted-foreground">
+                      <span className="text-[10px] text-dim">
                         {new Date(note.updated_at).toLocaleDateString()}
                       </span>
                     </div>
@@ -852,7 +862,7 @@ export function SidePanel({
                   )}
                   <a
                     href="/notes"
-                    className="mt-0.5 self-start text-[11px] text-primary hover:underline"
+                    className="mt-0.5 self-start font-mono text-[11px] text-violet hover:underline"
                   >
                     Open in Notes ↗
                   </a>
@@ -869,7 +879,7 @@ export function SidePanel({
                 onChange={(e) => setQuickTitle(e.target.value)}
                 placeholder="Title…"
                 maxLength={200}
-                className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full rounded border border-input bg-background px-3 py-1.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               />
               <textarea
                 value={quickContent}
@@ -877,7 +887,7 @@ export function SidePanel({
                 placeholder="Write a note…"
                 rows={3}
                 maxLength={10000}
-                className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full resize-none rounded border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               />
               <Button
                 size="sm"
@@ -894,7 +904,7 @@ export function SidePanel({
                   {notesLimitError}{" "}
                   <Link
                     href="/pricing"
-                    className="text-primary underline underline-offset-2"
+                    className="text-violet underline underline-offset-2"
                   >
                     Upgrade →
                   </Link>
@@ -907,7 +917,7 @@ export function SidePanel({
         {/* ── AI Review panel ── */}
         {activeTab === "ai" && plan === "free" && (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+            <div className="flex h-10 w-10 items-center justify-center rounded bg-primary/10">
               <svg
                 width="18"
                 height="18"
@@ -932,7 +942,7 @@ export function SidePanel({
             </div>
             <Link
               href="/pricing"
-              className="rounded-full bg-primary px-4 py-1.5 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-80"
+              className="rounded bg-primary px-4 py-1.5 font-mono text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
             >
               Upgrade to Pro →
             </Link>
@@ -1054,7 +1064,7 @@ export function SidePanel({
                 placeholder="Ask about your code…"
                 maxLength={2000}
                 disabled={chatLoading}
-                className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                className="flex-1 rounded border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
               />
               <Button
                 size="sm"

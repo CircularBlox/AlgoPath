@@ -21,7 +21,7 @@ import {
 import { processHtmlLatex } from "~/lib/latex";
 import { highlight, languages } from "~/lib/prism-setup";
 import { timeAgo } from "~/lib/time";
-import { levelTitle, rankConfig, xpProgress } from "~/lib/xp";
+import { levelTitle, xpProgress } from "~/lib/xp";
 import { FormattedText } from "./formatting";
 import { SidePanel, type TestResult } from "./side-panel";
 import type {
@@ -1226,7 +1226,7 @@ export function ProblemViewer({
                 type="button"
                 disabled={focusSaving}
                 onClick={() => saveFocus(opt.value)}
-                className="rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-50 cursor-pointer"
+                className="rounded border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-50 cursor-pointer"
               >
                 {opt.label}
               </button>
@@ -1234,7 +1234,7 @@ export function ProblemViewer({
             <button
               type="button"
               onClick={() => setFocusBanner(false)}
-              className="rounded-md px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              className="rounded px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
             >
               Dismiss
             </button>
@@ -1373,9 +1373,9 @@ export function ProblemViewer({
               key={v}
               type="button"
               onClick={() => setFilterPlatform(v)}
-              className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
+              className={`rounded px-2.5 py-0.5 font-mono text-xs font-medium transition-colors ${
                 filterPlatform === v
-                  ? "bg-foreground text-background"
+                  ? "bg-primary text-primary-foreground"
                   : "bg-muted text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -1390,7 +1390,7 @@ export function ProblemViewer({
           value={filterTag}
           onChange={(e) => setFilterTag(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-          className="h-7 w-28 rounded-md border border-input bg-background px-2.5 text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+          className="h-7 w-28 rounded border border-input bg-background px-2.5 text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
         />
         <input
           type="text"
@@ -1398,7 +1398,7 @@ export function ProblemViewer({
           value={filterDifficulty}
           onChange={(e) => setFilterDifficulty(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-          className="h-7 w-24 rounded-md border border-input bg-background px-2.5 text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+          className="h-7 w-24 rounded border border-input bg-background px-2.5 text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
         />
         {(filterTag || filterDifficulty || filterPlatform !== "all") && (
           <button
@@ -1497,10 +1497,8 @@ export function ProblemViewer({
 
       {/* Skip warning */}
       {skipWarningPending && (
-        <div className="flex flex-wrap items-center gap-2 rounded-md border border-amber-500/30 bg-amber-500/8 px-3 py-1.5">
-          <span className="text-xs text-amber-400">
-            Move on from this problem?
-          </span>
+        <div className="flex flex-wrap items-center gap-2 rounded border border-l-2 border-border border-l-amber bg-amber/10 px-3 py-1.5">
+          <span className="text-xs text-amber">Move on from this problem?</span>
           <div className="ml-auto flex items-center gap-1">
             <button
               type="button"
@@ -1508,7 +1506,7 @@ export function ProblemViewer({
                 setSkipWarningPending(null);
                 void fetchRandomLower();
               }}
-              className="rounded px-2 py-0.5 text-xs font-medium text-sky-400 hover:bg-sky-500/20 transition-colors"
+              className="rounded px-2 py-0.5 text-xs font-medium text-cyan transition-colors hover:bg-cyan/10"
             >
               Too hard — try easier
             </button>
@@ -1519,7 +1517,7 @@ export function ProblemViewer({
                 setSkipWarningPending(null);
                 action();
               }}
-              className="rounded px-2 py-0.5 text-xs font-medium text-amber-400 hover:bg-amber-500/20 transition-colors"
+              className="rounded px-2 py-0.5 text-xs font-medium text-amber transition-colors hover:bg-amber/10"
             >
               Skip
             </button>
@@ -1579,7 +1577,7 @@ export function ProblemViewer({
                   type="button"
                   disabled={drillLoading}
                   onClick={() => void startDrill(filterTag)}
-                  className="flex items-center gap-1.5 rounded-full bg-foreground px-3 py-1 text-xs font-medium text-background transition-opacity hover:opacity-80 disabled:opacity-50 shrink-0"
+                  className="flex shrink-0 items-center gap-1.5 rounded border border-violet/40 px-3 py-1 font-mono text-xs font-medium text-violet transition-colors hover:bg-violet/10 disabled:opacity-50"
                 >
                   {drillLoading ? (
                     "Loading…"
@@ -1680,15 +1678,15 @@ export function ProblemViewer({
               {drillQueue.tag}
             </span>
           </span>
-          <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
+          <div className="h-1 flex-1 overflow-hidden rounded bg-muted">
             <div
-              className="h-full bg-foreground rounded-full transition-all duration-300"
+              className="h-full rounded bg-violet transition-all duration-300"
               style={{
                 width: `${((drillQueue.index + 1) / drillQueue.queue.length) * 100}%`,
               }}
             />
           </div>
-          <span className="text-xs font-medium shrink-0 tabular-nums">
+          <span className="shrink-0 font-mono text-xs font-medium tabular-nums text-cyan">
             {drillQueue.index + 1} / {drillQueue.queue.length}
           </span>
           <button
@@ -1772,7 +1770,7 @@ export function ProblemViewer({
                           key={tag}
                           type="button"
                           onClick={() => void handleTagClick(tag)}
-                          className="focus:outline-none focus:ring-2 focus:ring-ring rounded-full"
+                          className="rounded focus:outline-none focus:ring-2 focus:ring-ring"
                         >
                           <Badge
                             variant="secondary"
@@ -1784,7 +1782,7 @@ export function ProblemViewer({
                       ))}
                     </div>
                   )}
-                  <div className="rounded-md border border-border bg-muted/40 px-4 py-3 text-sm break-all text-muted-foreground">
+                  <div className="rounded border border-border bg-muted/40 px-4 py-3 text-sm break-all text-muted-foreground">
                     {problem.url}
                   </div>
                   {!hintsOpen && !hintsLoading && (
@@ -1814,7 +1812,7 @@ export function ProblemViewer({
                         setShowHintNudge(false);
                         toggleHints(problem.problem_number ?? 0);
                       }}
-                      className="shrink-0 rounded-full bg-foreground px-3 py-1 text-xs font-medium text-background hover:opacity-80 transition-opacity"
+                      className="shrink-0 rounded bg-primary px-3 py-1 font-mono text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
                     >
                       Get Hint 1 →
                     </button>
@@ -1973,7 +1971,7 @@ export function ProblemViewer({
               {userId && solveTimestamp && (
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-1 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1">
-                    <span className="font-medium text-green-500">✓ Solved</span>
+                    <span className="font-medium text-green">✓ Solved</span>
                     <span
                       title={new Date(
                         solveTimestamp.solved_at,
@@ -1995,67 +1993,49 @@ export function ProblemViewer({
                 (() => {
                   const { xpGain, newLevel, oldLevel } = markDoneState;
                   const leveledUp = newLevel > oldLevel;
-                  const config = rankConfig(newLevel);
                   const progress = xpProgress(0, newLevel);
                   return (
-                    <div
-                      className="flex flex-col gap-3 rounded border px-5 py-4"
-                      style={{
-                        borderColor: `${config.color}40`,
-                        background: config.bg,
-                      }}
-                    >
-                      <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <div className="flex flex-col gap-3 rounded border border-l-2 border-border border-l-green bg-card px-5 py-4">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
                         <div className="flex items-center gap-2.5">
-                          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500/15 text-sm">
+                          <span className="flex h-7 w-7 items-center justify-center rounded bg-green/15 text-sm text-green">
                             ✓
                           </span>
-                          <span className="font-semibold text-sm">
+                          <span className="text-sm font-semibold">
                             Problem Solved!
                           </span>
                         </div>
-                        <span
-                          className="inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold"
-                          style={{
-                            color: config.color,
-                            borderColor: `${config.color}40`,
-                            backgroundColor: config.bg,
-                          }}
-                        >
-                          {config.icon} Lv.{newLevel} · {levelTitle(newLevel)}
+                        <span className="inline-flex items-center gap-1 rounded border border-violet/40 bg-violet/10 px-2.5 py-0.5 font-mono text-xs font-semibold text-violet">
+                          Lv.{newLevel} · {levelTitle(newLevel)}
                         </span>
                       </div>
                       <div className="flex items-baseline gap-2">
-                        <span
-                          className="text-3xl font-bold tabular-nums"
-                          style={{ color: config.color }}
-                        >
+                        <span className="font-mono text-3xl font-bold tabular-nums text-green">
                           +{xpGain}
                         </span>
                         <span className="text-sm text-muted-foreground">
                           XP earned
                         </span>
                         {leveledUp && (
-                          <span className="ml-auto rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+                          <span className="ml-auto rounded bg-violet/10 px-2.5 py-0.5 font-mono text-xs font-semibold text-violet">
                             Level Up! ↑
                           </span>
                         )}
                       </div>
                       <div className="flex flex-col gap-1">
-                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <div className="flex items-center justify-between font-mono text-xs text-muted-foreground">
                           <span>Progress to Lv.{newLevel + 1}</span>
-                          <span>
-                            {progress.current.toLocaleString()} /{" "}
-                            {progress.needed.toLocaleString()} XP
+                          <span className="tabular-nums">
+                            <span className="text-cyan">
+                              {progress.current.toLocaleString()}
+                            </span>{" "}
+                            / {progress.needed.toLocaleString()} XP
                           </span>
                         </div>
-                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                        <div className="h-1.5 w-full overflow-hidden rounded bg-muted">
                           <div
-                            className="h-full rounded-full transition-all duration-700"
-                            style={{
-                              width: `${progress.percent}%`,
-                              background: config.gradient,
-                            }}
+                            className="h-full rounded bg-violet transition-all duration-700"
+                            style={{ width: `${progress.percent}%` }}
                           />
                         </div>
                       </div>
@@ -2231,7 +2211,7 @@ export function ProblemViewer({
                           placeholder="Describe the issue (wrong difficulty, bad content, broken link…)"
                           maxLength={1000}
                           rows={3}
-                          className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                          className="w-full resize-none rounded border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                         />
                         {reportState.status === "error" && (
                           <p className="text-xs text-destructive">
@@ -2301,7 +2281,7 @@ export function ProblemViewer({
                             setSuggestedDifficulty(e.target.value)
                           }
                           placeholder="e.g. 1200"
-                          className="w-36 rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                          className="w-36 rounded border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                         />
                         {suggestDiffState.status === "error" && (
                           <p className="text-xs text-destructive">
@@ -2467,7 +2447,7 @@ export function ProblemViewer({
                                   adaptive_difficulty: next,
                                 });
                               }}
-                              className={`rounded-full px-2 py-0.5 text-xs font-medium transition-colors ${localAdaptive ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground hover:text-foreground"}`}
+                              className={`rounded px-2 py-0.5 font-mono text-xs font-medium transition-colors ${localAdaptive ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground hover:text-foreground"}`}
                               title="Adaptive difficulty: hints adapt to contest-level context"
                             >
                               Adaptive
@@ -2499,7 +2479,7 @@ export function ProblemViewer({
                               return (
                                 <div
                                   key={`hint-${n}`}
-                                  className="flex flex-col gap-2 rounded-md border border-border bg-muted/40 px-4 py-3"
+                                  className="flex flex-col gap-2 rounded border border-border bg-muted/40 px-4 py-3"
                                 >
                                   <span className="text-xs font-medium text-muted-foreground">
                                     Hint {n}
@@ -2524,7 +2504,7 @@ export function ProblemViewer({
                                         }
                                         className={`flex items-center gap-1 rounded px-2 py-0.5 text-xs transition-colors ${
                                           myRating === "up"
-                                            ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400"
+                                            ? "bg-green/15 text-green"
                                             : "bg-muted text-muted-foreground hover:text-foreground"
                                         }`}
                                         aria-label="Thumbs up"
@@ -2557,7 +2537,7 @@ export function ProblemViewer({
                                         }
                                         className={`flex items-center gap-1 rounded px-2 py-0.5 text-xs transition-colors ${
                                           myRating === "down"
-                                            ? "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400"
+                                            ? "bg-rose/15 text-rose"
                                             : "bg-muted text-muted-foreground hover:text-foreground"
                                         }`}
                                         aria-label="Thumbs down"
@@ -2589,7 +2569,7 @@ export function ProblemViewer({
                               [2, 3].map((n) => (
                                 <div
                                   key={`gated-${n}`}
-                                  className="relative overflow-hidden rounded-md border border-dashed border-border bg-muted/20"
+                                  className="relative overflow-hidden rounded border border-dashed border-border bg-muted/20"
                                 >
                                   <div
                                     className="pointer-events-none select-none px-4 py-3 blur-sm"
@@ -2631,7 +2611,7 @@ export function ProblemViewer({
                               ))}
                           </div>
                           {isGated && (
-                            <div className="flex flex-col gap-2 rounded-md border border-primary/20 bg-primary/5 px-4 py-3">
+                            <div className="flex flex-col gap-2 rounded border border-primary/20 bg-primary/5 px-4 py-3">
                               <p className="text-sm font-medium">
                                 Daily limit reached
                               </p>
@@ -2642,7 +2622,7 @@ export function ProblemViewer({
                               </p>
                               <Link
                                 href="/pricing"
-                                className="self-start rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-80"
+                                className="self-start rounded bg-primary px-3 py-1 font-mono text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
                               >
                                 Upgrade to Pro →
                               </Link>
@@ -2666,7 +2646,7 @@ export function ProblemViewer({
                                 Reveal Hint {hintsRevealed + 1}
                               </Button>
                             ) : (
-                              <div className="flex items-center gap-3 self-start rounded-md border border-border bg-muted/40 px-4 py-2.5">
+                              <div className="flex items-center gap-3 self-start rounded border border-border bg-muted/40 px-4 py-2.5">
                                 <span className="text-sm text-muted-foreground">
                                   Sign in to reveal more hints
                                 </span>
@@ -2712,7 +2692,7 @@ export function ProblemViewer({
                                   {hintHistorySessions.map((date) => (
                                     <span
                                       key={date}
-                                      className="rounded-full bg-muted px-2.5 py-0.5 text-xs text-muted-foreground tabular-nums"
+                                      className="rounded bg-muted px-2.5 py-0.5 font-mono text-xs tabular-nums text-muted-foreground"
                                     >
                                       {date}
                                     </span>
@@ -2814,11 +2794,11 @@ export function ProblemViewer({
                       {codeVisible && (
                         <div className="px-5">
                           {active?.code ? (
-                            <div className="overflow-hidden rounded-md border border-input">
+                            <div className="code-editor overflow-hidden rounded border border-border">
                               <pre
                                 style={{
-                                  background: "#272822",
-                                  color: "#f8f8f2",
+                                  background: "oklch(0.115 0.006 285)",
+                                  color: "var(--color-foreground)",
                                   fontFamily:
                                     '"JetBrains Mono","Fira Code","Fira Mono",ui-monospace,monospace',
                                   fontSize: 13,

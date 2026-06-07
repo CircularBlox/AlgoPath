@@ -236,6 +236,55 @@
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
+   CODE EDITOR — Prism token colors aligned to the §1 syntax palette.
+   Scoped to `.code-editor` (the highlight overlay <pre> only). The editable
+   <textarea> sits on top with transparent text + a visible caret, so these
+   rules color the rendered code WITHOUT touching the typing surface, selection,
+   or caret. Keywords violet · strings green · numbers/identifiers cyan ·
+   functions teal · comments dim — same table as the landing code sample.
+   ────────────────────────────────────────────────────────────────────────── */
+.code-editor .token.comment,
+.code-editor .token.prolog,
+.code-editor .token.doctype,
+.code-editor .token.cdata {
+  color: var(--color-dim);
+  font-style: italic;
+}
+.code-editor .token.punctuation,
+.code-editor .token.operator {
+  color: var(--color-muted-foreground);
+}
+.code-editor .token.keyword,
+.code-editor .token.selector,
+.code-editor .token.atrule,
+.code-editor .token.important {
+  color: var(--color-violet);
+}
+.code-editor .token.string,
+.code-editor .token.char,
+.code-editor .token.attr-value,
+.code-editor .token.regex {
+  color: var(--color-green);
+}
+.code-editor .token.number,
+.code-editor .token.boolean,
+.code-editor .token.constant,
+.code-editor .token.symbol {
+  color: var(--color-cyan);
+}
+.code-editor .token.function,
+.code-editor .token.class-name,
+.code-editor .token.builtin {
+  color: var(--color-teal);
+}
+.code-editor .token.property,
+.code-editor .token.tag,
+.code-editor .token.attr-name,
+.code-editor .token.variable {
+  color: var(--color-orange);
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
    LANDING PAGE — terminal/IDE atmosphere + motion.
    Tokens are global (§1, above); this block is only structure-free texture and
    animation, scoped under `.landing-root` so nothing leaks into the app.
