@@ -12,27 +12,10 @@
   }
 }
 
-@keyframes fire-flicker {
-  0%,
-  100% {
-    transform: scale(1) rotate(-3deg);
-    opacity: 0.38;
-  }
-  40% {
-    transform: scale(1.18) rotate(2deg);
-    opacity: 0.52;
-  }
-  70% {
-    transform: scale(1.08) rotate(-1deg);
-    opacity: 0.44;
-  }
-}
-
 @theme inline {
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", monospace;
   --animate-banner-in: banner-in 0.4s ease-out both;
-  --animate-fire-flicker: fire-flicker 2.8s ease-in-out infinite;
 
   /* ── CPOS terminal palette — the ONE token set (dark-locked, no light mode) ──
      Base / structure. Surface ramp steps ~0.05 L apart so panels sit clearly

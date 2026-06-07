@@ -112,12 +112,7 @@ async function NavbarBanner() {
     return (
       <div className="animate-banner-in border-b border-primary/20 bg-primary/5">
         <div className="mx-auto flex max-w-3xl items-center justify-center gap-3 px-4 py-2.5">
-          <span
-            className="animate-fire-flicker text-base"
-            style={{ display: "inline-block" }}
-          >
-            🔥
-          </span>
+          <span className="font-mono text-base font-bold text-amber">!</span>
           <p className="text-sm text-foreground/80">
             Your {streak}-day streak is at risk —{" "}
             <Link
@@ -136,9 +131,7 @@ async function NavbarBanner() {
     return (
       <div className="animate-banner-in border-b border-destructive/20 bg-destructive/5">
         <div className="mx-auto flex max-w-3xl items-center justify-center gap-3 px-4 py-2.5">
-          <span className="text-base" style={{ display: "inline-block" }}>
-            💔
-          </span>
+          <span className="font-mono text-base font-bold text-rose">×</span>
           <p className="text-sm text-foreground/80">
             Your {streak}-day streak was broken —{" "}
             <Link
