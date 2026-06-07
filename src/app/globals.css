@@ -262,21 +262,30 @@
 .landing-root {
   color-scheme: dark;
 
-  /* ── Strict design system ──────────────────────────────────────────────
-     ONE neutral scale, teal-tinted (hue 215) so the whole UI reads as a dark
-     hue rather than pure black/white. ONE accent (cyan/teal). Amber lives in
-     Tailwind palette classes and is used ONLY for caution. Nothing else. */
-  --color-background: oklch(0.045 0.012 215);
-  --color-foreground: oklch(0.95 0.008 210);
-  --color-muted: oklch(0.095 0.015 215); /* hover / inset surface step */
-  --color-muted-foreground: oklch(0.67 0.02 212);
-  --color-card: oklch(0.066 0.014 215); /* the one card surface */
-  --color-card-foreground: oklch(0.95 0.008 210);
-  --color-border: oklch(0.2 0.018 215); /* the one 1px border */
-  --color-primary: oklch(0.76 0.13 200); /* cyan / teal accent */
-  --color-primary-foreground: oklch(0.16 0.025 215); /* dark text on accent */
+  /* ── Editor syntax theme (Tokyo Night / Catppuccin family) ─────────────────
+     Treat color like a syntax scheme: every hue has exactly ONE job.
+       neutral surfaces + violet brand accent + 4 role colors.
+     ──────────────────────────────────────────────────────────────────────── */
+  --color-background: #0b0b10; /* page — near-black, slightly cool */
+  --color-foreground: rgb(255 255 255 / 0.92); /* text primary */
+  --color-muted: #1b1b25; /* one step above surface — header/hover */
+  --color-muted-foreground: rgb(255 255 255 / 0.66); /* text secondary/body */
+  --color-card: #14141c; /* the one card surface, faint violet tint */
+  --color-card-foreground: rgb(255 255 255 / 0.92);
+  --color-border: rgb(167 139 250 / 0.14); /* thin violet-tinted 1px border */
+  --color-primary: #a78bfa; /* VIOLET — the signature/brand accent */
+  --color-primary-foreground: #0b0b10; /* dark text on violet */
 
-  /* Distinctive type pairing — Geist for prose/display, JetBrains Mono for data. */
+  /* Syntax roles — used ONLY for their assigned job, never decoratively. */
+  --syntax-prefix: rgb(167 139 250 / 0.55); /* // and $ prefixes, metadata */
+  --syntax-num: #7dd3fc; /* CYAN — numbers, ratings, code identifiers */
+  --syntax-pos: #4ade80; /* MINT — success / passed / solved / climb line */
+  --syntax-caution: #fbbf24; /* AMBER — caution / streaks / "Medium" */
+  --syntax-neg: #fb7185; /* ROSE — failure / WA / errors */
+  --syntax-keyword: #a78bfa; /* code keywords = violet */
+  --syntax-string: #4ade80; /* code strings = mint */
+
+  /* Geist for large display headings; JetBrains Mono for everything technical. */
   --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
   --font-mono:
     var(--font-jbmono), ui-monospace, "SF Mono", SFMono-Regular, monospace;
@@ -286,40 +295,41 @@
   color: var(--color-foreground);
 }
 
-/* Faint structural grid, masked so it fades out below the fold of the hero. */
+/* Faint dotted "minimap" texture behind the hero — violet, very low opacity. */
 .landing-grid {
-  background-image:
-    linear-gradient(to right, oklch(0.24 0.015 215 / 0.4) 1px, transparent 1px),
-    linear-gradient(to bottom, oklch(0.24 0.015 215 / 0.4) 1px, transparent 1px);
-  background-size: 72px 72px;
+  background-image: radial-gradient(
+    rgb(167 139 250 / 0.12) 1px,
+    transparent 1px
+  );
+  background-size: 22px 22px;
   -webkit-mask-image: radial-gradient(
     ellipse 75% 65% at 50% 0%,
-    #000 25%,
+    #000 20%,
     transparent 78%
   );
   mask-image: radial-gradient(
     ellipse 75% 65% at 50% 0%,
-    #000 25%,
+    #000 20%,
     transparent 78%
   );
 }
 
-/* One restrained single-accent wash anchored to the top edge — not a blob. */
+/* One restrained violet wash anchored to the top edge — not a blob. */
 .landing-aura {
   background: radial-gradient(
     ellipse 58% 48% at 50% -8%,
-    oklch(0.76 0.13 200 / 0.16),
+    rgb(167 139 250 / 0.12),
     transparent 68%
   );
 }
 
-/* Hairline of accent light along the very top of the page. */
+/* Hairline of violet light along the very top of the page. */
 .landing-topline {
   background: linear-gradient(
     to right,
     transparent,
-    oklch(0.76 0.13 200 / 0.55) 30%,
-    oklch(0.76 0.13 200 / 0.55) 70%,
+    rgb(167 139 250 / 0.5) 30%,
+    rgb(167 139 250 / 0.5) 70%,
     transparent
   );
 }

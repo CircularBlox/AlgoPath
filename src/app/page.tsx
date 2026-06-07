@@ -13,21 +13,25 @@ const jbMono = JetBrains_Mono({
   variable: "--font-jbmono",
 });
 
-/* ── STRICT DESIGN SYSTEM (applied to every section, no exceptions) ───────────
-   Surfaces  · one card: bg-card + border border-border + rounded-xl + p-6.
-               inner rows: px-4 py-3. No white / inverted surfaces anywhere.
+/* ── ONE STRICT EDITOR THEME (applied to every section) ───────────────────────
+   Surfaces  · one dark card: bg-card + border border-border + rounded-xl + p-6.
+               inner rows: px-4 py-3. No light / inverted surfaces anywhere.
    Spacing   · 8px scale. Content sections py-20; hero pt-24 pb-20; CTA py-20.
-   Type      · Geist display in 3 sizes only —
-               L = text-4xl sm:text-5xl (hero + closing CTA)
-               M = text-2xl sm:text-3xl (section headings)
-               S = text-base            (card / step titles)
-               JetBrains Mono for all labels, code, and numbers.
-   Color     · tinted neutral scale + ONE cyan accent (`primary`).
-               Amber (Tailwind amber-400/500) ONLY for caution. Nothing else.
+   Type      · Geist display in 3 sizes (L/M/S); JetBrains Mono for all labels,
+               code, numbers, and metadata.
+   Color     · syntax-theme discipline — each hue has ONE job:
+               VIOLET (primary) brand/headings/eyebrows/Pro · CYAN numbers &
+               ratings & code idents · MINT success · AMBER caution · ROSE fail.
    ──────────────────────────────────────────────────────────────────────────── */
 const DISPLAY_L = "text-4xl font-semibold tracking-tight sm:text-5xl";
 const DISPLAY_M = "text-2xl font-semibold tracking-tight sm:text-3xl";
-const DISPLAY_S = "text-base font-semibold tracking-tight";
+const DISPLAY_S = "text-base font-semibold tracking-tight text-foreground";
+
+const NUM = "text-[var(--syntax-num)]";
+const POS = "text-[var(--syntax-pos)]";
+const CAUTION = "text-[var(--syntax-caution)]";
+const NEG = "text-[var(--syntax-neg)]";
+const PREFIX = "text-[var(--syntax-prefix)]";
 
 const topics = [
   "dynamic programming",
@@ -51,7 +55,7 @@ const marqueeItems = [0, 1].flatMap((copy) =>
   topics.map((t) => ({ id: `${copy}-${t}`, t })),
 );
 
-// Decorative streak heatmap — fixed levels, stable ids. Cyan-accent intensity.
+// Decorative streak heatmap — fixed levels, stable ids. Amber (streak) intensity.
 const heat = [
   3, 2, 4, 1, 3, 4, 2, 0, 3, 4, 4, 2, 3, 1, 4, 3, 2, 4, 1, 3, 4,
 ].map((lvl, i) => ({ id: `cell-${i}`, lvl }));
@@ -138,6 +142,129 @@ const tiers = [
   },
 ];
 
+// Syntax-highlighted Python sample — tokens carry stable ids (not index-keyed).
+// kw = keyword (violet) · id = identifier (cyan) · num (cyan) · str (mint) · op (muted)
+const codeLines: [string, "kw" | "id" | "num" | "str" | "op"][][] = [
+  [
+    ["def ", "kw"],
+    ["coinChange", "id"],
+    ["(", "op"],
+    ["coins", "id"],
+    [", ", "op"],
+    ["amount", "id"],
+    ["):", "op"],
+  ],
+  [
+    ["    dp ", "id"],
+    ["= ", "op"],
+    ["[", "op"],
+    ["float", "id"],
+    ["(", "op"],
+    ['"inf"', "str"],
+    [")", "op"],
+    ["] ", "op"],
+    ["* ", "op"],
+    ["(", "op"],
+    ["amount ", "id"],
+    ["+ ", "op"],
+    ["1", "num"],
+    [")", "op"],
+  ],
+  [
+    ["    dp", "id"],
+    ["[", "op"],
+    ["0", "num"],
+    ["] ", "op"],
+    ["= ", "op"],
+    ["0", "num"],
+  ],
+  [
+    ["    ", "op"],
+    ["for ", "kw"],
+    ["i ", "id"],
+    ["in ", "kw"],
+    ["range", "id"],
+    ["(", "op"],
+    ["1", "num"],
+    [", ", "op"],
+    ["amount ", "id"],
+    ["+ ", "op"],
+    ["1", "num"],
+    ["):", "op"],
+  ],
+  [
+    ["        ", "op"],
+    ["for ", "kw"],
+    ["c ", "id"],
+    ["in ", "kw"],
+    ["coins", "id"],
+    [":", "op"],
+  ],
+  [
+    ["            ", "op"],
+    ["if ", "kw"],
+    ["c ", "id"],
+    ["<= ", "op"],
+    ["i", "id"],
+    [":", "op"],
+  ],
+  [
+    ["                dp", "id"],
+    ["[", "op"],
+    ["i", "id"],
+    ["] ", "op"],
+    ["= ", "op"],
+    ["min", "id"],
+    ["(", "op"],
+    ["dp", "id"],
+    ["[", "op"],
+    ["i", "id"],
+    ["], ", "op"],
+    ["dp", "id"],
+    ["[", "op"],
+    ["i ", "id"],
+    ["- ", "op"],
+    ["c", "id"],
+    ["] ", "op"],
+    ["+ ", "op"],
+    ["1", "num"],
+    [")", "op"],
+  ],
+  [
+    ["    ", "op"],
+    ["return ", "kw"],
+    ["dp", "id"],
+    ["[", "op"],
+    ["amount", "id"],
+    ["] ", "op"],
+    ["if ", "kw"],
+    ["dp", "id"],
+    ["[", "op"],
+    ["amount", "id"],
+    ["] ", "op"],
+    ["!= ", "op"],
+    ["float", "id"],
+    ["(", "op"],
+    ['"inf"', "str"],
+    [") ", "op"],
+    ["else ", "kw"],
+    ["-1", "num"],
+  ],
+];
+
+const CODE = codeLines.map((toks, li) => ({
+  id: `l${li}`,
+  toks: toks.map(([t, k], ti) => ({ id: `l${li}t${ti}`, t, k })),
+}));
+
+const TOKEN_CLASS: Record<string, string> = {
+  kw: "text-[var(--syntax-keyword)]",
+  id: NUM,
+  num: NUM,
+  str: "text-[var(--syntax-string)]",
+  op: "text-muted-foreground",
+};
+
 export default function Home() {
   return (
     <main
@@ -192,20 +319,19 @@ export default function Home() {
             </div>
 
             <p className="rise mt-5 font-mono text-xs text-muted-foreground">
-              <span className="text-primary">$</span> no setup · no paywall ·
-              free forever<span className="caret text-primary">_</span>
+              <span className={PREFIX}>$</span> no setup · no paywall · free
+              forever<span className="caret text-primary">_</span>
             </p>
           </div>
 
           {/* Live hint panel — a real preview of the product UI */}
           <div className="rise" style={{ animationDelay: "120ms" }}>
-            <TerminalPanel title="coin-change · leetcode medium" tag="SAMPLE">
+            <TerminalPanel title="coin-change.md" tag="PROBLEM">
               <div className="px-4 py-3 font-mono text-[12.5px] leading-relaxed">
                 <p className="text-muted-foreground">
-                  Fewest coins to make{" "}
-                  <span className="text-foreground">amount</span> from{" "}
-                  <span className="text-foreground">coins[]</span>. Return -1 if
-                  impossible.
+                  Fewest coins to make <span className={NUM}>amount</span> from{" "}
+                  <span className={NUM}>coins[]</span>. Return{" "}
+                  <span className={NUM}>-1</span> if impossible.
                 </p>
               </div>
 
@@ -214,16 +340,19 @@ export default function Home() {
                 minimum for every amount below the target, how would that help?
               </HintRow>
               <HintRow label="hint 2" tag="direction">
-                Let <code className="text-foreground">dp[i]</code> be the min
-                coins for amount <code className="text-foreground">i</code>.
-                Subtract each coin and reuse a solved subproblem.
+                Let <code className={NUM}>dp[i]</code> be the min coins for
+                amount <code className={NUM}>i</code>. Subtract each coin and
+                reuse a solved subproblem.
               </HintRow>
               <HintRow label="hint 3" tag="locked" locked>
                 Reveal once you&apos;ve spent time on hint 2.
               </HintRow>
 
               <div className="flex items-center justify-between border-t border-border px-4 py-3 font-mono text-[11px] text-muted-foreground">
-                <span>2 / 3 hints used</span>
+                <span>
+                  <span className={NUM}>2</span> /{" "}
+                  <span className={NUM}>3</span> hints used
+                </span>
                 <span className="text-primary">solve to unlock →</span>
               </div>
             </TerminalPanel>
@@ -259,7 +388,9 @@ export default function Home() {
         <div className="mx-auto grid max-w-6xl grid-cols-2 divide-border sm:grid-cols-4 sm:divide-x">
           {stats.map((s) => (
             <div key={s.label} className="px-6 py-10 text-center sm:text-left">
-              <div className="font-mono text-3xl font-semibold tracking-tight tabular-nums text-primary">
+              <div
+                className={`font-mono text-3xl font-semibold tracking-tight tabular-nums ${NUM}`}
+              >
                 {s.v}
               </div>
               <div className="mt-2 text-xs text-muted-foreground">
@@ -305,31 +436,34 @@ export default function Home() {
           />
           <div className="mt-12 grid gap-4 lg:grid-cols-[1.15fr_1fr]">
             <TerminalPanel title="solution.py" tag="PYTHON">
-              <pre className="overflow-x-auto px-4 py-4 font-mono text-[12.5px] leading-relaxed text-foreground">
-                <code>{`def coinChange(coins, amount):
-    dp = [float("inf")] * (amount + 1)
-    dp[0] = 0
-    for i in range(1, amount + 1):
-        for c in coins:
-            if c <= i:
-                dp[i] = min(dp[i], dp[i - c] + 1)
-    return dp[amount] if dp[amount] != float("inf") else -1`}</code>
+              <pre className="overflow-x-auto px-4 py-4 font-mono text-[12.5px] leading-relaxed">
+                <code>
+                  {CODE.map((ln) => (
+                    <span key={ln.id} className="block whitespace-pre">
+                      {ln.toks.map((tk) => (
+                        <span key={tk.id} className={TOKEN_CLASS[tk.k]}>
+                          {tk.t}
+                        </span>
+                      ))}
+                    </span>
+                  ))}
+                </code>
               </pre>
             </TerminalPanel>
 
             <div className="overflow-hidden rounded-xl border border-border bg-card">
-              <ReviewRow accent="primary" label="complexity">
+              <ReviewRow accent="info" label="complexity">
                 O(n·m) time, O(n) space. Standard bottom-up DP — optimal for
                 this approach.
               </ReviewRow>
-              <ReviewRow accent="neutral" label="strengths">
+              <ReviewRow accent="pos" label="strengths">
                 Clean recurrence, handles the impossible case, idiomatic
                 bottom-up pattern.
               </ReviewRow>
               <ReviewRow accent="caution" label="consider" last>
                 Inner loop can break early once{" "}
-                <code className="font-mono text-foreground">dp[i] == 1</code>. A
-                minor win — the solution is already correct.
+                <code className={`font-mono ${NUM}`}>dp[i] == 1</code>. A minor
+                win — the solution is already correct.
               </ReviewRow>
             </div>
           </div>
@@ -357,15 +491,13 @@ export default function Home() {
                     key={p.title}
                     className="grid grid-cols-[1rem_1fr_4rem_3.5rem] items-center gap-2 border-b border-border px-4 py-3 last:border-b-0"
                   >
-                    <span
-                      className={
-                        p.solved ? "text-primary" : "text-muted-foreground"
-                      }
-                    >
+                    <span className={p.solved ? POS : "text-muted-foreground"}>
                       {p.solved ? "●" : "○"}
                     </span>
                     <span className="truncate text-foreground">{p.title}</span>
-                    <span className="text-muted-foreground">{p.diff}</span>
+                    <span className={/^\d+$/.test(p.diff) ? NUM : CAUTION}>
+                      {p.diff}
+                    </span>
                     <span className="text-right text-muted-foreground">
                       {p.platform}
                     </span>
@@ -378,7 +510,7 @@ export default function Home() {
             <Tile name="rating-climb" title="Watch it climb">
               <div className="flex items-end justify-between">
                 <Sparkline />
-                <span className="font-mono text-sm font-semibold text-primary">
+                <span className={`font-mono text-sm font-semibold ${POS}`}>
                   +340
                 </span>
               </div>
@@ -411,8 +543,8 @@ export default function Home() {
                     style={{
                       backgroundColor:
                         c.lvl === 0
-                          ? "oklch(0.2 0.018 215)"
-                          : `oklch(0.76 0.13 200 / ${0.2 + c.lvl * 0.2})`,
+                          ? "rgb(167 139 250 / 0.14)"
+                          : `rgb(251 191 36 / ${0.2 + c.lvl * 0.2})`,
                     }}
                   />
                 ))}
@@ -496,7 +628,7 @@ export default function Home() {
   );
 }
 
-// ── Shared tokens (the only button + card recipes used on the page) ─────────
+// ── Shared recipes (the only button + card patterns used on the page) ───────
 const card =
   "rounded-xl border border-border bg-card p-6 transition-colors duration-200 hover:border-primary/40";
 const btnPrimary =
@@ -515,14 +647,15 @@ function TerminalPanel({
   children: React.ReactNode;
 }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-[0_30px_80px_-40px_oklch(0_0_0_/_0.9)]">
-      <div className="flex items-center gap-3 border-b border-border bg-muted px-4 py-3">
+    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-[0_30px_80px_-40px_rgba(0,0,0,0.9)]">
+      {/* Editor chrome: traffic lights · filename tab · language pill */}
+      <div className="flex items-center gap-3 border-b border-border bg-muted px-4 py-2.5">
         <div className="flex gap-1.5" aria-hidden="true">
-          <span className="size-2.5 rounded-full bg-muted-foreground/30" />
-          <span className="size-2.5 rounded-full bg-muted-foreground/30" />
-          <span className="size-2.5 rounded-full bg-muted-foreground/30" />
+          <span className="size-2.5 rounded-full bg-[var(--syntax-neg)]" />
+          <span className="size-2.5 rounded-full bg-[var(--syntax-caution)]" />
+          <span className="size-2.5 rounded-full bg-[var(--syntax-pos)]" />
         </div>
-        <span className="truncate font-mono text-[11.5px] text-muted-foreground">
+        <span className="rounded-md border border-border bg-background px-2 py-0.5 font-mono text-[11.5px] text-foreground">
           {title}
         </span>
         <span className="ml-auto rounded border border-border px-1.5 py-0.5 font-mono text-[9.5px] tracking-widest text-muted-foreground">
@@ -578,23 +711,19 @@ function ReviewRow({
   last,
   children,
 }: {
-  accent: "primary" | "neutral" | "caution";
+  accent: "info" | "pos" | "caution";
   label: string;
   last?: boolean;
   children: React.ReactNode;
 }) {
   const edge =
-    accent === "primary"
+    accent === "info"
       ? "border-l-primary"
-      : accent === "caution"
-        ? "border-l-amber-500"
-        : "border-l-border";
+      : accent === "pos"
+        ? "border-l-[var(--syntax-pos)]"
+        : "border-l-[var(--syntax-caution)]";
   const tone =
-    accent === "primary"
-      ? "text-primary"
-      : accent === "caution"
-        ? "text-amber-400"
-        : "text-foreground";
+    accent === "info" ? "text-primary" : accent === "pos" ? POS : CAUTION;
   return (
     <div
       className={`border-l-2 px-4 py-3 ${edge} ${
@@ -647,14 +776,10 @@ function RunRow({
   return (
     <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
       <span className="flex items-center gap-2">
-        <span className={ok ? "text-primary" : "text-amber-400"}>
-          {ok ? "✓" : "✗"}
-        </span>
+        <span className={ok ? POS : NEG}>{ok ? "✓" : "✗"}</span>
         <span className="text-muted-foreground">{label}</span>
       </span>
-      <span className={ok ? "text-muted-foreground" : "text-amber-400"}>
-        {time}
-      </span>
+      <span className={ok ? "text-muted-foreground" : NEG}>{time}</span>
     </div>
   );
 }
@@ -674,7 +799,7 @@ function Sparkline() {
       width="124"
       height="44"
       fill="none"
-      className="text-primary"
+      className="text-[var(--syntax-pos)]"
       aria-hidden="true"
     >
       <title>Rating trend</title>
@@ -713,7 +838,7 @@ function Check() {
       strokeWidth="3"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="mt-[3px] shrink-0 text-primary"
+      className={`mt-[3px] shrink-0 ${POS}`}
       aria-hidden="true"
     >
       <polyline points="20 6 9 17 4 12" />
@@ -724,10 +849,17 @@ function Check() {
 function PriceCard({ tier }: { tier: (typeof tiers)[number] }) {
   return (
     <div
-      className={`flex h-full flex-col rounded-xl border bg-card p-6 ${
+      className={`relative flex h-full flex-col overflow-hidden rounded-xl border bg-card p-6 ${
         tier.featured ? "border-primary" : "border-border"
       }`}
     >
+      {/* Pro gets a violet top-rule, never a white inversion */}
+      {tier.featured && (
+        <span
+          className="absolute inset-x-0 top-0 h-0.5 bg-primary"
+          aria-hidden="true"
+        />
+      )}
       <div className="flex items-center justify-between">
         <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
           {tier.name}
@@ -739,7 +871,9 @@ function PriceCard({ tier }: { tier: (typeof tiers)[number] }) {
         )}
       </div>
       <div className="mt-4 flex items-baseline gap-1.5">
-        <span className="font-mono text-3xl font-semibold tracking-tight">
+        <span
+          className={`font-mono text-3xl font-semibold tracking-tight ${NUM}`}
+        >
           {tier.price}
         </span>
         <span className="text-xs text-muted-foreground">{tier.cadence}</span>
@@ -780,8 +914,8 @@ function SectionHead({
 }) {
   return (
     <div className="max-w-2xl">
-      <span className="font-mono text-[12px] text-muted-foreground">
-        <span className="text-primary">{"// "}</span>
+      <span className="font-mono text-[12px] text-primary">
+        <span className={PREFIX}>{"// "}</span>
         {kicker}
       </span>
       <h2 className={`mt-3 text-pretty ${DISPLAY_M}`}>{title}</h2>
