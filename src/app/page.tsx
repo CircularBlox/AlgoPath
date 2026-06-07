@@ -13,41 +13,67 @@ const jbMono = JetBrains_Mono({
   variable: "--font-jbmono",
 });
 
-// ── Demo content (illustrative — labelled as a sample throughout the UI) ──────
+/* ── Color system (documented, intentional) ──────────────────────────────────
+   Dark near-black base. Blue (primary) is dominant. Cyan + violet form an
+   analogous "tech" gradient family used for headline accents and progression.
+   Emerald / amber / red are strictly semantic (solved · in-progress · failed).
+   ──────────────────────────────────────────────────────────────────────────── */
+
+const topics = [
+  "dynamic programming",
+  "binary search",
+  "graphs",
+  "greedy",
+  "segment tree",
+  "two pointers",
+  "number theory",
+  "dsu",
+  "sliding window",
+  "dijkstra",
+  "bitmask dp",
+  "suffix array",
+  "max flow",
+  "combinatorics",
+];
+
+// Two copies for a seamless marquee loop, each with a stable id (not index-keyed).
+const marqueeItems = [0, 1].flatMap((copy) =>
+  topics.map((t) => ({ id: `${copy}-${t}`, t })),
+);
+
+// Decorative streak heatmap — fixed levels, stable ids.
+const heat = [
+  3, 2, 4, 1, 3, 4, 2, 0, 3, 4, 4, 2, 3, 1, 4, 3, 2, 4, 1, 3, 4,
+].map((lvl, i) => ({ id: `cell-${i}`, lvl }));
+
+const stats = [
+  { v: "3", label: "progressive hints", tone: "text-primary" },
+  { v: "4", label: "runner languages", tone: "text-cyan-400" },
+  { v: "3", label: "judges supported", tone: "text-violet-400" },
+  { v: "∞", label: "free practice", tone: "text-emerald-400" },
+];
+
 const steps = [
   {
     n: "01",
     title: "Paste the problem",
     body: "Drop a LeetCode, Codeforces, or USACO link. AlgoPath pulls the statement and samples.",
+    tone: "text-primary",
+    bar: "group-hover:bg-primary/50",
   },
   {
     n: "02",
     title: "Get a nudge, not a spoiler",
-    body: "Three hints unlock in order. Each one moves your thinking forward without handing over the answer.",
+    body: "Three hints unlock in order — each moves your thinking forward without handing over the answer.",
+    tone: "text-cyan-400",
+    bar: "group-hover:bg-cyan-400/50",
   },
   {
     n: "03",
     title: "Solve, then get reviewed",
-    body: "Write your solution in the editor, run the samples, and get AI feedback on complexity and approach.",
-  },
-];
-
-const features = [
-  {
-    name: "guided-hints",
-    desc: "Three progressive hints per problem — calibrated to your rating, never the full solution.",
-  },
-  {
-    name: "ai-review",
-    desc: "Instant analysis of complexity, correctness, and idiom the moment you submit.",
-  },
-  {
-    name: "sample-runner",
-    desc: "Run your code against the problem's sample I/O in C++, Python, Java, or JS.",
-  },
-  {
-    name: "progress",
-    desc: "XP, streaks, and a solve heatmap that track your climb across every platform.",
+    body: "Write your solution, run the samples, and get AI feedback on complexity and approach.",
+    tone: "text-violet-400",
+    bar: "group-hover:bg-violet-400/50",
   },
 ];
 
@@ -56,27 +82,20 @@ const problems = [
     title: "Tree Subtree Sums",
     diff: "1400",
     tone: "text-cyan-400",
-    platform: "Codeforces",
+    platform: "CF",
     solved: true,
   },
   {
     title: "Coin Change",
     diff: "Medium",
     tone: "text-amber-400",
-    platform: "LeetCode",
-    solved: false,
-  },
-  {
-    title: "Greedy Intervals",
-    diff: "1600",
-    tone: "text-amber-400",
-    platform: "Codeforces",
+    platform: "LC",
     solved: false,
   },
   {
     title: "Cow Gymnastics",
     diff: "Silver",
-    tone: "text-cyan-400",
+    tone: "text-violet-400",
     platform: "USACO",
     solved: true,
   },
@@ -133,31 +152,11 @@ const tiers = [
   },
 ];
 
-function Check() {
-  return (
-    <svg
-      width="13"
-      height="13"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="3"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="mt-[3px] shrink-0 text-primary"
-      aria-hidden="true"
-    >
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  );
-}
-
 export default function Home() {
   return (
     <main
       className={`landing-root ${geist.variable} ${jbMono.variable} relative min-h-screen overflow-hidden`}
     >
-      {/* Top hairline */}
       <div
         className="landing-topline pointer-events-none absolute inset-x-0 top-0 h-px"
         aria-hidden="true"
@@ -166,26 +165,28 @@ export default function Home() {
       {/* ── Hero ───────────────────────────────────────────────────────────── */}
       <section className="relative">
         <div
-          className="landing-grid pointer-events-none absolute inset-0 h-[760px]"
+          className="landing-grid pointer-events-none absolute inset-0 h-[780px]"
           aria-hidden="true"
         />
         <div
-          className="landing-aura pointer-events-none absolute inset-0 h-[760px]"
+          className="landing-aura pointer-events-none absolute inset-0 h-[780px]"
           aria-hidden="true"
         />
 
-        <div className="relative mx-auto grid max-w-6xl items-center gap-14 px-6 pt-20 pb-20 lg:grid-cols-[1.05fr_1fr] lg:gap-10 lg:pt-24">
-          {/* Left — copy */}
+        <div className="relative mx-auto grid max-w-6xl items-center gap-14 px-6 pt-20 pb-16 lg:grid-cols-[1.05fr_1fr] lg:gap-12 lg:pt-24">
           <div className="flex flex-col items-start">
-            <span className="rise inline-flex items-center gap-2 rounded-full border border-border bg-card/60 px-3 py-1 font-mono text-[11px] tracking-wide text-muted-foreground">
-              <span className="size-1.5 rounded-full bg-primary" />
+            <span className="rise inline-flex items-center gap-2 rounded-full border border-border bg-card/60 px-3 py-1 font-mono text-[11px] tracking-wide text-muted-foreground backdrop-blur-sm">
+              <span className="size-1.5 animate-pulse rounded-full bg-primary" />
               LeetCode · Codeforces · USACO
             </span>
 
-            <h1 className="rise mt-6 text-balance text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl lg:text-[3.4rem]">
+            <h1 className="rise mt-6 text-balance text-4xl font-semibold leading-[1.06] tracking-tight sm:text-5xl lg:text-[3.4rem]">
               Get unstuck
               <br />
-              without <span className="text-primary">spoiling the solve.</span>
+              without{" "}
+              <span className="bg-gradient-to-r from-primary via-cyan-400 to-violet-400 bg-clip-text pb-1 text-transparent">
+                spoiling the solve.
+              </span>
             </h1>
 
             <p className="rise mt-5 max-w-md text-[15px] leading-relaxed text-muted-foreground">
@@ -217,14 +218,14 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Right — live hint panel (a real preview of the product UI) */}
+          {/* Live hint panel — a real preview of the product UI */}
           <div className="rise" style={{ animationDelay: "120ms" }}>
             <TerminalPanel title="coin-change · leetcode medium" tag="SAMPLE">
               <div className="px-4 py-3 font-mono text-[12.5px] leading-relaxed">
                 <p className="text-muted-foreground">
                   Fewest coins to make{" "}
-                  <span className="text-foreground">amount</span> from{" "}
-                  <span className="text-foreground">coins[]</span>. Return -1 if
+                  <span className="text-cyan-400">amount</span> from{" "}
+                  <span className="text-cyan-400">coins[]</span>. Return -1 if
                   impossible.
                 </p>
               </div>
@@ -244,8 +245,8 @@ export default function Home() {
                 tag="direction"
                 labelTone="text-amber-400"
               >
-                Let <code className="text-foreground">dp[i]</code> be the min
-                coins for amount <code className="text-foreground">i</code>.
+                Let <code className="text-cyan-400">dp[i]</code> be the min
+                coins for amount <code className="text-cyan-400">i</code>.
                 Subtract each coin and reuse a solved subproblem.
               </HintRow>
               <HintRow
@@ -265,6 +266,47 @@ export default function Home() {
             </TerminalPanel>
           </div>
         </div>
+
+        {/* Topic ticker */}
+        <div className="marquee relative flex overflow-hidden border-y border-border bg-card/30 py-3">
+          <div className="marquee-track flex shrink-0 items-center gap-3 pr-3">
+            {marqueeItems.map((it) => (
+              <span
+                key={it.id}
+                className="inline-flex shrink-0 items-center gap-2 rounded-full border border-border px-3 py-1 font-mono text-[11px] text-muted-foreground"
+              >
+                <span className="size-1 rounded-full bg-primary/60" />
+                {it.t}
+              </span>
+            ))}
+          </div>
+          <div
+            className="pointer-events-none absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-background to-transparent"
+            aria-hidden="true"
+          />
+          <div
+            className="pointer-events-none absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-background to-transparent"
+            aria-hidden="true"
+          />
+        </div>
+      </section>
+
+      {/* ── Stat band ──────────────────────────────────────────────────────── */}
+      <section className="border-b border-border">
+        <div className="mx-auto grid max-w-6xl grid-cols-2 divide-border sm:grid-cols-4 sm:divide-x">
+          {stats.map((s) => (
+            <div key={s.label} className="px-6 py-8 text-center sm:text-left">
+              <div
+                className={`font-mono text-4xl font-semibold tracking-tight tabular-nums ${s.tone}`}
+              >
+                {s.v}
+              </div>
+              <div className="mt-1.5 text-xs text-muted-foreground">
+                {s.label}
+              </div>
+            </div>
+          ))}
+        </div>
       </section>
 
       {/* ── How it works ───────────────────────────────────────────────────── */}
@@ -281,10 +323,14 @@ export default function Home() {
                 className="group bg-card p-6 transition-colors duration-200 hover:bg-muted"
               >
                 <div className="flex items-baseline gap-3">
-                  <span className="font-mono text-2xl font-semibold text-primary tabular-nums">
+                  <span
+                    className={`font-mono text-2xl font-semibold tabular-nums ${s.tone}`}
+                  >
                     {s.n}
                   </span>
-                  <span className="h-px flex-1 bg-border transition-colors group-hover:bg-primary/40" />
+                  <span
+                    className={`h-px flex-1 bg-border transition-colors ${s.bar}`}
+                  />
                 </div>
                 <h3 className="mt-5 text-base font-semibold tracking-tight">
                   {s.title}
@@ -306,7 +352,6 @@ export default function Home() {
             title="Feedback the moment you submit"
           />
           <div className="mt-12 grid gap-5 lg:grid-cols-[1.15fr_1fr]">
-            {/* Code */}
             <TerminalPanel title="solution.py" tag="PYTHON">
               <pre className="overflow-x-auto px-4 py-4 font-mono text-[12.5px] leading-relaxed text-foreground/90">
                 <code>{`def coinChange(coins, amount):
@@ -320,7 +365,6 @@ export default function Home() {
               </pre>
             </TerminalPanel>
 
-            {/* Analysis */}
             <div className="overflow-hidden rounded-xl border border-border bg-card">
               <ReviewRow
                 accent="border-l-primary"
@@ -345,7 +389,7 @@ export default function Home() {
                 last
               >
                 Inner loop can break early once{" "}
-                <code className="font-mono text-foreground">dp[i] == 1</code>. A
+                <code className="font-mono text-cyan-400">dp[i] == 1</code>. A
                 minor win — the solution is already correct.
               </ReviewRow>
             </div>
@@ -353,64 +397,122 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── Features (man-page list) ───────────────────────────────────────── */}
+      {/* ── Capabilities (asymmetric bento) ────────────────────────────────── */}
       <section className="border-t border-border">
         <div className="mx-auto max-w-6xl px-6 py-20">
           <SectionHead
             kicker="capabilities"
-            title="Built for people who live in a terminal"
+            title="Everything around the solve"
           />
-          <div className="mt-12 divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
-            {features.map((f) => (
-              <div
-                key={f.name}
-                className="flex flex-col gap-1 px-5 py-4 transition-colors duration-200 hover:bg-muted sm:flex-row sm:items-baseline sm:gap-6"
-              >
-                <span className="w-40 shrink-0 font-mono text-sm font-semibold text-primary">
-                  {f.name}
-                </span>
-                <span className="text-sm leading-relaxed text-muted-foreground">
-                  {f.desc}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
-      {/* ── Recommended problems (terminal table) ──────────────────────────── */}
-      <section className="border-t border-border">
-        <div className="mx-auto max-w-6xl px-6 py-20">
-          <SectionHead
-            kicker="recommended"
-            title="A feed tuned to your rating"
-          />
-          <div className="mt-12 overflow-hidden rounded-xl border border-border bg-card font-mono text-[13px]">
-            <div className="grid grid-cols-[1.25rem_1fr_5rem_6.5rem] gap-3 border-b border-border px-4 py-2.5 text-[11px] uppercase tracking-wider text-muted-foreground/70">
-              <span />
-              <span>problem</span>
-              <span>diff</span>
-              <span className="text-right">platform</span>
-            </div>
-            {problems.map((p) => (
-              <div
-                key={p.title}
-                className="grid grid-cols-[1.25rem_1fr_5rem_6.5rem] items-center gap-3 border-b border-border px-4 py-3 transition-colors duration-150 last:border-b-0 hover:bg-muted"
-              >
-                <span
-                  className={
-                    p.solved ? "text-emerald-400" : "text-muted-foreground/50"
-                  }
-                >
-                  {p.solved ? "●" : "○"}
-                </span>
-                <span className="truncate text-foreground">{p.title}</span>
-                <span className={p.tone}>{p.diff}</span>
-                <span className="text-right text-muted-foreground">
-                  {p.platform}
+          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {/* Problem feed — wide */}
+            <Tile
+              span="sm:col-span-2"
+              name="problem-feed"
+              tone="text-primary"
+              title="A feed tuned to your rating"
+            >
+              <div className="overflow-hidden rounded-lg border border-border bg-background/40 font-mono text-[12px]">
+                {problems.map((p) => (
+                  <div
+                    key={p.title}
+                    className="grid grid-cols-[1rem_1fr_4rem_3.5rem] items-center gap-2 border-b border-border px-3 py-2 last:border-b-0"
+                  >
+                    <span
+                      className={
+                        p.solved
+                          ? "text-emerald-400"
+                          : "text-muted-foreground/50"
+                      }
+                    >
+                      {p.solved ? "●" : "○"}
+                    </span>
+                    <span className="truncate text-foreground">{p.title}</span>
+                    <span className={p.tone}>{p.diff}</span>
+                    <span className="text-right text-muted-foreground">
+                      {p.platform}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </Tile>
+
+            {/* Rating climb — sparkline */}
+            <Tile
+              name="rating-climb"
+              tone="text-cyan-400"
+              title="Watch it climb"
+            >
+              <div className="flex items-end justify-between">
+                <Sparkline />
+                <span className="font-mono text-sm font-semibold text-emerald-400">
+                  +340
                 </span>
               </div>
-            ))}
+              <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+                XP, streaks, and a solve heatmap track your progress across
+                every judge.
+              </p>
+            </Tile>
+
+            {/* Sample runner */}
+            <Tile
+              name="sample-runner"
+              tone="text-emerald-400"
+              title="Run the samples"
+            >
+              <div className="space-y-1.5 font-mono text-[12px]">
+                <RunRow ok label="test 1" time="4ms" />
+                <RunRow ok label="test 2" time="3ms" />
+                <RunRow label="test 3" time="WA" />
+              </div>
+              <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+                C++, Python, Java &amp; JS against the problem&apos;s sample
+                I/O.
+              </p>
+            </Tile>
+
+            {/* Streak heatmap */}
+            <Tile name="streak" tone="text-amber-400" title="Keep the streak">
+              <div className="flex flex-wrap gap-1">
+                {heat.map((c) => (
+                  <span
+                    key={c.id}
+                    className="size-3 rounded-[3px]"
+                    style={{
+                      backgroundColor:
+                        c.lvl === 0
+                          ? "oklch(0.17 0.008 260)"
+                          : `oklch(0.7 0.16 150 / ${0.2 + c.lvl * 0.2})`,
+                    }}
+                  />
+                ))}
+              </div>
+              <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+                A 12-day streak and counting — consistency beats cramming.
+              </p>
+            </Tile>
+
+            {/* Multi-platform */}
+            <Tile
+              name="every-judge"
+              tone="text-violet-400"
+              title="Every judge, one place"
+            >
+              <div className="flex flex-wrap gap-2">
+                <Chip className="border-amber-500/30 text-amber-400">
+                  LeetCode
+                </Chip>
+                <Chip className="border-primary/40 text-primary">
+                  Codeforces
+                </Chip>
+                <Chip className="border-cyan-500/30 text-cyan-400">USACO</Chip>
+              </div>
+              <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+                Interview prep and contest training without switching tabs.
+              </p>
+            </Tile>
           </div>
         </div>
       </section>
@@ -423,60 +525,19 @@ export default function Home() {
             title="Priced by a competitive programmer"
             sub="The free plan is the whole product, not a teaser. Upgrade only when you outgrow the daily caps."
           />
-          <div className="mt-12 grid gap-5 sm:grid-cols-3">
-            {tiers.map((t) => (
-              <div
-                key={t.name}
-                className={`flex flex-col rounded-xl border bg-card p-6 ${
-                  t.featured
-                    ? "border-primary/60 shadow-[0_0_0_1px_oklch(0.66_0.19_255_/_0.25),0_20px_60px_-30px_oklch(0.66_0.19_255_/_0.7)]"
-                    : "border-border"
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
-                    {t.name}
-                  </span>
-                  {t.featured && (
-                    <span className="rounded-full bg-primary/15 px-2 py-0.5 font-mono text-[10px] font-medium text-primary">
-                      popular
-                    </span>
-                  )}
-                </div>
-                <div className="mt-4 flex items-baseline gap-1.5">
-                  <span className="font-mono text-3xl font-semibold tracking-tight">
-                    {t.price}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {t.cadence}
-                  </span>
-                </div>
-                <p className="mt-1 text-xs text-muted-foreground">{t.note}</p>
-
-                <ul className="mt-5 flex flex-1 flex-col gap-2.5 text-sm">
-                  {t.feats.map((f) => (
-                    <li
-                      key={f}
-                      className="flex items-start gap-2 text-muted-foreground"
-                    >
-                      <Check />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-
-                <Link
-                  href={t.href}
-                  className={`mt-6 inline-flex h-10 items-center justify-center rounded-md text-sm font-semibold transition-all duration-150 ${
-                    t.featured
-                      ? "bg-primary text-primary-foreground hover:-translate-y-px"
-                      : "border border-border text-foreground hover:border-primary/50 hover:bg-muted"
-                  }`}
+          <div className="mt-12 grid items-start gap-5 sm:grid-cols-3">
+            {tiers.map((t) =>
+              t.featured ? (
+                <div
+                  key={t.name}
+                  className="rounded-xl bg-gradient-to-b from-primary/70 via-cyan-500/30 to-transparent p-px shadow-[0_24px_70px_-30px_oklch(0.66_0.19_255_/_0.8)]"
                 >
-                  {t.cta}
-                </Link>
-              </div>
-            ))}
+                  <PriceCard tier={t} />
+                </div>
+              ) : (
+                <PriceCard key={t.name} tier={t} />
+              ),
+            )}
           </div>
           <p className="mt-6 text-center text-xs text-muted-foreground">
             Payments coming soon.{" "}
@@ -500,7 +561,9 @@ export default function Home() {
           <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
             Pick a problem.
             <br />
-            <span className="text-primary">Get your first hint.</span>
+            <span className="bg-gradient-to-r from-primary via-cyan-400 to-violet-400 bg-clip-text pb-1 text-transparent">
+              Get your first hint.
+            </span>
           </h2>
           <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground">
             Interview prep or contest training — start solving smarter in under
@@ -618,6 +681,177 @@ function ReviewRow({
       <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
         {children}
       </p>
+    </div>
+  );
+}
+
+function Tile({
+  span,
+  name,
+  tone,
+  title,
+  children,
+}: {
+  span?: string;
+  name: string;
+  tone: string;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className={`group flex flex-col rounded-xl border border-border bg-card p-5 transition-colors duration-200 hover:border-primary/30 ${
+        span ?? ""
+      }`}
+    >
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="text-sm font-semibold tracking-tight">{title}</h3>
+        <span className={`font-mono text-[10px] ${tone}`}>{name}</span>
+      </div>
+      <div className="mt-auto">{children}</div>
+    </div>
+  );
+}
+
+function RunRow({
+  ok,
+  label,
+  time,
+}: {
+  ok?: boolean;
+  label: string;
+  time: string;
+}) {
+  return (
+    <div className="flex items-center justify-between rounded border border-border bg-background/40 px-2.5 py-1.5">
+      <span className="flex items-center gap-2">
+        <span className={ok ? "text-emerald-400" : "text-red-400"}>
+          {ok ? "✓" : "✗"}
+        </span>
+        <span className="text-muted-foreground">{label}</span>
+      </span>
+      <span className={ok ? "text-muted-foreground/60" : "text-red-400"}>
+        {time}
+      </span>
+    </div>
+  );
+}
+
+function Chip({
+  className,
+  children,
+}: {
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <span
+      className={`rounded-full border px-2.5 py-1 font-mono text-[11px] ${
+        className ?? ""
+      }`}
+    >
+      {children}
+    </span>
+  );
+}
+
+function Sparkline() {
+  return (
+    <svg
+      viewBox="0 0 200 64"
+      width="124"
+      height="44"
+      fill="none"
+      aria-hidden="true"
+    >
+      <title>Rating trend</title>
+      <defs>
+        <linearGradient id="sparkStroke" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#22d3ee" />
+          <stop offset="100%" stopColor="#a78bfa" />
+        </linearGradient>
+        <linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.22" />
+          <stop offset="100%" stopColor="#22d3ee" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <polygon
+        points="0,52 28,46 56,50 84,38 112,42 140,26 168,30 200,12 200,64 0,64"
+        fill="url(#sparkFill)"
+      />
+      <polyline
+        className="spark"
+        points="0,52 28,46 56,50 84,38 112,42 140,26 168,30 200,12"
+        stroke="url(#sparkStroke)"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        style={{ "--len": "300" } as React.CSSProperties}
+      />
+      <circle cx="200" cy="12" r="3.5" fill="#a78bfa" />
+    </svg>
+  );
+}
+
+function Check() {
+  return (
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="mt-[3px] shrink-0 text-primary"
+      aria-hidden="true"
+    >
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+}
+
+function PriceCard({ tier }: { tier: (typeof tiers)[number] }) {
+  return (
+    <div className="flex h-full flex-col rounded-xl border border-border bg-card p-6">
+      <div className="flex items-center justify-between">
+        <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
+          {tier.name}
+        </span>
+        {tier.featured && (
+          <span className="rounded-full bg-primary/15 px-2 py-0.5 font-mono text-[10px] font-medium text-primary">
+            popular
+          </span>
+        )}
+      </div>
+      <div className="mt-4 flex items-baseline gap-1.5">
+        <span className="font-mono text-3xl font-semibold tracking-tight">
+          {tier.price}
+        </span>
+        <span className="text-xs text-muted-foreground">{tier.cadence}</span>
+      </div>
+      <p className="mt-1 text-xs text-muted-foreground">{tier.note}</p>
+
+      <ul className="mt-5 flex flex-1 flex-col gap-2.5 text-sm">
+        {tier.feats.map((f) => (
+          <li key={f} className="flex items-start gap-2 text-muted-foreground">
+            <Check />
+            {f}
+          </li>
+        ))}
+      </ul>
+
+      <Link
+        href={tier.href}
+        className={`mt-6 inline-flex h-10 items-center justify-center rounded-md text-sm font-semibold transition-all duration-150 ${
+          tier.featured
+            ? "bg-primary text-primary-foreground hover:-translate-y-px"
+            : "border border-border text-foreground hover:border-primary/50 hover:bg-muted"
+        }`}
+      >
+        {tier.cta}
+      </Link>
     </div>
   );
 }
