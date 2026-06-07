@@ -127,14 +127,11 @@ export default function ActivityPage() {
               key={label}
               className="flex flex-col gap-0.5 rounded border border-border bg-card px-4 py-3"
             >
-              <span
-                className={`font-mono text-2xl font-bold tabular-nums ${color}`}
-              >
+              {/* cyan owns the figure; the category color lives on the label */}
+              <span className="font-mono text-2xl font-bold tabular-nums text-cyan">
                 {value}
               </span>
-              <span className="font-mono text-xs text-muted-foreground">
-                {label}
-              </span>
+              <span className={`font-mono text-xs ${color}`}>{label}</span>
             </div>
           ))}
         </div>

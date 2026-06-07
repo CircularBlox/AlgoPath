@@ -5,6 +5,24 @@ import { displayTag } from "~/lib/tags";
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
+/** Terminal section eyebrow — `// label`, full-foreground at rest. */
+function SectionLabel({
+  children,
+  className = "mb-4",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <h2 className={`flex items-baseline gap-2 font-mono text-xs ${className}`}>
+      <span className="text-dim">{"//"}</span>
+      <span className="font-semibold tracking-wide text-foreground">
+        {children}
+      </span>
+    </h2>
+  );
+}
+
 export default async function InsightsPage() {
   const [user, supabase] = await Promise.all([getUser(), createClient()]);
   if (!user) redirect("/auth/login?next=/insights");
@@ -43,7 +61,7 @@ export default async function InsightsPage() {
   if (plan === "free") {
     return (
       <main className="mx-auto max-w-2xl px-6 py-20 flex flex-col items-center gap-6 text-center">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+        <div className="flex h-12 w-12 items-center justify-center rounded bg-primary/10">
           <svg
             width="22"
             height="22"
@@ -69,7 +87,7 @@ export default async function InsightsPage() {
         </div>
         <Link
           href="/pricing"
-          className="rounded-full bg-primary px-5 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-80"
+          className="rounded bg-primary px-5 py-2 font-mono text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
         >
           Upgrade to Pro →
         </Link>
@@ -260,42 +278,59 @@ export default async function InsightsPage() {
         </p>
       </div>
 
-      {/* ── Summary stats ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      {/* ── Summary stats ── cyan owns figures; the streak takes its amber role */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {[
-          { label: "Problems Solved", value: String(totalSolves) },
-          { label: "Total XP Earned", value: totalXp.toLocaleString() },
+          {
+            label: "Problems Solved",
+            value: String(totalSolves),
+            tone: "text-cyan",
+          },
+          {
+            label: "Total XP Earned",
+            value: totalXp.toLocaleString(),
+            tone: "text-cyan",
+          },
           {
             label: "Avg Hints / Solve",
             value: (Math.round(avgHints * 10) / 10).toFixed(1),
+            tone: "text-cyan",
           },
           {
             label: "No-hint Solves",
             value: `${zeroHintSolves} (${Math.round((zeroHintSolves / totalSolves) * 100)}%)`,
+            tone: "text-cyan",
           },
-          { label: "Active Days", value: String(uniqueDays) },
+          {
+            label: "Active Days",
+            value: String(uniqueDays),
+            tone: "text-cyan",
+          },
           {
             label: "Current Streak",
-            value: `${profile?.streak ?? 0} 🔥`,
+            value: `${profile?.streak ?? 0}d`,
+            tone: profile?.streak ? "text-amber" : "text-dim",
           },
         ].map((stat) => (
           <div
             key={stat.label}
             className="flex flex-col gap-1 rounded border border-border bg-card px-5 py-4"
           >
-            <span className="text-2xl font-bold tabular-nums">
+            <span
+              className={`font-mono text-2xl font-bold tabular-nums ${stat.tone}`}
+            >
               {stat.value}
             </span>
-            <span className="text-xs text-muted-foreground">{stat.label}</span>
+            <span className="font-mono text-xs text-muted-foreground">
+              {stat.label}
+            </span>
           </div>
         ))}
       </div>
 
       {/* ── Solve velocity ── */}
       <section>
-        <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-          Solve Velocity
-        </h2>
+        <SectionLabel>Solve Velocity</SectionLabel>
         <div className="grid grid-cols-3 gap-3">
           {[
             { label: "Last 7 days", value: last7 },
@@ -306,8 +341,12 @@ export default async function InsightsPage() {
               key={v.label}
               className="flex flex-col gap-1 rounded border border-border bg-card px-5 py-4"
             >
-              <span className="text-2xl font-bold tabular-nums">{v.value}</span>
-              <span className="text-xs text-muted-foreground">{v.label}</span>
+              <span className="font-mono text-2xl font-bold tabular-nums text-cyan">
+                {v.value}
+              </span>
+              <span className="font-mono text-xs text-muted-foreground">
+                {v.label}
+              </span>
             </div>
           ))}
         </div>
@@ -316,21 +355,19 @@ export default async function InsightsPage() {
       {/* ── XP trend bar chart ── */}
       {xpTrend.length > 1 && (
         <section>
-          <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            XP Earned (last 14 days)
-          </h2>
-          <div className="flex items-end gap-1 h-24 rounded border border-border bg-card px-5 py-4">
+          <SectionLabel>XP Earned (last 14 days)</SectionLabel>
+          <div className="flex h-24 items-end gap-1 rounded border border-border bg-card px-5 py-4">
             {xpTrend.map(([date, xp]) => (
               <div
                 key={date}
-                className="flex flex-1 flex-col items-center gap-1 group relative"
+                className="group relative flex flex-1 flex-col items-center gap-1"
                 title={`${date}: ${xp} XP`}
               >
                 <div
                   className="w-full rounded-t bg-primary/70 transition-all group-hover:bg-primary"
                   style={{ height: `${Math.max(4, (xp / maxXp) * 56)}px` }}
                 />
-                <span className="text-[8px] text-muted-foreground rotate-45 origin-left hidden sm:block">
+                <span className="hidden origin-left rotate-45 font-mono text-[8px] text-dim sm:block">
                   {date.slice(5)}
                 </span>
               </div>
@@ -341,17 +378,15 @@ export default async function InsightsPage() {
 
       {/* ── Day of week activity ── */}
       <section>
-        <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-          Most Active Day
-        </h2>
-        <div className="flex items-end gap-2 h-28 rounded border border-border bg-card px-5 py-4">
+        <SectionLabel>Most Active Day</SectionLabel>
+        <div className="flex h-28 items-end gap-2 rounded border border-border bg-card px-5 py-4">
           {dayOfWeek.map((count, i) => (
             <div
               key={DAY_LABELS[i]}
-              className="flex flex-1 flex-col items-center gap-1.5 group"
+              className="group flex flex-1 flex-col items-center gap-1.5"
               title={`${DAY_LABELS[i]}: ${count} solve${count !== 1 ? "s" : ""}`}
             >
-              <span className="text-[10px] font-semibold tabular-nums text-muted-foreground group-hover:text-foreground">
+              <span className="font-mono text-[10px] font-semibold tabular-nums text-cyan">
                 {count > 0 ? count : ""}
               </span>
               <div
@@ -360,7 +395,7 @@ export default async function InsightsPage() {
                   height: `${Math.max(count > 0 ? 6 : 2, (count / maxDayCount) * 56)}px`,
                 }}
               />
-              <span className="text-[10px] text-muted-foreground">
+              <span className="font-mono text-[10px] text-muted-foreground">
                 {DAY_LABELS[i]}
               </span>
             </div>
@@ -371,23 +406,22 @@ export default async function InsightsPage() {
       {/* ── Platform breakdown ── */}
       {platformEntries.length > 0 && (
         <section>
-          <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            Platform Breakdown
-          </h2>
+          <SectionLabel>Platform Breakdown</SectionLabel>
           <div className="flex flex-col gap-2 rounded border border-border bg-card px-5 py-4">
             {platformEntries.map(([platform, count]) => (
               <div key={platform} className="flex items-center gap-3">
                 <span className="w-24 shrink-0 text-sm font-medium">
                   {platform}
                 </span>
-                <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                <div className="h-2 flex-1 overflow-hidden rounded bg-muted">
                   <div
-                    className="h-full rounded-full bg-primary/70 transition-all"
+                    className="h-full rounded bg-primary/70 transition-all"
                     style={{ width: `${(count / maxPlatformCount) * 100}%` }}
                   />
                 </div>
-                <span className="w-16 text-right text-xs tabular-nums text-muted-foreground">
-                  {count} ({Math.round((count / totalSolves) * 100)}%)
+                <span className="w-16 text-right font-mono text-xs tabular-nums text-muted-foreground">
+                  <span className="text-cyan">{count}</span> (
+                  {Math.round((count / totalSolves) * 100)}%)
                 </span>
               </div>
             ))}
@@ -398,25 +432,23 @@ export default async function InsightsPage() {
       {/* ── Solves by difficulty ── */}
       {sortedDiffs.length > 0 && (
         <section>
-          <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            Solves by Difficulty
-          </h2>
-          <div className="overflow-hidden rounded border border-border divide-y divide-border">
+          <SectionLabel>Solves by Difficulty</SectionLabel>
+          <div className="divide-y divide-border overflow-hidden rounded border border-border">
             {sortedDiffs.map(([diff, { solved, total_hints }]) => (
               <div key={diff} className="flex items-center gap-4 px-5 py-3">
-                <span className="w-36 shrink-0 text-sm text-foreground/80">
+                <span className="w-36 shrink-0 font-mono text-sm text-foreground/80">
                   {diff}
                 </span>
-                <span className="text-sm font-semibold tabular-nums w-10 shrink-0">
+                <span className="w-10 shrink-0 font-mono text-sm font-semibold tabular-nums text-cyan">
                   {solved}
                 </span>
-                <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
+                <div className="h-1.5 flex-1 overflow-hidden rounded bg-muted">
                   <div
-                    className="h-full rounded-full bg-primary/50"
+                    className="h-full rounded bg-primary/50"
                     style={{ width: `${(solved / totalSolves) * 100}%` }}
                   />
                 </div>
-                <span className="text-xs text-muted-foreground shrink-0">
+                <span className="shrink-0 font-mono text-xs text-muted-foreground">
                   {solved > 0
                     ? (Math.round((total_hints / solved) * 10) / 10).toFixed(1)
                     : "0"}{" "}
@@ -431,23 +463,22 @@ export default async function InsightsPage() {
       {/* ── Most solved topics ── */}
       {topSolvedTags.length > 0 && (
         <section>
-          <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            Most Practiced Topics
-          </h2>
-          <div className="overflow-hidden rounded border border-border divide-y divide-border">
+          <SectionLabel>Most Practiced Topics</SectionLabel>
+          <div className="divide-y divide-border overflow-hidden rounded border border-border">
             {topSolvedTags.map(([tag, count]) => (
               <div key={tag} className="flex items-center gap-3 px-5 py-2.5">
                 <span className="flex-1 text-sm">{displayTag(tag)}</span>
-                <div className="w-24 h-1.5 rounded-full bg-muted overflow-hidden">
+                <div className="h-1.5 w-24 overflow-hidden rounded bg-muted">
                   <div
-                    className="h-full rounded-full bg-primary/60"
+                    className="h-full rounded bg-primary/60"
                     style={{
                       width: `${(count / (topSolvedTags[0]?.[1] ?? 1)) * 100}%`,
                     }}
                   />
                 </div>
-                <span className="text-xs text-muted-foreground tabular-nums w-16 text-right shrink-0">
-                  {count} solve{count !== 1 ? "s" : ""}
+                <span className="w-16 shrink-0 text-right font-mono text-xs tabular-nums text-muted-foreground">
+                  <span className="text-cyan">{count}</span> solve
+                  {count !== 1 ? "s" : ""}
                 </span>
               </div>
             ))}
@@ -458,20 +489,18 @@ export default async function InsightsPage() {
       {/* ── Weak topics ── */}
       {topWeakTags.length > 0 && (
         <section>
-          <h2 className="mb-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            Weak Topics
-          </h2>
+          <SectionLabel className="mb-1">Weak Topics</SectionLabel>
           <p className="mb-4 text-xs text-muted-foreground">
             Topics where you use the most hints on average.
           </p>
-          <div className="overflow-hidden rounded border border-border divide-y divide-border">
+          <div className="divide-y divide-border overflow-hidden rounded border border-border">
             {topWeakTags.map(({ tag, avgHints: ah, count }) => (
               <div key={tag} className="flex items-center gap-3 px-5 py-2.5">
                 <span className="flex-1 text-sm">{displayTag(tag)}</span>
-                <span className="text-xs text-muted-foreground tabular-nums">
+                <span className="font-mono text-xs tabular-nums text-muted-foreground">
                   {count} solves
                 </span>
-                <span className="text-xs font-medium text-amber-500 tabular-nums w-20 text-right shrink-0">
+                <span className="w-20 shrink-0 text-right font-mono text-xs font-medium tabular-nums text-amber">
                   {ah.toFixed(1)} hints avg
                 </span>
               </div>
@@ -483,20 +512,18 @@ export default async function InsightsPage() {
       {/* ── Strong topics ── */}
       {topStrongTags.length > 0 && (
         <section>
-          <h2 className="mb-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            Strengths
-          </h2>
+          <SectionLabel className="mb-1">Strengths</SectionLabel>
           <p className="mb-4 text-xs text-muted-foreground">
             Topics where you solve with the fewest hints.
           </p>
-          <div className="overflow-hidden rounded border border-border divide-y divide-border">
+          <div className="divide-y divide-border overflow-hidden rounded border border-border">
             {topStrongTags.map(({ tag, avgHints: ah, count }) => (
               <div key={tag} className="flex items-center gap-3 px-5 py-2.5">
                 <span className="flex-1 text-sm">{displayTag(tag)}</span>
-                <span className="text-xs text-muted-foreground tabular-nums">
+                <span className="font-mono text-xs tabular-nums text-muted-foreground">
                   {count} solves
                 </span>
-                <span className="text-xs font-medium text-primary tabular-nums w-20 text-right shrink-0">
+                <span className="w-20 shrink-0 text-right font-mono text-xs font-medium tabular-nums text-green">
                   {ah.toFixed(1)} hints avg
                 </span>
               </div>
