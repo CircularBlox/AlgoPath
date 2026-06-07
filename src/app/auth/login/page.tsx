@@ -128,7 +128,7 @@ export default function LoginPage() {
       </div>
 
       {resetSuccess && (
-        <div className="rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm text-foreground">
+        <div className="rounded border border-border bg-muted/40 px-4 py-3 text-sm text-foreground">
           Password updated successfully. Sign in with your new password.
         </div>
       )}

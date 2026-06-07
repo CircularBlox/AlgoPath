@@ -94,7 +94,7 @@ export function PricingCards({
       {/* Compact tier cards */}
       <div className="grid gap-4 sm:grid-cols-3">
         {/* Free */}
-        <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5">
+        <div className="flex flex-col gap-4 rounded border border-border bg-card p-5">
           <div className="flex flex-col gap-0.5">
             <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
               Free
@@ -118,7 +118,7 @@ export function PricingCards({
         </div>
 
         {/* Pro */}
-        <div className="relative flex flex-col gap-4 rounded-xl border border-primary bg-primary/5 p-5 shadow-sm">
+        <div className="relative flex flex-col gap-4 rounded border border-primary bg-primary/5 p-5 shadow-sm">
           <div className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border border-primary/40 bg-primary px-3 py-0.5 text-[11px] font-semibold text-primary-foreground">
             Most popular
           </div>
@@ -151,7 +151,7 @@ export function PricingCards({
         </div>
 
         {/* Elite */}
-        <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5">
+        <div className="flex flex-col gap-4 rounded border border-border bg-card p-5">
           <div className="flex flex-col gap-0.5">
             <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
               Elite

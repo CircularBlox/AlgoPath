@@ -115,7 +115,7 @@ export default function AddProblemPage() {
         {contentHtml && (
           <div className="flex flex-col gap-1.5">
             <p className="text-sm font-medium">Preview</p>
-            <div className="cf-problem min-h-32 rounded-xl border border-border bg-card px-6 py-5 text-card-foreground shadow-sm">
+            <div className="cf-problem min-h-32 rounded border border-border bg-card px-6 py-5 text-card-foreground shadow-sm">
               {/* biome-ignore lint/security/noDangerouslySetInnerHtml: admin-only page, content authored by the site owner */}
               <div dangerouslySetInnerHTML={{ __html: contentHtml }} />
             </div>

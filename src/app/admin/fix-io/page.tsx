@@ -36,7 +36,7 @@ function HtmlPreview({
   return (
     <div
       className={cn(
-        "cf-problem overflow-auto rounded-lg border border-border bg-muted/20 p-4 text-sm",
+        "cf-problem overflow-auto rounded border border-border bg-muted/20 p-4 text-sm",
         className,
       )}
       // biome-ignore lint/security/noDangerouslySetInnerHtml: admin-only page, content from our own DB
@@ -105,7 +105,7 @@ function IssueRow({
 
   if (applied) {
     return (
-      <div className="flex items-center gap-4 rounded-xl border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 opacity-60">
+      <div className="flex items-center gap-4 rounded border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 opacity-60">
         <span className="w-10 font-mono text-xs text-muted-foreground">
           #{issue.problem_number}
         </span>
@@ -122,7 +122,7 @@ function IssueRow({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-xl border transition-colors",
+        "overflow-hidden rounded border transition-colors",
         approved
           ? "border-emerald-500/40 bg-emerald-500/5"
           : "border-border bg-card",
@@ -237,7 +237,7 @@ function IssueRow({
       {expanded && (
         <div className="border-t border-border px-4 pb-4 pt-3">
           {issue.issue_type === "no-newlines" && (
-            <div className="mb-3 flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2">
+            <div className="mb-3 flex items-start gap-3 rounded border border-amber-500/30 bg-amber-500/5 px-3 py-2">
               <p className="flex-1 text-xs text-amber-700 dark:text-amber-400">
                 Newlines were stripped by the scraper. Use{" "}
                 <strong>Fetch from CF</strong> to pull correct content, or add
@@ -257,13 +257,13 @@ function IssueRow({
           )}
 
           {refetchError && (
-            <div className="mb-3 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+            <div className="mb-3 rounded border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive">
               {refetchError}
             </div>
           )}
 
           {/* Tabs */}
-          <div className="mb-3 flex gap-1 rounded-lg border border-border bg-muted/40 p-1 w-fit">
+          <div className="mb-3 flex gap-1 rounded border border-border bg-muted/40 p-1 w-fit">
             {(["current", "proposed", "edit"] as const).map((tab) => (
               <button
                 key={tab}
@@ -297,7 +297,7 @@ function IssueRow({
             <textarea
               value={editedContent}
               onChange={(e) => onChange({ editedContent: e.target.value })}
-              className="h-96 w-full rounded-lg border border-border bg-muted/20 p-3 font-mono text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50 resize-y"
+              className="h-96 w-full rounded border border-border bg-muted/20 p-3 font-mono text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50 resize-y"
               spellCheck={false}
             />
           )}
@@ -526,14 +526,14 @@ export default function FixIOPage() {
 
       {/* Scan error */}
       {scanError && (
-        <div className="mb-6 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+        <div className="mb-6 rounded border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
           {scanError}
         </div>
       )}
 
       {/* Apply result */}
       {applyResult && (
-        <div className="mb-6 rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 text-sm">
+        <div className="mb-6 rounded border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 text-sm">
           <span className="font-medium text-emerald-700 dark:text-emerald-400">
             {applyResult.applied} fix{applyResult.applied !== 1 ? "es" : ""}{" "}
             applied.
@@ -552,14 +552,14 @@ export default function FixIOPage() {
 
       {/* Apply error */}
       {applyError && (
-        <div className="mb-6 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+        <div className="mb-6 rounded border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
           {applyError}
         </div>
       )}
 
       {/* Issues list */}
       {issues !== null && issues.length === 0 && (
-        <div className="rounded-xl border border-border bg-muted/30 px-6 py-10 text-center text-sm text-muted-foreground">
+        <div className="rounded border border-border bg-muted/30 px-6 py-10 text-center text-sm text-muted-foreground">
           No I/O issues detected.
         </div>
       )}

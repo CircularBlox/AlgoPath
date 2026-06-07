@@ -828,7 +828,7 @@ export function SidePanel({
               {problemNotes.map((note) => (
                 <div
                   key={note.id}
-                  className="flex flex-col gap-1 rounded-lg border border-border bg-muted/30 px-3 py-2.5"
+                  className="flex flex-col gap-1 rounded border border-border bg-muted/30 px-3 py-2.5"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <span className="text-sm font-medium leading-snug">
@@ -1011,7 +1011,7 @@ export function SidePanel({
                     {msg.role === "user" ? "You" : "AI Mentor"}
                   </span>
                   <div
-                    className={`max-w-[92%] rounded-lg px-3 py-2.5 text-sm leading-relaxed whitespace-pre-wrap ${
+                    className={`max-w-[92%] rounded px-3 py-2.5 text-sm leading-relaxed whitespace-pre-wrap ${
                       msg.role === "user"
                         ? "bg-primary/10 text-foreground"
                         : "bg-muted text-foreground"
@@ -1027,7 +1027,7 @@ export function SidePanel({
                   <span className="text-[10px] font-medium text-muted-foreground">
                     AI Mentor
                   </span>
-                  <div className="rounded-lg bg-muted px-3 py-2.5 text-sm text-muted-foreground">
+                  <div className="rounded bg-muted px-3 py-2.5 text-sm text-muted-foreground">
                     Thinking…
                   </div>
                 </div>

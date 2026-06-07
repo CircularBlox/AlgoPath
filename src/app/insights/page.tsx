@@ -89,7 +89,7 @@ export default async function InsightsPage() {
             Solve some problems to see your stats.
           </p>
         </div>
-        <div className="rounded-xl border border-dashed border-border px-6 py-10 text-center">
+        <div className="rounded border border-dashed border-border px-6 py-10 text-center">
           <p className="text-sm text-muted-foreground">
             No data yet.{" "}
             <Link
@@ -281,7 +281,7 @@ export default async function InsightsPage() {
         ].map((stat) => (
           <div
             key={stat.label}
-            className="flex flex-col gap-1 rounded-xl border border-border bg-card px-5 py-4"
+            className="flex flex-col gap-1 rounded border border-border bg-card px-5 py-4"
           >
             <span className="text-2xl font-bold tabular-nums">
               {stat.value}
@@ -304,7 +304,7 @@ export default async function InsightsPage() {
           ].map((v) => (
             <div
               key={v.label}
-              className="flex flex-col gap-1 rounded-xl border border-border bg-card px-5 py-4"
+              className="flex flex-col gap-1 rounded border border-border bg-card px-5 py-4"
             >
               <span className="text-2xl font-bold tabular-nums">{v.value}</span>
               <span className="text-xs text-muted-foreground">{v.label}</span>
@@ -319,7 +319,7 @@ export default async function InsightsPage() {
           <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
             XP Earned (last 14 days)
           </h2>
-          <div className="flex items-end gap-1 h-24 rounded-xl border border-border bg-card px-5 py-4">
+          <div className="flex items-end gap-1 h-24 rounded border border-border bg-card px-5 py-4">
             {xpTrend.map(([date, xp]) => (
               <div
                 key={date}
@@ -344,7 +344,7 @@ export default async function InsightsPage() {
         <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
           Most Active Day
         </h2>
-        <div className="flex items-end gap-2 h-28 rounded-xl border border-border bg-card px-5 py-4">
+        <div className="flex items-end gap-2 h-28 rounded border border-border bg-card px-5 py-4">
           {dayOfWeek.map((count, i) => (
             <div
               key={DAY_LABELS[i]}
@@ -374,7 +374,7 @@ export default async function InsightsPage() {
           <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
             Platform Breakdown
           </h2>
-          <div className="flex flex-col gap-2 rounded-xl border border-border bg-card px-5 py-4">
+          <div className="flex flex-col gap-2 rounded border border-border bg-card px-5 py-4">
             {platformEntries.map(([platform, count]) => (
               <div key={platform} className="flex items-center gap-3">
                 <span className="w-24 shrink-0 text-sm font-medium">
@@ -401,7 +401,7 @@ export default async function InsightsPage() {
           <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
             Solves by Difficulty
           </h2>
-          <div className="overflow-hidden rounded-xl border border-border divide-y divide-border">
+          <div className="overflow-hidden rounded border border-border divide-y divide-border">
             {sortedDiffs.map(([diff, { solved, total_hints }]) => (
               <div key={diff} className="flex items-center gap-4 px-5 py-3">
                 <span className="w-36 shrink-0 text-sm text-foreground/80">
@@ -434,7 +434,7 @@ export default async function InsightsPage() {
           <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
             Most Practiced Topics
           </h2>
-          <div className="overflow-hidden rounded-xl border border-border divide-y divide-border">
+          <div className="overflow-hidden rounded border border-border divide-y divide-border">
             {topSolvedTags.map(([tag, count]) => (
               <div key={tag} className="flex items-center gap-3 px-5 py-2.5">
                 <span className="flex-1 text-sm">{displayTag(tag)}</span>
@@ -464,7 +464,7 @@ export default async function InsightsPage() {
           <p className="mb-4 text-xs text-muted-foreground">
             Topics where you use the most hints on average.
           </p>
-          <div className="overflow-hidden rounded-xl border border-border divide-y divide-border">
+          <div className="overflow-hidden rounded border border-border divide-y divide-border">
             {topWeakTags.map(({ tag, avgHints: ah, count }) => (
               <div key={tag} className="flex items-center gap-3 px-5 py-2.5">
                 <span className="flex-1 text-sm">{displayTag(tag)}</span>
@@ -489,7 +489,7 @@ export default async function InsightsPage() {
           <p className="mb-4 text-xs text-muted-foreground">
             Topics where you solve with the fewest hints.
           </p>
-          <div className="overflow-hidden rounded-xl border border-border divide-y divide-border">
+          <div className="overflow-hidden rounded border border-border divide-y divide-border">
             {topStrongTags.map(({ tag, avgHints: ah, count }) => (
               <div key={tag} className="flex items-center gap-3 px-5 py-2.5">
                 <span className="flex-1 text-sm">{displayTag(tag)}</span>

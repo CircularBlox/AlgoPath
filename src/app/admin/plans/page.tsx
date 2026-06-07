@@ -100,7 +100,7 @@ export default function AdminPlansPage() {
       {searchError && <p className="text-sm text-destructive">{searchError}</p>}
 
       {result && (
-        <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5">
+        <div className="flex flex-col gap-4 rounded border border-border bg-card p-5">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-sm font-semibold">
               {result.username[0]?.toUpperCase() ?? "U"}

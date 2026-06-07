@@ -35,7 +35,7 @@ export function TopicRecommendation() {
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-border px-5 py-4 flex flex-col gap-2">
+      <div className="rounded border border-border px-5 py-4 flex flex-col gap-2">
         <div className="h-3 w-36 animate-pulse rounded bg-muted" />
         <div className="h-4 w-full animate-pulse rounded bg-muted" />
         <div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
@@ -46,7 +46,7 @@ export function TopicRecommendation() {
   if (!rec) return null;
 
   return (
-    <div className="rounded-xl border border-border px-5 py-4 flex flex-col gap-2.5">
+    <div className="rounded border border-border px-5 py-4 flex flex-col gap-2.5">
       <div className="flex items-center justify-between gap-3">
         <span className="text-sm font-semibold">{displayTag(rec.tag)}</span>
         <Link

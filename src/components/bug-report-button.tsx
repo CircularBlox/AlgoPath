@@ -89,7 +89,7 @@ export function BugReportButton() {
             role="dialog"
             aria-modal="true"
             aria-label="Report a bug"
-            className="fixed bottom-20 right-5 z-50 w-full max-w-sm rounded-xl border border-border bg-background p-5 shadow-2xl sm:bottom-auto sm:right-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2"
+            className="fixed bottom-20 right-5 z-50 w-full max-w-sm rounded border border-border bg-background p-5 shadow-2xl sm:bottom-auto sm:right-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2"
           >
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-sm font-semibold">Report a bug</h2>

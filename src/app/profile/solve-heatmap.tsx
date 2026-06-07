@@ -94,7 +94,7 @@ export async function SolveHeatmap() {
           {totalSolves} solve{totalSolves !== 1 ? "s" : ""} in the past year
         </span>
       </div>
-      <div className="overflow-x-auto rounded-lg border border-border bg-card p-4">
+      <div className="overflow-x-auto rounded border border-border bg-card p-4">
         {/* Month labels */}
         <div className="mb-1 flex" style={{ paddingLeft: "1.5rem" }}>
           {weeks.map((week, i) => {

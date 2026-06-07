@@ -1204,7 +1204,7 @@ export function ProblemViewer({
     <div className="flex flex-col gap-6">
       {/* Focus prompt — shown once for onboarded users who haven't set a focus yet */}
       {focusBanner && (
-        <div className="rounded-lg border border-border bg-muted/50 px-5 py-4 flex flex-col gap-3">
+        <div className="rounded border border-border bg-muted/50 px-5 py-4 flex flex-col gap-3">
           <div>
             <p className="text-sm font-semibold text-foreground">
               What are you focusing on?
@@ -1244,7 +1244,7 @@ export function ProblemViewer({
 
       {/* First-time welcome — shown to authenticated users with 0 solves */}
       {state.status === "idle" && userId && solvedCount === 0 && (
-        <div className="rounded-xl border border-primary/20 bg-primary/5 px-5 py-4">
+        <div className="rounded border border-primary/20 bg-primary/5 px-5 py-4">
           <p className="text-sm font-semibold">Welcome to AlgoPath!</p>
           <p className="mt-1 text-xs text-muted-foreground">
             Not sure where to start? Hit{" "}
@@ -1274,7 +1274,7 @@ export function ProblemViewer({
               type="button"
               onClick={() => triggerWithSkipWarning(fetchRandom)}
               disabled={isLoading}
-              className="flex flex-col gap-1.5 rounded-xl border border-border bg-card px-4 py-4 text-left transition-colors hover:border-foreground/30 hover:bg-muted/50 disabled:opacity-50"
+              className="flex flex-col gap-1.5 rounded border border-border bg-card px-4 py-4 text-left transition-colors hover:border-foreground/30 hover:bg-muted/50 disabled:opacity-50"
             >
               <span className="text-sm font-semibold">Decide for me</span>
               <span className="text-xs text-muted-foreground">
@@ -1285,7 +1285,7 @@ export function ProblemViewer({
             <button
               type="button"
               onClick={() => tagFilterInputRef.current?.focus()}
-              className="flex flex-col gap-1.5 rounded-xl border border-border bg-card px-4 py-4 text-left transition-colors hover:border-foreground/30 hover:bg-muted/50"
+              className="flex flex-col gap-1.5 rounded border border-border bg-card px-4 py-4 text-left transition-colors hover:border-foreground/30 hover:bg-muted/50"
             >
               <span className="text-sm font-semibold">Practice a topic</span>
               <span className="text-xs text-muted-foreground">
@@ -1295,7 +1295,7 @@ export function ProblemViewer({
             <button
               type="button"
               onClick={() => searchInputRef.current?.focus()}
-              className="flex flex-col gap-1.5 rounded-xl border border-border bg-card px-4 py-4 text-left transition-colors hover:border-foreground/30 hover:bg-muted/50"
+              className="flex flex-col gap-1.5 rounded border border-border bg-card px-4 py-4 text-left transition-colors hover:border-foreground/30 hover:bg-muted/50"
             >
               <span className="text-sm font-semibold">Browse problems</span>
               <span className="text-xs text-muted-foreground">
@@ -1315,7 +1315,7 @@ export function ProblemViewer({
             <p className="text-xs font-medium text-muted-foreground">
               Continue where you left off
             </p>
-            <div className="overflow-hidden rounded-lg border border-border divide-y divide-border">
+            <div className="overflow-hidden rounded border border-border divide-y divide-border">
               {recentProblems.map((problem) => (
                 <button
                   key={problem.id}
@@ -1557,7 +1557,7 @@ export function ProblemViewer({
       {state.status === "results" && (
         <div className="flex flex-col gap-2">
           {state.source === "ai" && (
-            <div className="rounded-lg border border-border bg-muted/40 px-4 py-3">
+            <div className="rounded border border-border bg-muted/40 px-4 py-3">
               <p className="text-xs font-medium text-muted-foreground mb-1">
                 AI
               </p>
@@ -1604,7 +1604,7 @@ export function ProblemViewer({
                 </button>
               )}
           </div>
-          <div className="overflow-hidden rounded-lg border border-border divide-y divide-border">
+          <div className="overflow-hidden rounded border border-border divide-y divide-border">
             {state.problems.map((problem) => {
               const visibleTags = problem.tags?.slice(0, 3) ?? [];
               const extraTags =
@@ -1673,7 +1673,7 @@ export function ProblemViewer({
 
       {/* Drill progress banner */}
       {drillQueue && state.status === "loaded" && (
-        <div className="flex items-center gap-3 rounded-lg border border-primary/20 bg-primary/5 px-4 py-2.5">
+        <div className="flex items-center gap-3 rounded border border-primary/20 bg-primary/5 px-4 py-2.5">
           <span className="text-xs text-muted-foreground shrink-0">
             Drill —{" "}
             <span className="font-medium text-foreground">
@@ -1803,7 +1803,7 @@ export function ProblemViewer({
 
                 {/* Hint nudge — appears after 45s of inactivity */}
                 {showHintNudge && !hintsOpen && (
-                  <div className="mx-6 mb-2 flex items-center justify-between gap-3 rounded-lg border border-primary/20 bg-primary/5 px-4 py-2.5">
+                  <div className="mx-6 mb-2 flex items-center justify-between gap-3 rounded border border-primary/20 bg-primary/5 px-4 py-2.5">
                     <p className="text-sm text-foreground">
                       Stuck? Step-by-step hints can unblock you without giving
                       away the answer.
@@ -1926,7 +1926,7 @@ export function ProblemViewer({
 
                   {/* Solve confirmation */}
                   {showSolveConfirm && (
-                    <div className="w-full rounded-lg border border-border bg-muted/40 px-4 py-3 flex flex-col gap-3">
+                    <div className="w-full rounded border border-border bg-muted/40 px-4 py-3 flex flex-col gap-3">
                       <div>
                         <p className="text-sm font-medium text-foreground">
                           How'd it go?
@@ -1999,7 +1999,7 @@ export function ProblemViewer({
                   const progress = xpProgress(0, newLevel);
                   return (
                     <div
-                      className="flex flex-col gap-3 rounded-xl border px-5 py-4"
+                      className="flex flex-col gap-3 rounded border px-5 py-4"
                       style={{
                         borderColor: `${config.color}40`,
                         background: config.bg,
@@ -2066,7 +2066,7 @@ export function ProblemViewer({
               {/* Try this next card — replaces auto-load after solving */}
               {markDoneState.status === "done" &&
                 (nextProblemLoading || nextProblem) && (
-                  <div className="flex flex-col gap-3 rounded-xl border border-border bg-card px-5 py-4">
+                  <div className="flex flex-col gap-3 rounded border border-border bg-card px-5 py-4">
                     <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                       Try this next
                     </p>
@@ -2155,7 +2155,7 @@ export function ProblemViewer({
 
               {/* Drill complete summary */}
               {drillComplete && !nextProblem && (
-                <div className="flex flex-col gap-3 rounded-xl border border-border bg-card px-5 py-4">
+                <div className="flex flex-col gap-3 rounded border border-border bg-card px-5 py-4">
                   <div className="flex flex-col gap-0.5">
                     <p className="text-sm font-semibold">Drill complete</p>
                     <p className="text-xs text-muted-foreground">
@@ -2215,7 +2215,7 @@ export function ProblemViewer({
                   reportState.status === "loading" ||
                   reportState.status === "error" ||
                   reportState.status === "success") && (
-                  <div className="rounded-lg border border-border bg-card px-5 py-4 flex flex-col gap-3">
+                  <div className="rounded border border-border bg-card px-5 py-4 flex flex-col gap-3">
                     <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                       Report Problem
                     </p>
@@ -2275,7 +2275,7 @@ export function ProblemViewer({
                   suggestDiffState.status === "loading" ||
                   suggestDiffState.status === "error" ||
                   suggestDiffState.status === "success") && (
-                  <div className="rounded-lg border border-border bg-card px-5 py-4 flex flex-col gap-3">
+                  <div className="rounded border border-border bg-card px-5 py-4 flex flex-col gap-3">
                     <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                       Suggest Difficulty
                     </p>
@@ -2341,7 +2341,7 @@ export function ProblemViewer({
                 )}
 
               {contentOpen && problem.content && (
-                <div className="cf-problem rounded-xl border border-border bg-card px-6 py-5 text-card-foreground shadow-sm">
+                <div className="cf-problem rounded border border-border bg-card px-6 py-5 text-card-foreground shadow-sm">
                   <div
                     // biome-ignore lint/security/noDangerouslySetInnerHtml: admin-authored DB content; LaTeX processed client-side
                     dangerouslySetInnerHTML={{
@@ -2369,7 +2369,7 @@ export function ProblemViewer({
                   return (
                     <div
                       ref={hintsPanelRef}
-                      className="flex flex-col gap-4 rounded-xl border border-border bg-card px-6 py-5 text-card-foreground shadow-sm"
+                      className="flex flex-col gap-4 rounded border border-border bg-card px-6 py-5 text-card-foreground shadow-sm"
                     >
                       <div className="flex items-center justify-between gap-2 flex-wrap">
                         <h3 className="font-semibold">Hints</h3>
@@ -2762,7 +2762,7 @@ export function ProblemViewer({
                   return (
                     <div
                       ref={solutionPanelRef}
-                      className="flex flex-col gap-3 rounded-xl border border-border bg-card text-card-foreground shadow-sm overflow-hidden"
+                      className="flex flex-col gap-3 rounded border border-border bg-card text-card-foreground shadow-sm overflow-hidden"
                     >
                       {/* Header row */}
                       <div className="flex items-center gap-3 px-5 pt-4 pb-3 border-b border-border">

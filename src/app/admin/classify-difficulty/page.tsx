@@ -56,7 +56,7 @@ function ResultsTable({ results }: { results: ClassificationResult[] }) {
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border shadow-sm">
+    <div className="overflow-hidden rounded border border-border shadow-sm">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -203,7 +203,7 @@ function Toggle({
         />
         <span
           className={cn(
-            "absolute top-0.5 h-3.5 w-3.5 rounded-full bg-white shadow transition-transform",
+            "absolute top-0.5 h-3.5 w-3.5 rounded-full bg-foreground shadow transition-transform",
             checked ? "translate-x-3.5" : "translate-x-0.5",
           )}
         />
@@ -298,7 +298,7 @@ export default function ClassifyDifficultyPage() {
       </div>
 
       {/* Controls */}
-      <div className="mb-8 rounded-xl border border-border bg-card p-6 shadow-sm">
+      <div className="mb-8 rounded border border-border bg-card p-6 shadow-sm">
         <div className="flex flex-wrap items-end gap-6">
           {/* Dry run toggle */}
           <div className="flex items-center gap-3">
@@ -363,7 +363,7 @@ export default function ClassifyDifficultyPage() {
         </div>
 
         {!dryRun && (
-          <p className="mt-4 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+          <p className="mt-4 rounded border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
             Live mode — numeric ratings will be written to the database.
           </p>
         )}
@@ -371,14 +371,14 @@ export default function ClassifyDifficultyPage() {
 
       {/* Error */}
       {error && (
-        <div className="mb-6 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+        <div className="mb-6 rounded border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
           {error}
         </div>
       )}
 
       {/* Empty message */}
       {message && classified === 0 && (
-        <div className="mb-6 rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+        <div className="mb-6 rounded border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
           {message}
         </div>
       )}
@@ -391,7 +391,7 @@ export default function ClassifyDifficultyPage() {
             {BUCKETS.map((bucket) => (
               <div
                 key={bucket}
-                className="rounded-xl border border-border bg-card px-5 py-4 shadow-sm"
+                className="rounded border border-border bg-card px-5 py-4 shadow-sm"
               >
                 <div
                   className={cn(

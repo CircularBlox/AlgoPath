@@ -209,7 +209,7 @@ export default async function PricingPage() {
           Full comparison
         </h2>
 
-        <div className="overflow-hidden rounded-xl border border-border">
+        <div className="overflow-hidden rounded border border-border">
           <table className="w-full text-sm">
             <thead className="sr-only">
               <tr>

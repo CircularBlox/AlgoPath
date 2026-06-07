@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Reveal, SampleRunner, StatNum } from "./landing-fx";
+import { ArmFx, Reveal, SampleRunner, StatNum } from "./landing-fx";
 
 /* ── Terminal/IDE landing — true-black, monospace-forward, box-drawing panels.
    Tokens (§1 palette) live in globals.css; every hue has exactly one job.
@@ -254,6 +254,7 @@ function diffClass(d: string): string {
 export default function Home() {
   return (
     <main className="landing-root relative min-h-screen overflow-hidden bg-background font-mono text-foreground">
+      <ArmFx />
       <div
         className="landing-topline pointer-events-none absolute inset-x-0 top-0 z-30 h-px"
         aria-hidden="true"

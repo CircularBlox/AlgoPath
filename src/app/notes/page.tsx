@@ -327,7 +327,7 @@ export default function NotesPage() {
         </button>
       </div>
 
-      <div className="grid flex-1 grid-cols-[240px_1fr] gap-4 overflow-hidden rounded-lg border border-border">
+      <div className="grid flex-1 grid-cols-[240px_1fr] gap-4 overflow-hidden rounded border border-border">
         {/* Sidebar */}
         <div className="flex flex-col gap-1 overflow-y-auto border-r border-border p-2">
           {loading && (

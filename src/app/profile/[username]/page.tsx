@@ -27,7 +27,7 @@ function SkillWebSkeleton() {
   return (
     <div className="flex flex-col gap-3">
       <div className="h-3 w-24 animate-pulse rounded-md bg-muted" />
-      <div className="h-48 w-full animate-pulse rounded-xl bg-muted" />
+      <div className="h-48 w-full animate-pulse rounded bg-muted" />
     </div>
   );
 }
@@ -63,7 +63,7 @@ async function PublicSkillWeb({
       <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
         Skill Web
       </h2>
-      <div className="overflow-hidden rounded-xl border border-border divide-y divide-border">
+      <div className="overflow-hidden rounded border border-border divide-y divide-border">
         {topTags.length >= 3 && (
           <div className="p-4">
             <TopicRadar tags={topTags} maxCount={maxTagCount} />
@@ -129,7 +129,7 @@ export default async function PublicProfilePage({
   return (
     <main className="mx-auto max-w-3xl px-6 py-12 flex flex-col gap-10">
       {/* ── Profile hero ───────────────────────────────────────── */}
-      <div className="overflow-hidden rounded-xl border border-border">
+      <div className="overflow-hidden rounded border border-border">
         <div className="flex items-start gap-5 p-6">
           <div
             className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full text-2xl font-bold"

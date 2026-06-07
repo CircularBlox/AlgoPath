@@ -187,7 +187,7 @@ async function RecommendedProblem({
 
   if (!recommended) {
     return (
-      <div className="flex items-center justify-center rounded-lg border border-dashed border-border py-10">
+      <div className="flex items-center justify-center rounded border border-dashed border-border py-10">
         <p className="text-sm text-muted-foreground">
           No recommendations available yet.
         </p>
@@ -253,11 +253,11 @@ function SkillAndSolvedSkeleton() {
     <>
       <div className="flex flex-col gap-3">
         <div className="h-3 w-24 animate-pulse rounded-md bg-muted" />
-        <div className="h-56 w-full animate-pulse rounded-xl bg-muted" />
+        <div className="h-56 w-full animate-pulse rounded bg-muted" />
       </div>
       <div className="flex flex-col gap-3">
         <div className="h-3 w-32 animate-pulse rounded-md bg-muted" />
-        <div className="h-64 w-full animate-pulse rounded-lg bg-muted" />
+        <div className="h-64 w-full animate-pulse rounded bg-muted" />
       </div>
     </>
   );
@@ -274,7 +274,7 @@ async function SkillAndSolvedSection({
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
           Solved Problems
         </h2>
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-12 text-center">
+        <div className="flex flex-col items-center justify-center rounded border border-dashed border-border py-12 text-center">
           <p className="text-sm text-muted-foreground">
             No problems solved yet.
           </p>
@@ -317,7 +317,7 @@ async function SkillAndSolvedSection({
           <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
             Skill Web
           </h2>
-          <div className="overflow-hidden rounded-xl border border-border divide-y divide-border">
+          <div className="overflow-hidden rounded border border-border divide-y divide-border">
             {topTags.length >= 3 && (
               <div className="p-4">
                 <TopicRadar tags={topTags} maxCount={maxTagCount} />
@@ -352,7 +352,7 @@ async function SkillAndSolvedSection({
             {solvedProblems.length}
           </span>
         </div>
-        <div className="flex flex-col divide-y divide-border overflow-hidden rounded-lg border border-border">
+        <div className="flex flex-col divide-y divide-border overflow-hidden rounded border border-border">
           {solvedOrdered.map((problem) => (
             <Link
               key={problem.problem_number}
@@ -498,7 +498,7 @@ export default async function ProfilePage() {
   return (
     <main className="mx-auto max-w-3xl px-6 py-12 flex flex-col gap-10">
       {/* ── Profile hero ───────────────────────────────────────── */}
-      <div className="overflow-hidden rounded-xl border border-border">
+      <div className="overflow-hidden rounded border border-border">
         <div className="flex items-start gap-5 p-6">
           <div
             className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full text-2xl font-bold"
@@ -628,7 +628,7 @@ export default async function ProfilePage() {
 
       {/* ── Streak nudge ────────────────────────────────────────── */}
       {status === "at_risk" && (
-        <div className="flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+        <div className="flex items-start gap-3 rounded border border-primary/20 bg-primary/5 px-4 py-3">
           <span
             style={{ filter: "grayscale(1) opacity(0.4)", fontSize: "1.1rem" }}
           >
@@ -652,7 +652,7 @@ export default async function ProfilePage() {
       )}
 
       {status === "broken" && (
-        <div className="flex items-start gap-3 rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3">
+        <div className="flex items-start gap-3 rounded border border-destructive/20 bg-destructive/5 px-4 py-3">
           <span style={{ fontSize: "1.1rem" }}>💔</span>
           <div className="flex flex-col gap-0.5">
             <p className="text-sm font-medium">
@@ -672,7 +672,7 @@ export default async function ProfilePage() {
       )}
 
       {status === "none" && (
-        <div className="flex items-start gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3">
+        <div className="flex items-start gap-3 rounded border border-border bg-muted/30 px-4 py-3">
           <span
             style={{ filter: "grayscale(1) opacity(0.4)", fontSize: "1.1rem" }}
           >
@@ -699,7 +699,7 @@ export default async function ProfilePage() {
           Recommended for You
         </h2>
         <Suspense
-          fallback={<div className="h-40 animate-pulse rounded-xl bg-muted" />}
+          fallback={<div className="h-40 animate-pulse rounded bg-muted" />}
         >
           <RecommendedProblem
             cachedRecNumber={cachedRecNumber}
@@ -716,7 +716,7 @@ export default async function ProfilePage() {
           What to Focus On Next
         </h2>
         <Suspense
-          fallback={<div className="h-24 animate-pulse rounded-xl bg-muted" />}
+          fallback={<div className="h-24 animate-pulse rounded bg-muted" />}
         >
           <TopicRecommendation />
         </Suspense>
@@ -727,7 +727,7 @@ export default async function ProfilePage() {
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
           Codeforces Account
         </h2>
-        <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+        <div className="rounded border border-border bg-card p-4 shadow-sm">
           <CfLinkSection
             initialHandle={cfHandle}
             initialRating={cfRating}
@@ -748,7 +748,7 @@ export default async function ProfilePage() {
 
       {/* ── Solve Activity Heatmap ────────────────────────────── */}
       <Suspense
-        fallback={<div className="h-28 animate-pulse rounded-lg bg-muted" />}
+        fallback={<div className="h-28 animate-pulse rounded bg-muted" />}
       >
         <SolveHeatmap />
       </Suspense>

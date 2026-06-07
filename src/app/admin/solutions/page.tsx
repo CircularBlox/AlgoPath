@@ -420,11 +420,11 @@ export default function AdminSolutionsPage() {
           </span>
 
           {previewCodes.length === 0 ? (
-            <div className="flex items-center justify-center rounded-xl border border-border bg-card px-6 py-12 text-sm text-muted-foreground">
+            <div className="flex items-center justify-center rounded border border-border bg-card px-6 py-12 text-sm text-muted-foreground">
               Add code above to see a live preview
             </div>
           ) : (
-            <div className="flex flex-col gap-3 rounded-xl border border-border bg-card text-card-foreground shadow-sm overflow-hidden">
+            <div className="flex flex-col gap-3 rounded border border-border bg-card text-card-foreground shadow-sm overflow-hidden">
               {/* Header row */}
               <div className="flex items-center gap-3 px-5 pt-4 pb-3 border-b border-border">
                 <span className="font-semibold text-sm">Code Solution</span>

@@ -7,6 +7,18 @@ const prefersReduced = () =>
   window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
 /**
+ * Arms the scroll-reveal CSS by adding `.anim` to `.landing-root` after mount.
+ * Until this runs, `.ri` / `.spark` / `.hcell` render at their final visible
+ * state — so if JS never loads, the page is fully readable (no hidden sections).
+ */
+export function ArmFx() {
+  useEffect(() => {
+    document.querySelector(".landing-root")?.classList.add("anim");
+  }, []);
+  return null;
+}
+
+/**
  * Scroll-reveal container. Adds `.in` once it enters the viewport; the CSS in
  * globals.css (`.reveal.in .ri`, `.spark`, `.hcell`) does the rest.
  */

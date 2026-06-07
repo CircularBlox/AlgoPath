@@ -190,10 +190,11 @@
   }
 }
 
-/* KaTeX inline: chip style by default */
+/* KaTeX inline: dark chip — math reads as cyan (numbers/identifiers) on muted. */
 .katex {
-  background-color: oklch(0.8 0 0);
-  color: oklch(0.12 0 0);
+  background-color: var(--color-muted);
+  color: var(--color-cyan);
+  border: 1px solid var(--color-border);
   padding: 0.125rem 0.375rem;
   border-radius: 0.25rem;
 }
@@ -212,17 +213,19 @@
   overflow-x: auto;
 }
 
-/* Display-mode in problem statements: subtle background block */
+/* Display-mode in problem statements: subtle dark background block */
 .cf-problem .katex-display {
-  background-color: oklch(0.97 0 0);
+  background-color: var(--color-muted);
+  border: 1px solid var(--color-border);
   padding: 0.75rem 1rem;
   border-radius: 0.375rem;
 }
 
-/* Display-mode outside problem content (hints): stronger chip style */
+/* Display-mode outside problem content (hints): dark chip */
 :not(.cf-problem) .katex-display {
-  background-color: oklch(0.8 0 0);
-  color: oklch(0.12 0 0);
+  background-color: var(--color-muted);
+  color: var(--color-cyan);
+  border: 1px solid var(--color-border);
   padding: 0.75rem 1rem;
   border-radius: 0.375rem;
 }
@@ -309,8 +312,10 @@
   animation: landing-caret 1.05s steps(1) infinite;
 }
 
-/* ── Scroll reveal — IntersectionObserver adds `.in` to a `.reveal` container ── */
-.landing-root .ri {
+/* ── Scroll reveal — IntersectionObserver adds `.in` to a `.reveal` container.
+   Gated behind `.anim` (added by JS on mount) so content stays fully visible if
+   JS never runs / hydration fails — the reveal is progressive enhancement only. */
+.landing-root.anim .ri {
   opacity: 0;
   transform: translateY(10px);
   transition:
@@ -319,7 +324,7 @@
   transition-delay: var(--d, 0ms);
 }
 
-.landing-root .reveal.in .ri {
+.landing-root.anim .reveal.in .ri {
   opacity: 1;
   transform: none;
 }
@@ -331,12 +336,12 @@
   }
 }
 
-.landing-root .spark {
+.landing-root.anim .spark {
   stroke-dasharray: var(--len, 320);
   stroke-dashoffset: var(--len, 320);
 }
 
-.landing-root .reveal.in .spark {
+.landing-root.anim .reveal.in .spark {
   animation: landing-draw 1.4s cubic-bezier(0.16, 1, 0.3, 1) 0.15s forwards;
 }
 
@@ -352,11 +357,11 @@
   }
 }
 
-.landing-root .hcell {
+.landing-root.anim .hcell {
   opacity: 0;
 }
 
-.landing-root .reveal.in .hcell {
+.landing-root.anim .reveal.in .hcell {
   animation: landing-heat 0.3s ease forwards;
   animation-delay: var(--d, 0ms);
 }
@@ -383,19 +388,19 @@
   .landing-root .rise,
   .landing-root .caret,
   .landing-root .marquee-track,
-  .landing-root .reveal.in .spark,
-  .landing-root .reveal.in .hcell {
+  .landing-root.anim .reveal.in .spark,
+  .landing-root.anim .reveal.in .hcell {
     animation: none;
   }
-  .landing-root .ri {
+  .landing-root.anim .ri {
     opacity: 1;
     transform: none;
     transition: none;
   }
-  .landing-root .spark {
+  .landing-root.anim .spark {
     stroke-dashoffset: 0;
   }
-  .landing-root .hcell {
+  .landing-root.anim .hcell {
     opacity: 1;
   }
 }

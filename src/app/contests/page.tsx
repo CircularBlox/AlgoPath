@@ -127,7 +127,7 @@ export default async function ContestsPage() {
             No upcoming contests found.
           </p>
         ) : (
-          <div className="flex flex-col divide-y divide-border rounded-xl border border-border overflow-hidden">
+          <div className="flex flex-col divide-y divide-border rounded border border-border overflow-hidden">
             {upcoming.map((c) => (
               <a
                 key={c.id}
@@ -190,7 +190,7 @@ export default async function ContestsPage() {
               No contest history found for {cfHandle}.
             </p>
           ) : (
-            <div className="overflow-hidden rounded-xl border border-border">
+            <div className="overflow-hidden rounded border border-border">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border bg-muted/30">
@@ -249,7 +249,7 @@ export default async function ContestsPage() {
       )}
 
       {!cfHandle && (
-        <div className="rounded-xl border border-dashed border-border px-6 py-8 text-center">
+        <div className="rounded border border-dashed border-border px-6 py-8 text-center">
           <p className="text-sm font-medium mb-1">
             Link your Codeforces account
           </p>

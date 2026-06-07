@@ -135,7 +135,7 @@ export default function SettingsPage() {
                 </Button>
               </div>
             ) : (
-              <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 flex flex-col gap-3">
+              <div className="rounded border border-destructive/40 bg-destructive/5 p-4 flex flex-col gap-3">
                 <p className="text-sm font-medium">
                   Are you sure? This will permanently delete your account,
                   profile, and all solved problem history.
