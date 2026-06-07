@@ -5,14 +5,13 @@ import { Button } from "~/components/ui/button";
 
 // Codeforces' own rank colors are a recognized external standard, so the hue
 // stays meaningful (not the site's role palette). Mapped onto §1 tokens where
-// they align — pupil→green, specialist→cyan, CM→violet, master→amber, GM→rose —
-// and brightened to read on true-black. Expert keeps a distinct blue (no §1
-// blue token) via a bright Tailwind shade.
+// they align — pupil→green, specialist→cyan, CM→violet, master→amber, GM→rose.
+// Expert uses --color-info, the CF-rank-only blue token (§1 has no general blue).
 const CF_RANK_COLORS: Record<string, string> = {
   newbie: "text-muted-foreground",
   pupil: "text-green",
   specialist: "text-cyan",
-  expert: "text-sky-400",
+  expert: "text-info",
   "candidate master": "text-violet",
   master: "text-amber",
   "international master": "text-amber",

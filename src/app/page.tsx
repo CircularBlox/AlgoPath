@@ -324,9 +324,9 @@ export default function Home() {
               </p>
             </div>
 
-            {/* Hero terminal panel */}
+            {/* Hero terminal panel — promoted: violet top rule leads the eye */}
             <div
-              className={`rise ${panel}`}
+              className={`rise ${panel} border-t-2 border-t-violet`}
               style={{ animationDelay: "400ms" }}
             >
               <PanelHeader
@@ -553,6 +553,7 @@ export default function Home() {
                 span="sm:col-span-2"
                 name="problem-feed"
                 title="A feed tuned to your rating"
+                lead
               >
                 <div className="overflow-hidden rounded border border-border text-[12px]">
                   {problems.map((p) => (
@@ -787,15 +788,21 @@ function Tile({
   span,
   name,
   title,
+  lead,
   children,
 }: {
   span?: string;
   name: string;
   title: string;
+  lead?: boolean;
   children: React.ReactNode;
 }) {
   return (
-    <div className={`ri flex flex-col ${panel} ${span ?? ""}`}>
+    <div
+      className={`ri flex flex-col ${panel} ${span ?? ""} ${
+        lead ? "border-l-2 border-l-violet" : ""
+      }`}
+    >
       <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
         <h3 className="text-[13px] font-semibold text-foreground">{title}</h3>
         <span className="text-[10px] text-dim">{name}</span>
