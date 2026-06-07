@@ -262,16 +262,19 @@
 .landing-root {
   color-scheme: dark;
 
-  /* Elevated near-black palette with a faint cold-blue cast in the neutrals. */
-  --color-background: oklch(0.035 0.004 260);
-  --color-foreground: oklch(0.97 0.003 260);
-  --color-muted: oklch(0.085 0.005 260);
-  --color-muted-foreground: oklch(0.63 0.012 260);
-  --color-card: oklch(0.052 0.005 260);
-  --color-card-foreground: oklch(0.97 0.003 260);
-  --color-border: oklch(0.17 0.008 260);
-  --color-primary: oklch(0.66 0.19 255);
-  --color-primary-foreground: oklch(0.99 0 0);
+  /* ── Strict design system ──────────────────────────────────────────────
+     ONE neutral scale, teal-tinted (hue 215) so the whole UI reads as a dark
+     hue rather than pure black/white. ONE accent (cyan/teal). Amber lives in
+     Tailwind palette classes and is used ONLY for caution. Nothing else. */
+  --color-background: oklch(0.045 0.012 215);
+  --color-foreground: oklch(0.95 0.008 210);
+  --color-muted: oklch(0.095 0.015 215); /* hover / inset surface step */
+  --color-muted-foreground: oklch(0.67 0.02 212);
+  --color-card: oklch(0.066 0.014 215); /* the one card surface */
+  --color-card-foreground: oklch(0.95 0.008 210);
+  --color-border: oklch(0.2 0.018 215); /* the one 1px border */
+  --color-primary: oklch(0.76 0.13 200); /* cyan / teal accent */
+  --color-primary-foreground: oklch(0.16 0.025 215); /* dark text on accent */
 
   /* Distinctive type pairing — Geist for prose/display, JetBrains Mono for data. */
   --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
@@ -286,8 +289,8 @@
 /* Faint structural grid, masked so it fades out below the fold of the hero. */
 .landing-grid {
   background-image:
-    linear-gradient(to right, oklch(0.22 0.01 260 / 0.4) 1px, transparent 1px),
-    linear-gradient(to bottom, oklch(0.22 0.01 260 / 0.4) 1px, transparent 1px);
+    linear-gradient(to right, oklch(0.24 0.015 215 / 0.4) 1px, transparent 1px),
+    linear-gradient(to bottom, oklch(0.24 0.015 215 / 0.4) 1px, transparent 1px);
   background-size: 72px 72px;
   -webkit-mask-image: radial-gradient(
     ellipse 75% 65% at 50% 0%,
@@ -301,28 +304,22 @@
   );
 }
 
-/* Two-tone wash anchored to the top edge — blue left, cyan right. Not a blob. */
+/* One restrained single-accent wash anchored to the top edge — not a blob. */
 .landing-aura {
-  background:
-    radial-gradient(
-      ellipse 48% 45% at 26% -8%,
-      oklch(0.66 0.19 255 / 0.2),
-      transparent 66%
-    ),
-    radial-gradient(
-      ellipse 46% 42% at 80% 0%,
-      oklch(0.74 0.15 205 / 0.14),
-      transparent 68%
-    );
+  background: radial-gradient(
+    ellipse 58% 48% at 50% -8%,
+    oklch(0.76 0.13 200 / 0.16),
+    transparent 68%
+  );
 }
 
-/* Hairline of light along the very top of the page — blue → cyan. */
+/* Hairline of accent light along the very top of the page. */
 .landing-topline {
   background: linear-gradient(
     to right,
     transparent,
-    oklch(0.66 0.19 255 / 0.6) 28%,
-    oklch(0.78 0.16 200 / 0.6) 60%,
+    oklch(0.76 0.13 200 / 0.55) 30%,
+    oklch(0.76 0.13 200 / 0.55) 70%,
     transparent
   );
 }

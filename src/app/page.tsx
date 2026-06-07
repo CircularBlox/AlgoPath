@@ -13,11 +13,21 @@ const jbMono = JetBrains_Mono({
   variable: "--font-jbmono",
 });
 
-/* ── Color system (documented, intentional) ──────────────────────────────────
-   Dark near-black base. Blue (primary) is dominant. Cyan + violet form an
-   analogous "tech" gradient family used for headline accents and progression.
-   Emerald / amber / red are strictly semantic (solved · in-progress · failed).
+/* ── STRICT DESIGN SYSTEM (applied to every section, no exceptions) ───────────
+   Surfaces  · one card: bg-card + border border-border + rounded-xl + p-6.
+               inner rows: px-4 py-3. No white / inverted surfaces anywhere.
+   Spacing   · 8px scale. Content sections py-20; hero pt-24 pb-20; CTA py-20.
+   Type      · Geist display in 3 sizes only —
+               L = text-4xl sm:text-5xl (hero + closing CTA)
+               M = text-2xl sm:text-3xl (section headings)
+               S = text-base            (card / step titles)
+               JetBrains Mono for all labels, code, and numbers.
+   Color     · tinted neutral scale + ONE cyan accent (`primary`).
+               Amber (Tailwind amber-400/500) ONLY for caution. Nothing else.
    ──────────────────────────────────────────────────────────────────────────── */
+const DISPLAY_L = "text-4xl font-semibold tracking-tight sm:text-5xl";
+const DISPLAY_M = "text-2xl font-semibold tracking-tight sm:text-3xl";
+const DISPLAY_S = "text-base font-semibold tracking-tight";
 
 const topics = [
   "dynamic programming",
@@ -41,16 +51,16 @@ const marqueeItems = [0, 1].flatMap((copy) =>
   topics.map((t) => ({ id: `${copy}-${t}`, t })),
 );
 
-// Decorative streak heatmap — fixed levels, stable ids.
+// Decorative streak heatmap — fixed levels, stable ids. Cyan-accent intensity.
 const heat = [
   3, 2, 4, 1, 3, 4, 2, 0, 3, 4, 4, 2, 3, 1, 4, 3, 2, 4, 1, 3, 4,
 ].map((lvl, i) => ({ id: `cell-${i}`, lvl }));
 
 const stats = [
-  { v: "3", label: "progressive hints", tone: "text-primary" },
-  { v: "4", label: "runner languages", tone: "text-cyan-400" },
-  { v: "3", label: "judges supported", tone: "text-violet-400" },
-  { v: "∞", label: "free practice", tone: "text-emerald-400" },
+  { v: "3", label: "progressive hints" },
+  { v: "4", label: "runner languages" },
+  { v: "3", label: "judges supported" },
+  { v: "∞", label: "free practice" },
 ];
 
 const steps = [
@@ -58,47 +68,23 @@ const steps = [
     n: "01",
     title: "Paste the problem",
     body: "Drop a LeetCode, Codeforces, or USACO link. AlgoPath pulls the statement and samples.",
-    tone: "text-primary",
-    bar: "group-hover:bg-primary/50",
   },
   {
     n: "02",
     title: "Get a nudge, not a spoiler",
     body: "Three hints unlock in order — each moves your thinking forward without handing over the answer.",
-    tone: "text-cyan-400",
-    bar: "group-hover:bg-cyan-400/50",
   },
   {
     n: "03",
     title: "Solve, then get reviewed",
     body: "Write your solution, run the samples, and get AI feedback on complexity and approach.",
-    tone: "text-violet-400",
-    bar: "group-hover:bg-violet-400/50",
   },
 ];
 
 const problems = [
-  {
-    title: "Tree Subtree Sums",
-    diff: "1400",
-    tone: "text-cyan-400",
-    platform: "CF",
-    solved: true,
-  },
-  {
-    title: "Coin Change",
-    diff: "Medium",
-    tone: "text-amber-400",
-    platform: "LC",
-    solved: false,
-  },
-  {
-    title: "Cow Gymnastics",
-    diff: "Silver",
-    tone: "text-violet-400",
-    platform: "USACO",
-    solved: true,
-  },
+  { title: "Tree Subtree Sums", diff: "1400", platform: "CF", solved: true },
+  { title: "Coin Change", diff: "Medium", platform: "LC", solved: false },
+  { title: "Cow Gymnastics", diff: "Silver", platform: "USACO", solved: true },
 ];
 
 const tiers = [
@@ -173,20 +159,19 @@ export default function Home() {
           aria-hidden="true"
         />
 
-        <div className="relative mx-auto grid max-w-6xl items-center gap-14 px-6 pt-20 pb-16 lg:grid-cols-[1.05fr_1fr] lg:gap-12 lg:pt-24">
+        <div className="relative mx-auto grid max-w-6xl items-center gap-14 px-6 pt-24 pb-20 lg:grid-cols-[1.05fr_1fr] lg:gap-12">
           <div className="flex flex-col items-start">
-            <span className="rise inline-flex items-center gap-2 rounded-full border border-border bg-card/60 px-3 py-1 font-mono text-[11px] tracking-wide text-muted-foreground backdrop-blur-sm">
+            <span className="rise inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 font-mono text-[11px] tracking-wide text-muted-foreground">
               <span className="size-1.5 animate-pulse rounded-full bg-primary" />
               LeetCode · Codeforces · USACO
             </span>
 
-            <h1 className="rise mt-6 text-balance text-4xl font-semibold leading-[1.06] tracking-tight sm:text-5xl lg:text-[3.4rem]">
+            <h1
+              className={`rise mt-6 text-balance leading-[1.06] ${DISPLAY_L}`}
+            >
               Get unstuck
               <br />
-              without{" "}
-              <span className="bg-gradient-to-r from-primary via-cyan-400 to-violet-400 bg-clip-text pb-1 text-transparent">
-                spoiling the solve.
-              </span>
+              without <span className="text-primary">spoiling the solve.</span>
             </h1>
 
             <p className="rise mt-5 max-w-md text-[15px] leading-relaxed text-muted-foreground">
@@ -195,24 +180,18 @@ export default function Home() {
             </p>
 
             <div className="rise mt-8 flex flex-wrap items-center gap-3">
-              <Link
-                href="/auth/signup"
-                className="group inline-flex h-11 items-center gap-2 rounded-md bg-primary px-6 text-[15px] font-semibold text-primary-foreground shadow-[0_0_0_1px_oklch(0.66_0.19_255_/_0.4),0_8px_30px_-8px_oklch(0.66_0.19_255_/_0.6)] transition-transform duration-150 hover:-translate-y-px active:translate-y-0"
-              >
+              <Link href="/auth/signup" className={btnPrimary}>
                 Start free
                 <span className="transition-transform duration-150 group-hover:translate-x-0.5">
                   →
                 </span>
               </Link>
-              <a
-                href="#how"
-                className="inline-flex h-11 items-center rounded-md border border-border bg-card/40 px-6 text-[15px] font-medium text-foreground transition-colors duration-150 hover:border-primary/50 hover:bg-card"
-              >
+              <a href="#how" className={btnSecondary}>
                 See how it works
               </a>
             </div>
 
-            <p className="rise mt-5 font-mono text-xs text-muted-foreground/80">
+            <p className="rise mt-5 font-mono text-xs text-muted-foreground">
               <span className="text-primary">$</span> no setup · no paywall ·
               free forever<span className="caret text-primary">_</span>
             </p>
@@ -224,58 +203,42 @@ export default function Home() {
               <div className="px-4 py-3 font-mono text-[12.5px] leading-relaxed">
                 <p className="text-muted-foreground">
                   Fewest coins to make{" "}
-                  <span className="text-cyan-400">amount</span> from{" "}
-                  <span className="text-cyan-400">coins[]</span>. Return -1 if
+                  <span className="text-foreground">amount</span> from{" "}
+                  <span className="text-foreground">coins[]</span>. Return -1 if
                   impossible.
                 </p>
               </div>
 
-              <HintRow
-                accent="border-l-primary"
-                label="hint 1"
-                tag="observation"
-                labelTone="text-primary"
-              >
+              <HintRow label="hint 1" tag="observation">
                 Build the answer from smaller subproblems. If you knew the
                 minimum for every amount below the target, how would that help?
               </HintRow>
-              <HintRow
-                accent="border-l-amber-500"
-                label="hint 2"
-                tag="direction"
-                labelTone="text-amber-400"
-              >
-                Let <code className="text-cyan-400">dp[i]</code> be the min
-                coins for amount <code className="text-cyan-400">i</code>.
+              <HintRow label="hint 2" tag="direction">
+                Let <code className="text-foreground">dp[i]</code> be the min
+                coins for amount <code className="text-foreground">i</code>.
                 Subtract each coin and reuse a solved subproblem.
               </HintRow>
-              <HintRow
-                accent="border-l-border"
-                label="hint 3"
-                tag="locked"
-                labelTone="text-muted-foreground"
-                locked
-              >
+              <HintRow label="hint 3" tag="locked" locked>
                 Reveal once you&apos;ve spent time on hint 2.
               </HintRow>
 
-              <div className="flex items-center justify-between border-t border-border px-4 py-2.5 font-mono text-[11px] text-muted-foreground/70">
+              <div className="flex items-center justify-between border-t border-border px-4 py-3 font-mono text-[11px] text-muted-foreground">
                 <span>2 / 3 hints used</span>
-                <span className="text-primary/70">solve to unlock →</span>
+                <span className="text-primary">solve to unlock →</span>
               </div>
             </TerminalPanel>
           </div>
         </div>
 
         {/* Topic ticker */}
-        <div className="marquee relative flex overflow-hidden border-y border-border bg-card/30 py-3">
+        <div className="marquee relative flex overflow-hidden border-y border-border py-3">
           <div className="marquee-track flex shrink-0 items-center gap-3 pr-3">
             {marqueeItems.map((it) => (
               <span
                 key={it.id}
                 className="inline-flex shrink-0 items-center gap-2 rounded-full border border-border px-3 py-1 font-mono text-[11px] text-muted-foreground"
               >
-                <span className="size-1 rounded-full bg-primary/60" />
+                <span className="size-1 rounded-full bg-primary" />
                 {it.t}
               </span>
             ))}
@@ -295,13 +258,11 @@ export default function Home() {
       <section className="border-b border-border">
         <div className="mx-auto grid max-w-6xl grid-cols-2 divide-border sm:grid-cols-4 sm:divide-x">
           {stats.map((s) => (
-            <div key={s.label} className="px-6 py-8 text-center sm:text-left">
-              <div
-                className={`font-mono text-4xl font-semibold tracking-tight tabular-nums ${s.tone}`}
-              >
+            <div key={s.label} className="px-6 py-10 text-center sm:text-left">
+              <div className="font-mono text-3xl font-semibold tracking-tight tabular-nums text-primary">
                 {s.v}
               </div>
-              <div className="mt-1.5 text-xs text-muted-foreground">
+              <div className="mt-2 text-xs text-muted-foreground">
                 {s.label}
               </div>
             </div>
@@ -316,25 +277,16 @@ export default function Home() {
             kicker="how it works"
             title="From stuck to solved in three steps"
           />
-          <div className="mt-12 grid gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-3">
+          <div className="mt-12 grid gap-4 sm:grid-cols-3">
             {steps.map((s) => (
-              <div
-                key={s.n}
-                className="group bg-card p-6 transition-colors duration-200 hover:bg-muted"
-              >
+              <div key={s.n} className={card}>
                 <div className="flex items-baseline gap-3">
-                  <span
-                    className={`font-mono text-2xl font-semibold tabular-nums ${s.tone}`}
-                  >
+                  <span className="font-mono text-2xl font-semibold tabular-nums text-primary">
                     {s.n}
                   </span>
-                  <span
-                    className={`h-px flex-1 bg-border transition-colors ${s.bar}`}
-                  />
+                  <span className="h-px flex-1 bg-border" />
                 </div>
-                <h3 className="mt-5 text-base font-semibold tracking-tight">
-                  {s.title}
-                </h3>
+                <h3 className={`mt-5 ${DISPLAY_S}`}>{s.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                   {s.body}
                 </p>
@@ -351,9 +303,9 @@ export default function Home() {
             kicker="ai code review"
             title="Feedback the moment you submit"
           />
-          <div className="mt-12 grid gap-5 lg:grid-cols-[1.15fr_1fr]">
+          <div className="mt-12 grid gap-4 lg:grid-cols-[1.15fr_1fr]">
             <TerminalPanel title="solution.py" tag="PYTHON">
-              <pre className="overflow-x-auto px-4 py-4 font-mono text-[12.5px] leading-relaxed text-foreground/90">
+              <pre className="overflow-x-auto px-4 py-4 font-mono text-[12.5px] leading-relaxed text-foreground">
                 <code>{`def coinChange(coins, amount):
     dp = [float("inf")] * (amount + 1)
     dp[0] = 0
@@ -366,30 +318,17 @@ export default function Home() {
             </TerminalPanel>
 
             <div className="overflow-hidden rounded-xl border border-border bg-card">
-              <ReviewRow
-                accent="border-l-primary"
-                tone="text-primary"
-                label="complexity"
-              >
+              <ReviewRow accent="primary" label="complexity">
                 O(n·m) time, O(n) space. Standard bottom-up DP — optimal for
                 this approach.
               </ReviewRow>
-              <ReviewRow
-                accent="border-l-emerald-500"
-                tone="text-emerald-400"
-                label="strengths"
-              >
+              <ReviewRow accent="neutral" label="strengths">
                 Clean recurrence, handles the impossible case, idiomatic
                 bottom-up pattern.
               </ReviewRow>
-              <ReviewRow
-                accent="border-l-amber-500"
-                tone="text-amber-400"
-                label="consider"
-                last
-              >
+              <ReviewRow accent="caution" label="consider" last>
                 Inner loop can break early once{" "}
-                <code className="font-mono text-cyan-400">dp[i] == 1</code>. A
+                <code className="font-mono text-foreground">dp[i] == 1</code>. A
                 minor win — the solution is already correct.
               </ReviewRow>
             </div>
@@ -410,26 +349,23 @@ export default function Home() {
             <Tile
               span="sm:col-span-2"
               name="problem-feed"
-              tone="text-primary"
               title="A feed tuned to your rating"
             >
-              <div className="overflow-hidden rounded-lg border border-border bg-background/40 font-mono text-[12px]">
+              <div className="overflow-hidden rounded-xl border border-border font-mono text-[12px]">
                 {problems.map((p) => (
                   <div
                     key={p.title}
-                    className="grid grid-cols-[1rem_1fr_4rem_3.5rem] items-center gap-2 border-b border-border px-3 py-2 last:border-b-0"
+                    className="grid grid-cols-[1rem_1fr_4rem_3.5rem] items-center gap-2 border-b border-border px-4 py-3 last:border-b-0"
                   >
                     <span
                       className={
-                        p.solved
-                          ? "text-emerald-400"
-                          : "text-muted-foreground/50"
+                        p.solved ? "text-primary" : "text-muted-foreground"
                       }
                     >
                       {p.solved ? "●" : "○"}
                     </span>
                     <span className="truncate text-foreground">{p.title}</span>
-                    <span className={p.tone}>{p.diff}</span>
+                    <span className="text-muted-foreground">{p.diff}</span>
                     <span className="text-right text-muted-foreground">
                       {p.platform}
                     </span>
@@ -439,14 +375,10 @@ export default function Home() {
             </Tile>
 
             {/* Rating climb — sparkline */}
-            <Tile
-              name="rating-climb"
-              tone="text-cyan-400"
-              title="Watch it climb"
-            >
+            <Tile name="rating-climb" title="Watch it climb">
               <div className="flex items-end justify-between">
                 <Sparkline />
-                <span className="font-mono text-sm font-semibold text-emerald-400">
+                <span className="font-mono text-sm font-semibold text-primary">
                   +340
                 </span>
               </div>
@@ -457,11 +389,7 @@ export default function Home() {
             </Tile>
 
             {/* Sample runner */}
-            <Tile
-              name="sample-runner"
-              tone="text-emerald-400"
-              title="Run the samples"
-            >
+            <Tile name="sample-runner" title="Run the samples">
               <div className="space-y-1.5 font-mono text-[12px]">
                 <RunRow ok label="test 1" time="4ms" />
                 <RunRow ok label="test 2" time="3ms" />
@@ -474,17 +402,17 @@ export default function Home() {
             </Tile>
 
             {/* Streak heatmap */}
-            <Tile name="streak" tone="text-amber-400" title="Keep the streak">
+            <Tile name="streak" title="Keep the streak">
               <div className="flex flex-wrap gap-1">
                 {heat.map((c) => (
                   <span
                     key={c.id}
-                    className="size-3 rounded-[3px]"
+                    className="size-3 rounded-sm"
                     style={{
                       backgroundColor:
                         c.lvl === 0
-                          ? "oklch(0.17 0.008 260)"
-                          : `oklch(0.7 0.16 150 / ${0.2 + c.lvl * 0.2})`,
+                          ? "oklch(0.2 0.018 215)"
+                          : `oklch(0.76 0.13 200 / ${0.2 + c.lvl * 0.2})`,
                     }}
                   />
                 ))}
@@ -495,19 +423,11 @@ export default function Home() {
             </Tile>
 
             {/* Multi-platform */}
-            <Tile
-              name="every-judge"
-              tone="text-violet-400"
-              title="Every judge, one place"
-            >
+            <Tile name="every-judge" title="Every judge, one place">
               <div className="flex flex-wrap gap-2">
-                <Chip className="border-amber-500/30 text-amber-400">
-                  LeetCode
-                </Chip>
-                <Chip className="border-primary/40 text-primary">
-                  Codeforces
-                </Chip>
-                <Chip className="border-cyan-500/30 text-cyan-400">USACO</Chip>
+                <Chip>LeetCode</Chip>
+                <Chip>Codeforces</Chip>
+                <Chip>USACO</Chip>
               </div>
               <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
                 Interview prep and contest training without switching tabs.
@@ -525,19 +445,10 @@ export default function Home() {
             title="Priced by a competitive programmer"
             sub="The free plan is the whole product, not a teaser. Upgrade only when you outgrow the daily caps."
           />
-          <div className="mt-12 grid items-start gap-5 sm:grid-cols-3">
-            {tiers.map((t) =>
-              t.featured ? (
-                <div
-                  key={t.name}
-                  className="rounded-xl bg-gradient-to-b from-primary/70 via-cyan-500/30 to-transparent p-px shadow-[0_24px_70px_-30px_oklch(0.66_0.19_255_/_0.8)]"
-                >
-                  <PriceCard tier={t} />
-                </div>
-              ) : (
-                <PriceCard key={t.name} tier={t} />
-              ),
-            )}
+          <div className="mt-12 grid items-start gap-4 sm:grid-cols-3">
+            {tiers.map((t) => (
+              <PriceCard key={t.name} tier={t} />
+            ))}
           </div>
           <p className="mt-6 text-center text-xs text-muted-foreground">
             Payments coming soon.{" "}
@@ -557,22 +468,17 @@ export default function Home() {
           className="landing-aura pointer-events-none absolute inset-0"
           aria-hidden="true"
         />
-        <div className="relative mx-auto flex max-w-2xl flex-col items-center px-6 py-24 text-center">
-          <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+        <div className="relative mx-auto flex max-w-2xl flex-col items-center px-6 py-20 text-center">
+          <h2 className={DISPLAY_L}>
             Pick a problem.
             <br />
-            <span className="bg-gradient-to-r from-primary via-cyan-400 to-violet-400 bg-clip-text pb-1 text-transparent">
-              Get your first hint.
-            </span>
+            <span className="text-primary">Get your first hint.</span>
           </h2>
           <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground">
             Interview prep or contest training — start solving smarter in under
             thirty seconds.
           </p>
-          <Link
-            href="/auth/signup"
-            className="mt-8 inline-flex h-12 items-center gap-2 rounded-md bg-primary px-8 text-[15px] font-semibold text-primary-foreground shadow-[0_0_0_1px_oklch(0.66_0.19_255_/_0.4),0_10px_40px_-10px_oklch(0.66_0.19_255_/_0.7)] transition-transform duration-150 hover:-translate-y-px"
-          >
+          <Link href="/auth/signup" className={`${btnPrimary} mt-8`}>
             Start free today →
           </Link>
           <p className="mt-5 font-mono text-xs text-muted-foreground">
@@ -590,7 +496,15 @@ export default function Home() {
   );
 }
 
-// ── Building blocks ───────────────────────────────────────────────────────
+// ── Shared tokens (the only button + card recipes used on the page) ─────────
+const card =
+  "rounded-xl border border-border bg-card p-6 transition-colors duration-200 hover:border-primary/40";
+const btnPrimary =
+  "group inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-6 text-[15px] font-semibold text-primary-foreground transition-transform duration-150 hover:-translate-y-px active:translate-y-0";
+const btnSecondary =
+  "inline-flex h-11 items-center rounded-lg border border-border bg-card px-6 text-[15px] font-medium text-foreground transition-colors duration-150 hover:border-primary/50 hover:bg-muted";
+
+// ── Building blocks ─────────────────────────────────────────────────────────
 function TerminalPanel({
   title,
   tag,
@@ -602,16 +516,16 @@ function TerminalPanel({
 }) {
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-card shadow-[0_30px_80px_-40px_oklch(0_0_0_/_0.9)]">
-      <div className="flex items-center gap-3 border-b border-border bg-muted/40 px-4 py-2.5">
+      <div className="flex items-center gap-3 border-b border-border bg-muted px-4 py-3">
         <div className="flex gap-1.5" aria-hidden="true">
-          <span className="size-2.5 rounded-full bg-red-500/70" />
-          <span className="size-2.5 rounded-full bg-amber-500/70" />
-          <span className="size-2.5 rounded-full bg-emerald-500/70" />
+          <span className="size-2.5 rounded-full bg-muted-foreground/30" />
+          <span className="size-2.5 rounded-full bg-muted-foreground/30" />
+          <span className="size-2.5 rounded-full bg-muted-foreground/30" />
         </div>
         <span className="truncate font-mono text-[11.5px] text-muted-foreground">
           {title}
         </span>
-        <span className="ml-auto rounded bg-background/60 px-1.5 py-0.5 font-mono text-[9.5px] tracking-widest text-muted-foreground/60">
+        <span className="ml-auto rounded border border-border px-1.5 py-0.5 font-mono text-[9.5px] tracking-widest text-muted-foreground">
           {tag}
         </span>
       </div>
@@ -621,33 +535,35 @@ function TerminalPanel({
 }
 
 function HintRow({
-  accent,
   label,
   tag,
-  labelTone,
   locked,
   children,
 }: {
-  accent: string;
   label: string;
   tag: string;
-  labelTone: string;
   locked?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <div
-      className={`border-b border-l-2 border-border px-4 py-3 ${accent} ${
-        locked ? "opacity-50" : ""
+      className={`border-b border-l-2 border-border px-4 py-3 ${
+        locked ? "opacity-60" : "border-l-primary"
       }`}
     >
       <div className="mb-1.5 flex items-center gap-2 font-mono text-[11px]">
-        <span className={`font-semibold ${labelTone}`}>{label}</span>
+        <span
+          className={`font-semibold ${
+            locked ? "text-muted-foreground" : "text-primary"
+          }`}
+        >
+          {label}
+        </span>
         <span className="text-muted-foreground">· {tag}</span>
       </div>
       <p
         className={`text-[12.5px] leading-relaxed ${
-          locked ? "italic text-muted-foreground" : "text-foreground/90"
+          locked ? "italic text-muted-foreground" : "text-foreground"
         }`}
       >
         {children}
@@ -658,20 +574,30 @@ function HintRow({
 
 function ReviewRow({
   accent,
-  tone,
   label,
   last,
   children,
 }: {
-  accent: string;
-  tone: string;
+  accent: "primary" | "neutral" | "caution";
   label: string;
   last?: boolean;
   children: React.ReactNode;
 }) {
+  const edge =
+    accent === "primary"
+      ? "border-l-primary"
+      : accent === "caution"
+        ? "border-l-amber-500"
+        : "border-l-border";
+  const tone =
+    accent === "primary"
+      ? "text-primary"
+      : accent === "caution"
+        ? "text-amber-400"
+        : "text-foreground";
   return (
     <div
-      className={`border-l-2 px-5 py-4 ${accent} ${
+      className={`border-l-2 px-4 py-3 ${edge} ${
         last ? "" : "border-b border-b-border"
       }`}
     >
@@ -688,25 +614,21 @@ function ReviewRow({
 function Tile({
   span,
   name,
-  tone,
   title,
   children,
 }: {
   span?: string;
   name: string;
-  tone: string;
   title: string;
   children: React.ReactNode;
 }) {
   return (
-    <div
-      className={`group flex flex-col rounded-xl border border-border bg-card p-5 transition-colors duration-200 hover:border-primary/30 ${
-        span ?? ""
-      }`}
-    >
+    <div className={`flex flex-col ${card} ${span ?? ""}`}>
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-sm font-semibold tracking-tight">{title}</h3>
-        <span className={`font-mono text-[10px] ${tone}`}>{name}</span>
+        <h3 className={DISPLAY_S}>{title}</h3>
+        <span className="font-mono text-[10px] text-muted-foreground">
+          {name}
+        </span>
       </div>
       <div className="mt-auto">{children}</div>
     </div>
@@ -723,33 +645,23 @@ function RunRow({
   time: string;
 }) {
   return (
-    <div className="flex items-center justify-between rounded border border-border bg-background/40 px-2.5 py-1.5">
+    <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
       <span className="flex items-center gap-2">
-        <span className={ok ? "text-emerald-400" : "text-red-400"}>
+        <span className={ok ? "text-primary" : "text-amber-400"}>
           {ok ? "✓" : "✗"}
         </span>
         <span className="text-muted-foreground">{label}</span>
       </span>
-      <span className={ok ? "text-muted-foreground/60" : "text-red-400"}>
+      <span className={ok ? "text-muted-foreground" : "text-amber-400"}>
         {time}
       </span>
     </div>
   );
 }
 
-function Chip({
-  className,
-  children,
-}: {
-  className?: string;
-  children: React.ReactNode;
-}) {
+function Chip({ children }: { children: React.ReactNode }) {
   return (
-    <span
-      className={`rounded-full border px-2.5 py-1 font-mono text-[11px] ${
-        className ?? ""
-      }`}
-    >
+    <span className="rounded-full border border-border px-2.5 py-1 font-mono text-[11px] text-foreground">
       {children}
     </span>
   );
@@ -762,17 +674,14 @@ function Sparkline() {
       width="124"
       height="44"
       fill="none"
+      className="text-primary"
       aria-hidden="true"
     >
       <title>Rating trend</title>
       <defs>
-        <linearGradient id="sparkStroke" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#22d3ee" />
-          <stop offset="100%" stopColor="#a78bfa" />
-        </linearGradient>
         <linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.22" />
-          <stop offset="100%" stopColor="#22d3ee" stopOpacity="0" />
+          <stop offset="0%" stopColor="currentColor" stopOpacity="0.22" />
+          <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
         </linearGradient>
       </defs>
       <polygon
@@ -782,13 +691,13 @@ function Sparkline() {
       <polyline
         className="spark"
         points="0,52 28,46 56,50 84,38 112,42 140,26 168,30 200,12"
-        stroke="url(#sparkStroke)"
+        stroke="currentColor"
         strokeWidth="2.5"
         strokeLinecap="round"
         strokeLinejoin="round"
         style={{ "--len": "300" } as React.CSSProperties}
       />
-      <circle cx="200" cy="12" r="3.5" fill="#a78bfa" />
+      <circle cx="200" cy="12" r="3.5" fill="currentColor" />
     </svg>
   );
 }
@@ -814,13 +723,17 @@ function Check() {
 
 function PriceCard({ tier }: { tier: (typeof tiers)[number] }) {
   return (
-    <div className="flex h-full flex-col rounded-xl border border-border bg-card p-6">
+    <div
+      className={`flex h-full flex-col rounded-xl border bg-card p-6 ${
+        tier.featured ? "border-primary" : "border-border"
+      }`}
+    >
       <div className="flex items-center justify-between">
         <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
           {tier.name}
         </span>
         {tier.featured && (
-          <span className="rounded-full bg-primary/15 px-2 py-0.5 font-mono text-[10px] font-medium text-primary">
+          <span className="rounded-full border border-primary/40 px-2 py-0.5 font-mono text-[10px] font-medium text-primary">
             popular
           </span>
         )}
@@ -844,7 +757,7 @@ function PriceCard({ tier }: { tier: (typeof tiers)[number] }) {
 
       <Link
         href={tier.href}
-        className={`mt-6 inline-flex h-10 items-center justify-center rounded-md text-sm font-semibold transition-all duration-150 ${
+        className={`mt-6 inline-flex h-10 items-center justify-center rounded-lg text-sm font-semibold transition-all duration-150 ${
           tier.featured
             ? "bg-primary text-primary-foreground hover:-translate-y-px"
             : "border border-border text-foreground hover:border-primary/50 hover:bg-muted"
@@ -867,13 +780,11 @@ function SectionHead({
 }) {
   return (
     <div className="max-w-2xl">
-      <span className="font-mono text-[12px] text-muted-foreground/70">
-        <span className="text-primary/60">{"// "}</span>
+      <span className="font-mono text-[12px] text-muted-foreground">
+        <span className="text-primary">{"// "}</span>
         {kicker}
       </span>
-      <h2 className="mt-3 text-pretty text-2xl font-semibold tracking-tight sm:text-3xl">
-        {title}
-      </h2>
+      <h2 className={`mt-3 text-pretty ${DISPLAY_M}`}>{title}</h2>
       {sub && (
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
           {sub}
