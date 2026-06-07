@@ -2,7 +2,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { AdminDropdown } from "~/components/admin-dropdown";
-import { ThemeToggle } from "~/components/theme-toggle";
 import { isAdmin } from "~/lib/is-admin";
 import { streakStatus } from "~/lib/streak";
 import { createClient, getUser } from "~/lib/supabase/server";
@@ -162,7 +161,6 @@ export function Navbar() {
           </div>
 
           <div className="ml-auto flex items-center gap-2">
-            <ThemeToggle />
             <Suspense
               fallback={
                 <Link

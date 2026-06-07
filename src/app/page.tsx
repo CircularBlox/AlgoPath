@@ -1,37 +1,15 @@
-import { Geist, JetBrains_Mono } from "next/font/google";
 import Link from "next/link";
+import { Reveal, SampleRunner, StatNum } from "./landing-fx";
 
-const geist = Geist({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-geist",
-});
+/* ── Terminal/IDE landing — true-black, monospace-forward, box-drawing panels.
+   Tokens (§1 palette) live in globals.css; every hue has exactly one job.
+   Radius is `rounded` (4px) only. No white cards, no glow, no emoji. ──────────── */
 
-const jbMono = JetBrains_Mono({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-jbmono",
-});
-
-/* ── ONE STRICT EDITOR THEME (applied to every section) ───────────────────────
-   Surfaces  · one dark card: bg-card + border border-border + rounded-xl + p-6.
-               inner rows: px-4 py-3. No light / inverted surfaces anywhere.
-   Spacing   · 8px scale. Content sections py-20; hero pt-24 pb-20; CTA py-20.
-   Type      · Geist display in 3 sizes (L/M/S); JetBrains Mono for all labels,
-               code, numbers, and metadata.
-   Color     · syntax-theme discipline — each hue has ONE job:
-               VIOLET (primary) brand/headings/eyebrows/Pro · CYAN numbers &
-               ratings & code idents · MINT success · AMBER caution · ROSE fail.
-   ──────────────────────────────────────────────────────────────────────────── */
-const DISPLAY_L = "text-4xl font-semibold tracking-tight sm:text-5xl";
-const DISPLAY_M = "text-2xl font-semibold tracking-tight sm:text-3xl";
-const DISPLAY_S = "text-base font-semibold tracking-tight text-foreground";
-
-const NUM = "text-[var(--syntax-num)]";
-const POS = "text-[var(--syntax-pos)]";
-const CAUTION = "text-[var(--syntax-caution)]";
-const NEG = "text-[var(--syntax-neg)]";
-const PREFIX = "text-[var(--syntax-prefix)]";
+const btnPrimary =
+  "inline-flex h-10 items-center gap-2 rounded bg-primary px-5 font-mono text-[13px] font-semibold text-primary-foreground transition-colors hover:bg-primary/90";
+const btnSecondary =
+  "inline-flex h-10 items-center rounded border border-border bg-card px-5 font-mono text-[13px] text-foreground transition-colors hover:border-border-bright hover:bg-muted";
+const panel = "rounded border border-border bg-card";
 
 const topics = [
   "dynamic programming",
@@ -49,13 +27,10 @@ const topics = [
   "max flow",
   "combinatorics",
 ];
-
-// Two copies for a seamless marquee loop, each with a stable id (not index-keyed).
 const marqueeItems = [0, 1].flatMap((copy) =>
   topics.map((t) => ({ id: `${copy}-${t}`, t })),
 );
 
-// Decorative streak heatmap — fixed levels, stable ids. Amber (streak) intensity.
 const heat = [
   3, 2, 4, 1, 3, 4, 2, 0, 3, 4, 4, 2, 3, 1, 4, 3, 2, 4, 1, 3, 4,
 ].map((lvl, i) => ({ id: `cell-${i}`, lvl }));
@@ -88,17 +63,17 @@ const steps = [
 const problems = [
   { title: "Tree Subtree Sums", diff: "1400", platform: "CF", solved: true },
   { title: "Coin Change", diff: "Medium", platform: "LC", solved: false },
+  { title: "Greedy Intervals", diff: "2100", platform: "CF", solved: false },
   { title: "Cow Gymnastics", diff: "Silver", platform: "USACO", solved: true },
 ];
 
 const tiers = [
   {
-    name: "Free",
+    name: "FREE",
     price: "$0",
     cadence: "forever",
     note: "No card. Fully usable, not a trial.",
     cta: "Start free",
-    href: "/auth/signup",
     featured: false,
     feats: [
       "Unlimited problem practice",
@@ -109,12 +84,11 @@ const tiers = [
     ],
   },
   {
-    name: "Pro",
+    name: "PRO",
     price: "$8",
-    cadence: "/ mo",
+    cadence: "/mo",
     note: "or $65/yr — save 32%",
     cta: "Go Pro",
-    href: "/auth/signup",
     featured: true,
     feats: [
       "Everything in Free",
@@ -125,12 +99,11 @@ const tiers = [
     ],
   },
   {
-    name: "Elite",
+    name: "ELITE",
     price: "$16",
-    cadence: "/ mo",
+    cadence: "/mo",
     note: "or $130/yr — save 32%",
     cta: "Go Elite",
-    href: "/auth/signup",
     featured: false,
     feats: [
       "Everything in Pro",
@@ -142,12 +115,12 @@ const tiers = [
   },
 ];
 
-// Syntax-highlighted Python sample — tokens carry stable ids (not index-keyed).
-// kw = keyword (violet) · id = identifier (cyan) · num (cyan) · str (mint) · op (muted)
-const codeLines: [string, "kw" | "id" | "num" | "str" | "op"][][] = [
+// Syntax-highlighted Python sample — §1 palette: kw=violet, fn=teal, id/num=cyan,
+// str=green, op=muted. Stable ids (not index-keyed).
+const codeLines: [string, "kw" | "fn" | "id" | "num" | "str" | "op"][][] = [
   [
     ["def ", "kw"],
-    ["coinChange", "id"],
+    ["coinChange", "fn"],
     ["(", "op"],
     ["coins", "id"],
     [", ", "op"],
@@ -158,7 +131,7 @@ const codeLines: [string, "kw" | "id" | "num" | "str" | "op"][][] = [
     ["    dp ", "id"],
     ["= ", "op"],
     ["[", "op"],
-    ["float", "id"],
+    ["float", "fn"],
     ["(", "op"],
     ['"inf"', "str"],
     [")", "op"],
@@ -183,7 +156,7 @@ const codeLines: [string, "kw" | "id" | "num" | "str" | "op"][][] = [
     ["for ", "kw"],
     ["i ", "id"],
     ["in ", "kw"],
-    ["range", "id"],
+    ["range", "fn"],
     ["(", "op"],
     ["1", "num"],
     [", ", "op"],
@@ -214,7 +187,7 @@ const codeLines: [string, "kw" | "id" | "num" | "str" | "op"][][] = [
     ["i", "id"],
     ["] ", "op"],
     ["= ", "op"],
-    ["min", "id"],
+    ["min", "fn"],
     ["(", "op"],
     ["dp", "id"],
     ["[", "op"],
@@ -243,7 +216,7 @@ const codeLines: [string, "kw" | "id" | "num" | "str" | "op"][][] = [
     ["amount", "id"],
     ["] ", "op"],
     ["!= ", "op"],
-    ["float", "id"],
+    ["float", "fn"],
     ["(", "op"],
     ['"inf"', "str"],
     [") ", "op"],
@@ -258,441 +231,505 @@ const CODE = codeLines.map((toks, li) => ({
 }));
 
 const TOKEN_CLASS: Record<string, string> = {
-  kw: "text-[var(--syntax-keyword)]",
-  id: NUM,
-  num: NUM,
-  str: "text-[var(--syntax-string)]",
+  kw: "text-violet",
+  fn: "text-teal",
+  id: "text-cyan",
+  num: "text-cyan",
+  str: "text-green",
   op: "text-muted-foreground",
 };
 
+function diffClass(d: string): string {
+  if (/^\d+$/.test(d)) {
+    const n = Number(d);
+    return n >= 2000 ? "text-rose" : n >= 1700 ? "text-amber" : "text-cyan";
+  }
+  const k = d.toLowerCase();
+  if (k === "easy") return "text-green";
+  if (k === "medium") return "text-amber";
+  if (k === "hard") return "text-rose";
+  return "text-cyan";
+}
+
 export default function Home() {
   return (
-    <main
-      className={`landing-root ${geist.variable} ${jbMono.variable} relative min-h-screen overflow-hidden`}
-    >
+    <main className="landing-root relative min-h-screen overflow-hidden bg-background font-mono text-foreground">
       <div
-        className="landing-topline pointer-events-none absolute inset-x-0 top-0 h-px"
+        className="landing-topline pointer-events-none absolute inset-x-0 top-0 z-30 h-px"
+        aria-hidden="true"
+      />
+      <div
+        className="landing-scanlines pointer-events-none absolute inset-0 z-20"
         aria-hidden="true"
       />
 
-      {/* ── Hero ───────────────────────────────────────────────────────────── */}
-      <section className="relative">
-        <div
-          className="landing-grid pointer-events-none absolute inset-0 h-[780px]"
-          aria-hidden="true"
-        />
-        <div
-          className="landing-aura pointer-events-none absolute inset-0 h-[780px]"
-          aria-hidden="true"
-        />
-
-        <div className="relative mx-auto grid max-w-6xl items-center gap-14 px-6 pt-24 pb-20 lg:grid-cols-[1.05fr_1fr] lg:gap-12">
-          <div className="flex flex-col items-start">
-            <span className="rise inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 font-mono text-[11px] tracking-wide text-muted-foreground">
-              <span className="size-1.5 animate-pulse rounded-full bg-primary" />
-              LeetCode · Codeforces · USACO
-            </span>
-
-            <h1
-              className={`rise mt-6 text-balance leading-[1.06] ${DISPLAY_L}`}
-            >
-              Get unstuck
-              <br />
-              without <span className="text-primary">spoiling the solve.</span>
-            </h1>
-
-            <p className="rise mt-5 max-w-md text-[15px] leading-relaxed text-muted-foreground">
-              AlgoPath gives competitive programmers progressive hints and
-              instant AI code review. Learn the idea, then solve it yourself.
-            </p>
-
-            <div className="rise mt-8 flex flex-wrap items-center gap-3">
-              <Link href="/auth/signup" className={btnPrimary}>
-                Start free
-                <span className="transition-transform duration-150 group-hover:translate-x-0.5">
-                  →
-                </span>
-              </Link>
-              <a href="#how" className={btnSecondary}>
-                See how it works
-              </a>
-            </div>
-
-            <p className="rise mt-5 font-mono text-xs text-muted-foreground">
-              <span className={PREFIX}>$</span> no setup · no paywall · free
-              forever<span className="caret text-primary">_</span>
-            </p>
-          </div>
-
-          {/* Live hint panel — a real preview of the product UI */}
-          <div className="rise" style={{ animationDelay: "120ms" }}>
-            <TerminalPanel title="coin-change.md" tag="PROBLEM">
-              <div className="px-4 py-3 font-mono text-[12.5px] leading-relaxed">
-                <p className="text-muted-foreground">
-                  Fewest coins to make <span className={NUM}>amount</span> from{" "}
-                  <span className={NUM}>coins[]</span>. Return{" "}
-                  <span className={NUM}>-1</span> if impossible.
-                </p>
-              </div>
-
-              <HintRow label="hint 1" tag="observation">
-                Build the answer from smaller subproblems. If you knew the
-                minimum for every amount below the target, how would that help?
-              </HintRow>
-              <HintRow label="hint 2" tag="direction">
-                Let <code className={NUM}>dp[i]</code> be the min coins for
-                amount <code className={NUM}>i</code>. Subtract each coin and
-                reuse a solved subproblem.
-              </HintRow>
-              <HintRow label="hint 3" tag="locked" locked>
-                Reveal once you&apos;ve spent time on hint 2.
-              </HintRow>
-
-              <div className="flex items-center justify-between border-t border-border px-4 py-3 font-mono text-[11px] text-muted-foreground">
-                <span>
-                  <span className={NUM}>2</span> /{" "}
-                  <span className={NUM}>3</span> hints used
-                </span>
-                <span className="text-primary">solve to unlock →</span>
-              </div>
-            </TerminalPanel>
-          </div>
-        </div>
-
-        {/* Topic ticker */}
-        <div className="marquee relative flex overflow-hidden border-y border-border py-3">
-          <div className="marquee-track flex shrink-0 items-center gap-3 pr-3">
-            {marqueeItems.map((it) => (
+      <div className="relative z-10">
+        {/* ── Hero (1D) ────────────────────────────────────────────────────── */}
+        <section className="relative">
+          <div
+            className="landing-grid pointer-events-none absolute inset-0 h-[640px]"
+            aria-hidden="true"
+          />
+          <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-6 py-14 lg:grid-cols-[1.05fr_1fr]">
+            <div className="flex flex-col items-start">
               <span
-                key={it.id}
-                className="inline-flex shrink-0 items-center gap-2 rounded-full border border-border px-3 py-1 font-mono text-[11px] text-muted-foreground"
+                className="rise inline-flex items-center gap-1.5 rounded border border-border bg-card px-3 py-1 text-[11px] text-muted-foreground"
+                style={{ animationDelay: "0ms" }}
               >
-                <span className="size-1 rounded-full bg-primary" />
-                {it.t}
+                <span className="text-dim">[</span>
+                LeetCode · Codeforces · USACO
+                <span className="text-dim">]</span>
               </span>
-            ))}
-          </div>
-          <div
-            className="pointer-events-none absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-background to-transparent"
-            aria-hidden="true"
-          />
-          <div
-            className="pointer-events-none absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-background to-transparent"
-            aria-hidden="true"
-          />
-        </div>
-      </section>
 
-      {/* ── Stat band ──────────────────────────────────────────────────────── */}
-      <section className="border-b border-border">
-        <div className="mx-auto grid max-w-6xl grid-cols-2 divide-border sm:grid-cols-4 sm:divide-x">
-          {stats.map((s) => (
-            <div key={s.label} className="px-6 py-10 text-center sm:text-left">
-              <div
-                className={`font-mono text-3xl font-semibold tracking-tight tabular-nums ${NUM}`}
+              <h1
+                className="rise mt-6 font-sans text-4xl font-semibold leading-[1.05] tracking-tight text-foreground sm:text-5xl"
+                style={{ animationDelay: "80ms" }}
               >
-                {s.v}
+                Get unstuck
+                <br />
+                without <span className="text-violet">spoiling the solve.</span>
+              </h1>
+
+              <p
+                className="rise mt-5 max-w-md text-[13.5px] leading-relaxed text-muted-foreground"
+                style={{ animationDelay: "160ms" }}
+              >
+                AlgoPath gives competitive programmers progressive hints and
+                instant AI code review. Learn the idea, then solve it yourself.
+              </p>
+
+              <div
+                className="rise mt-8 flex flex-wrap items-center gap-3"
+                style={{ animationDelay: "240ms" }}
+              >
+                <Link href="/auth/signup" className={btnPrimary}>
+                  Start free
+                  <span aria-hidden="true">→</span>
+                </Link>
+                <a href="#how" className={btnSecondary}>
+                  See how it works
+                </a>
               </div>
-              <div className="mt-2 text-xs text-muted-foreground">
-                {s.label}
-              </div>
+
+              <p
+                className="rise mt-5 text-xs text-dim"
+                style={{ animationDelay: "320ms" }}
+              >
+                <span className="text-violet">$</span> no setup · no paywall ·
+                free forever<span className="caret text-violet">_</span>
+              </p>
             </div>
-          ))}
-        </div>
-      </section>
 
-      {/* ── How it works ───────────────────────────────────────────────────── */}
-      <section id="how" className="border-t border-border">
-        <div className="mx-auto max-w-6xl px-6 py-20">
-          <SectionHead
-            kicker="how it works"
-            title="From stuck to solved in three steps"
-          />
-          <div className="mt-12 grid gap-4 sm:grid-cols-3">
-            {steps.map((s) => (
-              <div key={s.n} className={card}>
-                <div className="flex items-baseline gap-3">
-                  <span className="font-mono text-2xl font-semibold tabular-nums text-primary">
-                    {s.n}
-                  </span>
-                  <span className="h-px flex-1 bg-border" />
-                </div>
-                <h3 className={`mt-5 ${DISPLAY_S}`}>{s.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  {s.body}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── AI code review ─────────────────────────────────────────────────── */}
-      <section className="border-t border-border">
-        <div className="mx-auto max-w-6xl px-6 py-20">
-          <SectionHead
-            kicker="ai code review"
-            title="Feedback the moment you submit"
-          />
-          <div className="mt-12 grid gap-4 lg:grid-cols-[1.15fr_1fr]">
-            <TerminalPanel title="solution.py" tag="PYTHON">
-              <pre className="overflow-x-auto px-4 py-4 font-mono text-[12.5px] leading-relaxed">
-                <code>
-                  {CODE.map((ln) => (
-                    <span key={ln.id} className="block whitespace-pre">
-                      {ln.toks.map((tk) => (
-                        <span key={tk.id} className={TOKEN_CLASS[tk.k]}>
-                          {tk.t}
-                        </span>
-                      ))}
-                    </span>
-                  ))}
-                </code>
-              </pre>
-            </TerminalPanel>
-
-            <div className="overflow-hidden rounded-xl border border-border bg-card">
-              <ReviewRow accent="info" label="complexity">
-                O(n·m) time, O(n) space. Standard bottom-up DP — optimal for
-                this approach.
-              </ReviewRow>
-              <ReviewRow accent="pos" label="strengths">
-                Clean recurrence, handles the impossible case, idiomatic
-                bottom-up pattern.
-              </ReviewRow>
-              <ReviewRow accent="caution" label="consider" last>
-                Inner loop can break early once{" "}
-                <code className={`font-mono ${NUM}`}>dp[i] == 1</code>. A minor
-                win — the solution is already correct.
-              </ReviewRow>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Capabilities (asymmetric bento) ────────────────────────────────── */}
-      <section className="border-t border-border">
-        <div className="mx-auto max-w-6xl px-6 py-20">
-          <SectionHead
-            kicker="capabilities"
-            title="Everything around the solve"
-          />
-
-          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {/* Problem feed — wide */}
-            <Tile
-              span="sm:col-span-2"
-              name="problem-feed"
-              title="A feed tuned to your rating"
+            {/* Hero terminal panel */}
+            <div
+              className={`rise ${panel}`}
+              style={{ animationDelay: "400ms" }}
             >
-              <div className="overflow-hidden rounded-xl border border-border font-mono text-[12px]">
-                {problems.map((p) => (
-                  <div
-                    key={p.title}
-                    className="grid grid-cols-[1rem_1fr_4rem_3.5rem] items-center gap-2 border-b border-border px-4 py-3 last:border-b-0"
-                  >
-                    <span className={p.solved ? POS : "text-muted-foreground"}>
-                      {p.solved ? "●" : "○"}
-                    </span>
-                    <span className="truncate text-foreground">{p.title}</span>
-                    <span className={/^\d+$/.test(p.diff) ? NUM : CAUTION}>
-                      {p.diff}
-                    </span>
-                    <span className="text-right text-muted-foreground">
-                      {p.platform}
-                    </span>
-                  </div>
-                ))}
+              <PanelHeader
+                title="coin-change.md · LeetCode Medium"
+                tag="PROBLEM"
+              />
+              <div className="px-4 py-3 text-[12.5px] leading-relaxed text-muted-foreground">
+                Fewest coins to make <span className="text-cyan">amount</span>{" "}
+                from <span className="text-cyan">coins[]</span>. Return{" "}
+                <span className="text-cyan">-1</span> if impossible.
               </div>
-            </Tile>
-
-            {/* Rating climb — sparkline */}
-            <Tile name="rating-climb" title="Watch it climb">
-              <div className="flex items-end justify-between">
-                <Sparkline />
-                <span className={`font-mono text-sm font-semibold ${POS}`}>
-                  +340
+              <div className="rise" style={{ animationDelay: "560ms" }}>
+                <HintRow accent="violet" label="hint 1" tag="observation">
+                  Build the answer from smaller subproblems — the minimum for
+                  every amount below the target.
+                </HintRow>
+              </div>
+              <div className="rise" style={{ animationDelay: "680ms" }}>
+                <HintRow accent="amber" label="hint 2" tag="direction">
+                  Let <span className="text-cyan">dp[i]</span> be the min coins
+                  for amount <span className="text-cyan">i</span>; reuse solved
+                  subproblems.
+                </HintRow>
+              </div>
+              <div className="rise" style={{ animationDelay: "800ms" }}>
+                <HintRow accent="dim" label="hint 3" tag="locked" locked>
+                  Reveal once you&apos;ve spent time on hint 2.
+                </HintRow>
+              </div>
+              <div className="flex items-center justify-between border-t border-border px-4 py-2.5 text-[11px] text-dim">
+                <span>
+                  <span className="text-cyan">2</span> /{" "}
+                  <span className="text-cyan">3</span> hints used
                 </span>
+                <span className="text-violet">solve to unlock →</span>
               </div>
-              <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-                XP, streaks, and a solve heatmap track your progress across
-                every judge.
-              </p>
-            </Tile>
-
-            {/* Sample runner */}
-            <Tile name="sample-runner" title="Run the samples">
-              <div className="space-y-1.5 font-mono text-[12px]">
-                <RunRow ok label="test 1" time="4ms" />
-                <RunRow ok label="test 2" time="3ms" />
-                <RunRow label="test 3" time="WA" />
-              </div>
-              <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-                C++, Python, Java &amp; JS against the problem&apos;s sample
-                I/O.
-              </p>
-            </Tile>
-
-            {/* Streak heatmap */}
-            <Tile name="streak" title="Keep the streak">
-              <div className="flex flex-wrap gap-1">
-                {heat.map((c) => (
-                  <span
-                    key={c.id}
-                    className="size-3 rounded-sm"
-                    style={{
-                      backgroundColor:
-                        c.lvl === 0
-                          ? "rgb(167 139 250 / 0.14)"
-                          : `rgb(251 191 36 / ${0.2 + c.lvl * 0.2})`,
-                    }}
-                  />
-                ))}
-              </div>
-              <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-                A 12-day streak and counting — consistency beats cramming.
-              </p>
-            </Tile>
-
-            {/* Multi-platform */}
-            <Tile name="every-judge" title="Every judge, one place">
-              <div className="flex flex-wrap gap-2">
-                <Chip>LeetCode</Chip>
-                <Chip>Codeforces</Chip>
-                <Chip>USACO</Chip>
-              </div>
-              <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-                Interview prep and contest training without switching tabs.
-              </p>
-            </Tile>
+            </div>
           </div>
-        </div>
-      </section>
 
-      {/* ── Pricing ────────────────────────────────────────────────────────── */}
-      <section className="border-t border-border">
-        <div className="mx-auto max-w-6xl px-6 py-20">
-          <SectionHead
-            kicker="pricing"
-            title="Priced by a competitive programmer"
-            sub="The free plan is the whole product, not a teaser. Upgrade only when you outgrow the daily caps."
-          />
-          <div className="mt-12 grid items-start gap-4 sm:grid-cols-3">
-            {tiers.map((t) => (
-              <PriceCard key={t.name} tier={t} />
+          {/* Topic ticker */}
+          <div className="marquee relative flex overflow-hidden border-y border-border">
+            <div className="marquee-track flex shrink-0 items-center gap-2 py-2 pr-2">
+              {marqueeItems.map((it) => (
+                <span
+                  key={it.id}
+                  className="inline-flex shrink-0 items-center gap-2 border border-border px-2.5 py-1 text-[11px] text-muted-foreground"
+                >
+                  <span className="size-1 rounded-full bg-violet" />
+                  {it.t}
+                </span>
+              ))}
+            </div>
+            <div
+              className="pointer-events-none absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-background to-transparent"
+              aria-hidden="true"
+            />
+            <div
+              className="pointer-events-none absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-background to-transparent"
+              aria-hidden="true"
+            />
+          </div>
+        </section>
+
+        {/* ── Stats strip (1E) ─────────────────────────────────────────────── */}
+        <section className="border-b border-border">
+          <div className="mx-auto grid max-w-6xl grid-cols-2 divide-border sm:grid-cols-4 sm:divide-x">
+            {stats.map((s) => (
+              <div key={s.label} className="px-6 py-8 text-center sm:text-left">
+                <StatNum
+                  value={s.v}
+                  className="text-3xl font-semibold tracking-tight tabular-nums text-cyan"
+                />
+                <div className="mt-2 text-xs text-muted-foreground">
+                  {s.label}
+                </div>
+              </div>
             ))}
           </div>
-          <p className="mt-6 text-center text-xs text-muted-foreground">
-            Payments coming soon.{" "}
-            <Link
-              href="/pricing"
-              className="text-foreground underline underline-offset-4 transition-colors hover:text-primary"
-            >
-              Full comparison →
-            </Link>
-          </p>
-        </div>
-      </section>
+        </section>
 
-      {/* ── Closing CTA ────────────────────────────────────────────────────── */}
-      <section className="relative border-t border-border">
-        <div
-          className="landing-aura pointer-events-none absolute inset-0"
-          aria-hidden="true"
-        />
-        <div className="relative mx-auto flex max-w-2xl flex-col items-center px-6 py-20 text-center">
-          <h2 className={DISPLAY_L}>
-            Pick a problem.
-            <br />
-            <span className="text-primary">Get your first hint.</span>
-          </h2>
-          <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground">
-            Interview prep or contest training — start solving smarter in under
-            thirty seconds.
+        {/* ── How it works (1F) ────────────────────────────────────────────── */}
+        <section id="how" className="border-t border-border">
+          <div className="mx-auto max-w-6xl px-6 py-12">
+            <SectionHead
+              kicker="how it works"
+              title="From stuck to solved in three steps"
+            />
+            <Reveal className="mt-10 grid gap-4 sm:grid-cols-3">
+              {steps.map((s, i) => (
+                <div
+                  key={s.n}
+                  className={`ri ${panel} p-5`}
+                  style={{ "--d": `${i * 70}ms` } as React.CSSProperties}
+                >
+                  <div className="flex items-baseline gap-3">
+                    <span className="text-2xl font-semibold tabular-nums text-violet">
+                      {s.n}
+                    </span>
+                    <span className="h-px flex-1 bg-border" />
+                  </div>
+                  <h3 className="mt-4 text-[13px] font-semibold text-foreground">
+                    {s.title}
+                  </h3>
+                  <p className="mt-2 text-[12.5px] leading-relaxed text-muted-foreground">
+                    {s.body}
+                  </p>
+                </div>
+              ))}
+            </Reveal>
+          </div>
+        </section>
+
+        {/* ── Hint section (1G) ────────────────────────────────────────────── */}
+        <section className="border-t border-border">
+          <div className="mx-auto max-w-6xl px-6 py-12">
+            <SectionHead
+              kicker="guided hints"
+              title="Hints that teach, never spoil"
+            />
+            <Reveal className={`mt-10 ${panel}`}>
+              <PanelHeader title="coin-change.md · 3 progressive hints" />
+              <div
+                className="ri"
+                style={{ "--d": "0ms" } as React.CSSProperties}
+              >
+                <HintRow accent="violet" label="hint 1" tag="observation">
+                  Think about building the answer from smaller subproblems. If
+                  you knew the minimum coins for every amount below the target,
+                  how would that answer the original question?
+                </HintRow>
+              </div>
+              <div
+                className="ri"
+                style={{ "--d": "80ms" } as React.CSSProperties}
+              >
+                <HintRow accent="amber" label="hint 2" tag="direction">
+                  Define <span className="text-cyan">dp[i]</span> as the minimum
+                  coins for amount <span className="text-cyan">i</span>. For
+                  each amount, subtract every coin and take the best
+                  already-solved subproblem.
+                </HintRow>
+              </div>
+              <div
+                className="ri"
+                style={{ "--d": "160ms" } as React.CSSProperties}
+              >
+                <HintRow accent="dim" label="hint 3" tag="locked" locked>
+                  Reveal after you&apos;ve spent real time on hint 2.
+                </HintRow>
+              </div>
+            </Reveal>
+          </div>
+        </section>
+
+        {/* ── AI code review (1H) ──────────────────────────────────────────── */}
+        <section className="border-t border-border">
+          <div className="mx-auto max-w-6xl px-6 py-12">
+            <SectionHead
+              kicker="ai code review"
+              title="Feedback the moment you submit"
+            />
+            <div className="mt-10 grid gap-4 lg:grid-cols-[1.15fr_1fr]">
+              <div className={panel}>
+                <PanelHeader title="solution.py" tag="PYTHON" />
+                <pre className="overflow-x-auto px-4 py-4 text-[12.5px] leading-relaxed">
+                  <code>
+                    {CODE.map((ln) => (
+                      <span key={ln.id} className="block whitespace-pre">
+                        {ln.toks.map((tk) => (
+                          <span key={tk.id} className={TOKEN_CLASS[tk.k]}>
+                            {tk.t}
+                          </span>
+                        ))}
+                      </span>
+                    ))}
+                  </code>
+                </pre>
+              </div>
+
+              <Reveal className={panel}>
+                <PanelHeader title="review" tag="AI" />
+                <div
+                  className="ri"
+                  style={{ "--d": "0ms" } as React.CSSProperties}
+                >
+                  <ReviewRow accent="violet" label="complexity">
+                    O(n·m) time, O(n) space. Standard bottom-up DP — optimal for
+                    this approach.
+                  </ReviewRow>
+                </div>
+                <div
+                  className="ri"
+                  style={{ "--d": "100ms" } as React.CSSProperties}
+                >
+                  <ReviewRow accent="green" label="strengths">
+                    Clean recurrence, handles the impossible case, idiomatic
+                    bottom-up pattern.
+                  </ReviewRow>
+                </div>
+                <div
+                  className="ri"
+                  style={{ "--d": "200ms" } as React.CSSProperties}
+                >
+                  <ReviewRow accent="amber" label="consider" last>
+                    Inner loop can break early once{" "}
+                    <span className="text-cyan">dp[i] == 1</span>. A minor win —
+                    the solution is already correct.
+                  </ReviewRow>
+                </div>
+              </Reveal>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Capabilities (1I) ────────────────────────────────────────────── */}
+        <section className="border-t border-border">
+          <div className="mx-auto max-w-6xl px-6 py-12">
+            <SectionHead
+              kicker="capabilities"
+              title="Everything around the solve"
+            />
+            <Reveal className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <Tile
+                span="sm:col-span-2"
+                name="problem-feed"
+                title="A feed tuned to your rating"
+              >
+                <div className="overflow-hidden rounded border border-border text-[12px]">
+                  {problems.map((p) => (
+                    <div
+                      key={p.title}
+                      className="grid grid-cols-[1rem_1fr_3.5rem_3.5rem] items-center gap-2 border-b border-border px-3 py-2 transition-colors last:border-b-0 hover:bg-muted"
+                    >
+                      <span className={p.solved ? "text-green" : "text-dim"}>
+                        {p.solved ? "●" : "○"}
+                      </span>
+                      <span className="truncate text-foreground">
+                        {p.title}
+                      </span>
+                      <span className={diffClass(p.diff)}>{p.diff}</span>
+                      <span className="text-right text-muted-foreground">
+                        {p.platform}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </Tile>
+
+              <Tile name="rating-climb" title="Watch it climb">
+                <div className="flex items-end justify-between">
+                  <Sparkline />
+                  <span className="text-sm font-semibold text-green">
+                    +<StatNum value="340" />
+                  </span>
+                </div>
+                <p className="mt-3 text-[12px] leading-relaxed text-muted-foreground">
+                  XP, streaks, and a solve heatmap track your progress across
+                  every judge.
+                </p>
+              </Tile>
+
+              <Tile name="sample-runner" title="Run the samples">
+                <SampleRunner />
+                <p className="mt-3 text-[12px] leading-relaxed text-muted-foreground">
+                  C++, Python, Java &amp; JS against the sample I/O.
+                </p>
+              </Tile>
+
+              <Tile name="streak" title="Keep the streak">
+                <StreakHeatmap />
+                <p className="mt-3 text-[12px] leading-relaxed text-muted-foreground">
+                  A 12-day streak and counting — consistency beats cramming.
+                </p>
+              </Tile>
+
+              <Tile name="every-judge" title="Every judge, one place">
+                <div className="flex flex-wrap gap-2">
+                  <Chip>LeetCode</Chip>
+                  <Chip>Codeforces</Chip>
+                  <Chip>USACO</Chip>
+                </div>
+                <p className="mt-3 text-[12px] leading-relaxed text-muted-foreground">
+                  Interview prep and contest training without switching tabs.
+                </p>
+              </Tile>
+            </Reveal>
+          </div>
+        </section>
+
+        {/* ── XP one-liner (1J replacement) ────────────────────────────────── */}
+        <section className="border-t border-border">
+          <p className="mx-auto max-w-6xl px-6 py-4 text-center text-xs text-dim">
+            <span className="text-violet">$</span> xp per solve · harder
+            problems + fewer hints ={" "}
+            <span className="text-cyan">larger reward</span>
           </p>
-          <Link href="/auth/signup" className={`${btnPrimary} mt-8`}>
-            Start free today →
-          </Link>
-          <p className="mt-5 font-mono text-xs text-muted-foreground">
-            Already have an account?{" "}
+        </section>
+
+        {/* ── Pricing (1K) ─────────────────────────────────────────────────── */}
+        <section className="border-t border-border">
+          <div className="mx-auto max-w-6xl px-6 py-12">
+            <SectionHead
+              kicker="pricing"
+              title="Priced by a competitive programmer"
+              sub="The free plan is the whole product, not a teaser. Upgrade only when you outgrow the daily caps."
+            />
+            <Reveal className="mt-10 grid items-start gap-4 sm:grid-cols-3">
+              {tiers.map((t, i) => (
+                <PriceCard key={t.name} tier={t} delay={i * 70} />
+              ))}
+            </Reveal>
+            <p className="mt-6 text-center text-xs text-muted-foreground">
+              Payments coming soon.{" "}
+              <Link
+                href="/pricing"
+                className="text-foreground underline underline-offset-4 transition-colors hover:text-violet"
+              >
+                Full comparison →
+              </Link>
+            </p>
+          </div>
+        </section>
+
+        {/* ── Closing CTA (1L) ─────────────────────────────────────────────── */}
+        <section className="border-t border-border">
+          <div className="mx-auto flex max-w-2xl flex-col items-center px-6 py-14 text-center">
+            <h2 className="font-sans text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+              Pick a problem.
+              <br />
+              <span className="text-violet">Get your first hint.</span>
+            </h2>
+            <p className="mt-4 max-w-sm text-[13px] leading-relaxed text-muted-foreground">
+              Interview prep or contest training — start solving smarter in
+              under thirty seconds.
+            </p>
             <Link
-              href="/auth/login"
-              className="text-foreground underline underline-offset-4 transition-colors hover:text-primary"
+              href="/auth/signup"
+              className={`${btnPrimary} mt-8 h-11 px-7`}
             >
-              Sign in
+              Start free today →
             </Link>
-          </p>
-        </div>
-      </section>
+            <p className="mt-5 text-xs text-dim">
+              Already have an account?{" "}
+              <Link
+                href="/auth/login"
+                className="text-foreground underline underline-offset-4 transition-colors hover:text-violet"
+              >
+                Sign in
+              </Link>
+            </p>
+          </div>
+        </section>
+      </div>
     </main>
   );
 }
 
-// ── Shared recipes (the only button + card patterns used on the page) ───────
-const card =
-  "rounded-xl border border-border bg-card p-6 transition-colors duration-200 hover:border-primary/40";
-const btnPrimary =
-  "group inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-6 text-[15px] font-semibold text-primary-foreground transition-transform duration-150 hover:-translate-y-px active:translate-y-0";
-const btnSecondary =
-  "inline-flex h-11 items-center rounded-lg border border-border bg-card px-6 text-[15px] font-medium text-foreground transition-colors duration-150 hover:border-primary/50 hover:bg-muted";
-
 // ── Building blocks ─────────────────────────────────────────────────────────
-function TerminalPanel({
-  title,
-  tag,
-  children,
-}: {
-  title: string;
-  tag: string;
-  children: React.ReactNode;
-}) {
+function PanelHeader({ title, tag }: { title: string; tag?: string }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-[0_30px_80px_-40px_rgba(0,0,0,0.9)]">
-      {/* Editor chrome: traffic lights · filename tab · language pill */}
-      <div className="flex items-center gap-3 border-b border-border bg-muted px-4 py-2.5">
-        <div className="flex gap-1.5" aria-hidden="true">
-          <span className="size-2.5 rounded-full bg-[var(--syntax-neg)]" />
-          <span className="size-2.5 rounded-full bg-[var(--syntax-caution)]" />
-          <span className="size-2.5 rounded-full bg-[var(--syntax-pos)]" />
-        </div>
-        <span className="rounded-md border border-border bg-background px-2 py-0.5 font-mono text-[11.5px] text-foreground">
-          {title}
-        </span>
-        <span className="ml-auto rounded border border-border px-1.5 py-0.5 font-mono text-[9.5px] tracking-widest text-muted-foreground">
+    <div className="flex items-center gap-2 border-b border-border px-3 py-2 text-[11px]">
+      <span className="text-dim">──</span>
+      <span className="whitespace-nowrap text-muted-foreground">{title}</span>
+      <span className="h-px flex-1 bg-border" />
+      {tag && (
+        <span className="border border-border px-1.5 py-0.5 text-[9px] tracking-widest text-teal">
           {tag}
         </span>
-      </div>
-      {children}
+      )}
     </div>
   );
 }
 
 function HintRow({
+  accent,
   label,
   tag,
   locked,
   children,
 }: {
+  accent: "violet" | "amber" | "dim";
   label: string;
   tag: string;
   locked?: boolean;
   children: React.ReactNode;
 }) {
+  const edge =
+    accent === "violet"
+      ? "border-l-violet"
+      : accent === "amber"
+        ? "border-l-amber"
+        : "border-l-border";
+  const tone =
+    accent === "violet"
+      ? "text-violet"
+      : accent === "amber"
+        ? "text-amber"
+        : "text-dim";
   return (
     <div
-      className={`border-b border-l-2 border-border px-4 py-3 ${
-        locked ? "opacity-60" : "border-l-primary"
+      className={`border-b border-l-2 border-border px-4 py-3 last:border-b-0 ${edge} ${
+        locked ? "opacity-60" : ""
       }`}
     >
-      <div className="mb-1.5 flex items-center gap-2 font-mono text-[11px]">
-        <span
-          className={`font-semibold ${
-            locked ? "text-muted-foreground" : "text-primary"
-          }`}
-        >
-          {label}
-        </span>
-        <span className="text-muted-foreground">· {tag}</span>
+      <div className="mb-1.5 flex items-center gap-2 text-[11px]">
+        <span className={`font-semibold ${tone}`}>{label}</span>
+        <span className="text-dim">· {tag}</span>
       </div>
       <p
         className={`text-[12.5px] leading-relaxed ${
@@ -711,29 +748,31 @@ function ReviewRow({
   last,
   children,
 }: {
-  accent: "info" | "pos" | "caution";
+  accent: "violet" | "green" | "amber";
   label: string;
   last?: boolean;
   children: React.ReactNode;
 }) {
   const edge =
-    accent === "info"
-      ? "border-l-primary"
-      : accent === "pos"
-        ? "border-l-[var(--syntax-pos)]"
-        : "border-l-[var(--syntax-caution)]";
+    accent === "violet"
+      ? "border-l-violet"
+      : accent === "green"
+        ? "border-l-green"
+        : "border-l-amber";
   const tone =
-    accent === "info" ? "text-primary" : accent === "pos" ? POS : CAUTION;
+    accent === "violet"
+      ? "text-violet"
+      : accent === "green"
+        ? "text-green"
+        : "text-amber";
   return (
     <div
-      className={`border-l-2 px-4 py-3 ${edge} ${
+      className={`border-l-2 border-border px-4 py-3 ${edge} ${
         last ? "" : "border-b border-b-border"
       }`}
     >
-      <span className={`font-mono text-[11px] font-semibold ${tone}`}>
-        {label}
-      </span>
-      <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+      <span className={`text-[11px] font-semibold ${tone}`}>{label}</span>
+      <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted-foreground">
         {children}
       </p>
     </div>
@@ -752,41 +791,19 @@ function Tile({
   children: React.ReactNode;
 }) {
   return (
-    <div className={`flex flex-col ${card} ${span ?? ""}`}>
-      <div className="mb-4 flex items-center justify-between">
-        <h3 className={DISPLAY_S}>{title}</h3>
-        <span className="font-mono text-[10px] text-muted-foreground">
-          {name}
-        </span>
+    <div className={`ri flex flex-col ${panel} ${span ?? ""}`}>
+      <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
+        <h3 className="text-[13px] font-semibold text-foreground">{title}</h3>
+        <span className="text-[10px] text-dim">{name}</span>
       </div>
-      <div className="mt-auto">{children}</div>
-    </div>
-  );
-}
-
-function RunRow({
-  ok,
-  label,
-  time,
-}: {
-  ok?: boolean;
-  label: string;
-  time: string;
-}) {
-  return (
-    <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
-      <span className="flex items-center gap-2">
-        <span className={ok ? POS : NEG}>{ok ? "✓" : "✗"}</span>
-        <span className="text-muted-foreground">{label}</span>
-      </span>
-      <span className={ok ? "text-muted-foreground" : NEG}>{time}</span>
+      <div className="flex-1 px-4 py-4">{children}</div>
     </div>
   );
 }
 
 function Chip({ children }: { children: React.ReactNode }) {
   return (
-    <span className="rounded-full border border-border px-2.5 py-1 font-mono text-[11px] text-foreground">
+    <span className="rounded border border-border px-2.5 py-1 text-[11px] text-foreground">
       {children}
     </span>
   );
@@ -796,23 +813,13 @@ function Sparkline() {
   return (
     <svg
       viewBox="0 0 200 64"
-      width="124"
+      width="128"
       height="44"
       fill="none"
-      className="text-[var(--syntax-pos)]"
+      className="text-green"
       aria-hidden="true"
     >
       <title>Rating trend</title>
-      <defs>
-        <linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="currentColor" stopOpacity="0.22" />
-          <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <polygon
-        points="0,52 28,46 56,50 84,38 112,42 140,26 168,30 200,12 200,64 0,64"
-        fill="url(#sparkFill)"
-      />
       <polyline
         className="spark"
         points="0,52 28,46 56,50 84,38 112,42 140,26 168,30 200,12"
@@ -822,8 +829,32 @@ function Sparkline() {
         strokeLinejoin="round"
         style={{ "--len": "300" } as React.CSSProperties}
       />
-      <circle cx="200" cy="12" r="3.5" fill="currentColor" />
+      <circle cx="200" cy="12" r="3" fill="currentColor" />
     </svg>
+  );
+}
+
+function StreakHeatmap() {
+  return (
+    <div className="flex flex-wrap gap-1">
+      {heat.map((c, i) => (
+        <span
+          key={c.id}
+          className="hcell size-3 rounded-[2px]"
+          style={
+            {
+              "--d": `${i * 22}ms`,
+              backgroundColor:
+                c.lvl === 0
+                  ? "var(--color-border)"
+                  : `color-mix(in oklab, var(--color-amber) ${
+                      20 + c.lvl * 20
+                    }%, transparent)`,
+            } as React.CSSProperties
+          }
+        />
+      ))}
+    </div>
   );
 }
 
@@ -838,7 +869,7 @@ function Check() {
       strokeWidth="3"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className={`mt-[3px] shrink-0 ${POS}`}
+      className="mt-[3px] shrink-0 text-green"
       aria-hidden="true"
     >
       <polyline points="20 6 9 17 4 12" />
@@ -846,41 +877,39 @@ function Check() {
   );
 }
 
-function PriceCard({ tier }: { tier: (typeof tiers)[number] }) {
+function PriceCard({
+  tier,
+  delay,
+}: {
+  tier: (typeof tiers)[number];
+  delay: number;
+}) {
   return (
     <div
-      className={`relative flex h-full flex-col overflow-hidden rounded-xl border bg-card p-6 ${
-        tier.featured ? "border-primary" : "border-border"
+      className={`ri relative flex h-full flex-col rounded border bg-card p-5 ${
+        tier.featured ? "border-violet" : "border-border"
       }`}
+      style={{ "--d": `${delay}ms` } as React.CSSProperties}
     >
-      {/* Pro gets a violet top-rule, never a white inversion */}
-      {tier.featured && (
-        <span
-          className="absolute inset-x-0 top-0 h-0.5 bg-primary"
-          aria-hidden="true"
-        />
-      )}
       <div className="flex items-center justify-between">
-        <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
+        <span className="text-xs tracking-widest text-muted-foreground">
           {tier.name}
         </span>
         {tier.featured && (
-          <span className="rounded-full border border-primary/40 px-2 py-0.5 font-mono text-[10px] font-medium text-primary">
-            popular
+          <span className="border border-violet px-1.5 py-0.5 text-[10px] text-violet">
+            [recommended]
           </span>
         )}
       </div>
       <div className="mt-4 flex items-baseline gap-1.5">
-        <span
-          className={`font-mono text-3xl font-semibold tracking-tight ${NUM}`}
-        >
+        <span className="text-3xl font-semibold tracking-tight text-cyan">
           {tier.price}
         </span>
         <span className="text-xs text-muted-foreground">{tier.cadence}</span>
       </div>
       <p className="mt-1 text-xs text-muted-foreground">{tier.note}</p>
 
-      <ul className="mt-5 flex flex-1 flex-col gap-2.5 text-sm">
+      <ul className="mt-5 flex flex-1 flex-col gap-2 text-xs">
         {tier.feats.map((f) => (
           <li key={f} className="flex items-start gap-2 text-muted-foreground">
             <Check />
@@ -890,11 +919,11 @@ function PriceCard({ tier }: { tier: (typeof tiers)[number] }) {
       </ul>
 
       <Link
-        href={tier.href}
-        className={`mt-6 inline-flex h-10 items-center justify-center rounded-lg text-sm font-semibold transition-all duration-150 ${
+        href="/auth/signup"
+        className={`mt-6 inline-flex h-10 items-center justify-center rounded text-[13px] font-semibold transition-colors ${
           tier.featured
-            ? "bg-primary text-primary-foreground hover:-translate-y-px"
-            : "border border-border text-foreground hover:border-primary/50 hover:bg-muted"
+            ? "bg-primary text-primary-foreground hover:bg-primary/90"
+            : "border border-border text-foreground hover:border-border-bright hover:bg-muted"
         }`}
       >
         {tier.cta}
@@ -914,13 +943,15 @@ function SectionHead({
 }) {
   return (
     <div className="max-w-2xl">
-      <span className="font-mono text-[12px] text-primary">
-        <span className={PREFIX}>{"// "}</span>
+      <span className="text-[12px] text-violet">
+        <span className="text-dim">{"// "}</span>
         {kicker}
       </span>
-      <h2 className={`mt-3 text-pretty ${DISPLAY_M}`}>{title}</h2>
+      <h2 className="mt-3 font-sans text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+        {title}
+      </h2>
       {sub && (
-        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+        <p className="mt-3 text-[13px] leading-relaxed text-muted-foreground">
           {sub}
         </p>
       )}

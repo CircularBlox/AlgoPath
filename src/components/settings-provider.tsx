@@ -1,6 +1,5 @@
 "use client";
 
-import { useTheme } from "next-themes";
 import {
   createContext,
   type ReactNode,
@@ -11,13 +10,15 @@ import {
 
 export interface Settings {
   autoSave: "on" | "off";
+  // Theme is hard-locked to dark (the app ships dark-only). The field is kept
+  // for settings storage compatibility but no longer drives any theme system.
   theme: "system" | "light" | "dark";
   language: "English" | "French" | "Spanish" | "German";
 }
 
 const defaults: Settings = {
   autoSave: "on",
-  theme: "light",
+  theme: "dark",
   language: "English",
 };
 
@@ -50,16 +51,12 @@ export function useSettings() {
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<Settings>(defaults);
-  const { setTheme } = useTheme();
 
   useEffect(() => {
-    const loaded = loadSettings();
-    setSettings(loaded);
-    setTheme(loaded.theme);
-  }, [setTheme]);
+    setSettings(loadSettings());
+  }, []);
 
   function update<K extends keyof Settings>(key: K, value: Settings[K]) {
-    if (key === "theme") setTheme(value as string);
     setSettings((prev) => {
       const next = { ...prev, [key]: value };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
