@@ -26,7 +26,13 @@ export default function AddProblemPage() {
       <form action={formAction} className="flex flex-col gap-5">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="title">Title</Label>
-          <Input id="title" name="title" placeholder="The Equalizer" required />
+          <Input
+            id="title"
+            name="title"
+            placeholder="The Equalizer"
+            required
+            className="rounded shadow-none"
+          />
         </div>
 
         <div className="flex flex-col gap-1.5">
@@ -37,6 +43,7 @@ export default function AddProblemPage() {
             type="url"
             placeholder="https://codeforces.com/contest/2217/problem/A"
             required
+            className="rounded font-mono shadow-none"
           />
         </div>
 
@@ -47,9 +54,8 @@ export default function AddProblemPage() {
             name="platform"
             defaultValue="codeforces"
             className={cn(
-              "h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none",
+              "h-9 w-full rounded border border-input bg-input/30 px-3 py-1 text-sm outline-none",
               "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
-              "dark:bg-input/30",
             )}
           >
             <option value="codeforces">Codeforces</option>
@@ -70,9 +76,8 @@ export default function AddProblemPage() {
             name="difficulty"
             defaultValue=""
             className={cn(
-              "h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none",
+              "h-9 w-full rounded border border-input bg-input/30 px-3 py-1 font-mono text-sm outline-none",
               "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
-              "dark:bg-input/30",
             )}
           >
             <option value="">— none —</option>
@@ -91,7 +96,12 @@ export default function AddProblemPage() {
               (comma-separated, optional)
             </span>
           </Label>
-          <Input id="tags" name="tags" placeholder="games, math, greedy" />
+          <Input
+            id="tags"
+            name="tags"
+            placeholder="games, math, greedy"
+            className="rounded shadow-none"
+          />
         </div>
 
         <div className="flex flex-col gap-1.5">
@@ -105,17 +115,18 @@ export default function AddProblemPage() {
             onChange={(e) => setContentHtml(e.target.value)}
             required
             className={cn(
-              "w-full rounded-md border border-input bg-transparent px-3 py-2 font-mono text-sm shadow-xs outline-none transition-[color,box-shadow] placeholder:text-muted-foreground",
+              "w-full rounded border border-input bg-input/30 px-3 py-2 font-mono text-sm outline-none transition-[color,box-shadow] placeholder:text-muted-foreground",
               "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
-              "dark:bg-input/30",
             )}
           />
         </div>
 
         {contentHtml && (
           <div className="flex flex-col gap-1.5">
-            <p className="text-sm font-medium">Preview</p>
-            <div className="cf-problem min-h-32 rounded border border-border bg-card px-6 py-5 text-card-foreground shadow-sm">
+            <p className="font-mono text-xs text-muted-foreground">
+              {"// preview"}
+            </p>
+            <div className="cf-problem min-h-32 rounded border border-border bg-card px-6 py-5 text-card-foreground">
               {/* biome-ignore lint/security/noDangerouslySetInnerHtml: admin-only page, content authored by the site owner */}
               <div dangerouslySetInnerHTML={{ __html: contentHtml }} />
             </div>
@@ -123,15 +134,19 @@ export default function AddProblemPage() {
         )}
 
         {state.error && (
-          <p className="text-sm text-destructive">{state.error}</p>
+          <p className="font-mono text-sm text-destructive">{state.error}</p>
         )}
         {state.success && (
-          <p className="text-sm text-green-600 dark:text-green-400">
+          <p className="font-mono text-sm text-green">
             Problem added successfully!
           </p>
         )}
 
-        <Button type="submit" disabled={isPending} className="self-start">
+        <Button
+          type="submit"
+          disabled={isPending}
+          className="self-start rounded"
+        >
           {isPending ? "Adding..." : "Add Problem"}
         </Button>
       </form>
