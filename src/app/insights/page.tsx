@@ -364,7 +364,7 @@ export default async function InsightsPage() {
                 title={`${date}: ${xp} XP`}
               >
                 <div
-                  className="w-full rounded-t bg-primary/70 transition-all group-hover:bg-primary"
+                  className="w-full rounded-t bg-green/70 transition-all group-hover:bg-green"
                   style={{ height: `${Math.max(4, (xp / maxXp) * 56)}px` }}
                 />
                 <span className="hidden origin-left rotate-45 font-mono text-[8px] text-dim sm:block">
