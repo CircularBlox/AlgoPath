@@ -81,7 +81,7 @@ export function BugReportButton() {
           <button
             type="button"
             aria-label="Close"
-            className="fixed inset-0 z-50 cursor-default bg-transparent"
+            className="fixed inset-0 z-50 cursor-default bg-background/70"
             onClick={() => setOpen(false)}
           />
           <div

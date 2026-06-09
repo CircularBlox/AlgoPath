@@ -63,13 +63,13 @@ export function PricingCards({
   return (
     <div className="flex flex-col gap-6">
       {/* Billing toggle */}
-      <div className="mx-auto flex w-fit items-center gap-1 rounded-full border border-border bg-muted/40 p-1">
+      <div className="mx-auto flex w-fit items-center gap-1 rounded border border-border bg-muted/40 p-1">
         <button
           type="button"
           onClick={() => setBilling("monthly")}
-          className={`rounded-full px-4 py-1.5 text-xs font-medium transition-all ${
+          className={`rounded px-4 py-1.5 text-xs font-medium transition-all ${
             !yearly
-              ? "bg-background text-foreground shadow-sm"
+              ? "bg-background text-foreground"
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
@@ -78,14 +78,14 @@ export function PricingCards({
         <button
           type="button"
           onClick={() => setBilling("yearly")}
-          className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-medium transition-all ${
+          className={`flex items-center gap-1.5 rounded px-4 py-1.5 text-xs font-medium transition-all ${
             yearly
-              ? "bg-background text-foreground shadow-sm"
+              ? "bg-background text-foreground"
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
           Yearly
-          <span className="rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+          <span className="rounded bg-primary/15 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-primary">
             −35%
           </span>
         </button>
@@ -100,7 +100,7 @@ export function PricingCards({
               Free
             </p>
             <div className="flex items-baseline gap-1">
-              <span className="text-3xl font-bold">$0</span>
+              <span className="font-mono text-3xl font-bold">$0</span>
             </div>
             <p className="text-xs text-muted-foreground">
               Forever · No credit card
@@ -118,8 +118,8 @@ export function PricingCards({
         </div>
 
         {/* Pro */}
-        <div className="relative flex flex-col gap-4 rounded border border-primary bg-primary/5 p-5 shadow-sm">
-          <div className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border border-primary/40 bg-primary px-3 py-0.5 text-[11px] font-semibold text-primary-foreground">
+        <div className="relative flex flex-col gap-4 rounded border border-primary bg-primary/5 p-5">
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded border border-primary/40 bg-primary px-3 py-0.5 text-[11px] font-semibold text-primary-foreground">
             Most popular
           </div>
           <div className="flex flex-col gap-0.5">
@@ -127,7 +127,7 @@ export function PricingCards({
               Pro
             </p>
             <div className="flex items-baseline gap-1">
-              <span className="text-3xl font-bold">
+              <span className="font-mono text-3xl font-bold">
                 {yearly ? "$5.42" : "$8"}
               </span>
               <span className="text-sm text-muted-foreground">/ mo</span>
@@ -157,7 +157,7 @@ export function PricingCards({
               Elite
             </p>
             <div className="flex items-baseline gap-1">
-              <span className="text-3xl font-bold">
+              <span className="font-mono text-3xl font-bold">
                 {yearly ? "$10.83" : "$16"}
               </span>
               <span className="text-sm text-muted-foreground">/ mo</span>
