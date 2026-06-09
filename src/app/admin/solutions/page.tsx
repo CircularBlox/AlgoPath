@@ -1,8 +1,7 @@
 "use client";
 
-import Editor from "react-simple-code-editor";
-import "prismjs/themes/prism-okaidia.css";
 import { useCallback, useState } from "react";
+import Editor from "react-simple-code-editor";
 import { FormattedText } from "~/app/display-problem/formatting";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -243,7 +242,7 @@ export default function AdminSolutionsPage() {
             onKeyDown={(e) => {
               if (e.key === "Enter") handleLoad();
             }}
-            className="w-40"
+            className="w-40 font-mono"
           />
         </div>
         <Button onClick={handleLoad} disabled={loading || !problemNumber}>
@@ -264,7 +263,9 @@ export default function AdminSolutionsPage() {
             )}
           </div>
         )}
-        {loadError && <p className="text-sm text-destructive">{loadError}</p>}
+        {loadError && (
+          <p className="font-mono text-sm text-destructive">{loadError}</p>
+        )}
       </div>
 
       {/* Two-column layout */}
@@ -287,7 +288,7 @@ export default function AdminSolutionsPage() {
                 >
                   {lang}
                   {codes[lang].trim() && (
-                    <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-green-500 align-middle" />
+                    <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-green align-middle" />
                   )}
                 </button>
                 {problem && (
@@ -307,7 +308,7 @@ export default function AdminSolutionsPage() {
           {/* Code editor */}
           <div className="flex flex-col gap-2">
             <Label>Code — {activeTab}</Label>
-            <div className="overflow-hidden rounded-md border border-input">
+            <div className="code-editor overflow-hidden rounded border border-input">
               <Editor
                 value={codes[activeTab]}
                 onValueChange={(val) =>
@@ -352,8 +353,8 @@ export default function AdminSolutionsPage() {
                   }, 0);
                 }}
                 style={{
-                  background: "#272822",
-                  color: "#f8f8f2",
+                  background: "oklch(0.115 0.006 285)",
+                  color: "var(--color-foreground)",
                   fontFamily:
                     '"JetBrains Mono","Fira Code","Fira Mono",ui-monospace,monospace',
                   fontSize: 13,
@@ -373,7 +374,7 @@ export default function AdminSolutionsPage() {
               onChange={(e) => setExplanation(e.target.value)}
               placeholder="Describe the approach, complexity, key observations…"
               rows={6}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm leading-relaxed placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-y"
+              className="w-full rounded border border-input bg-input/30 px-3 py-2 text-sm leading-relaxed placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 resize-y"
             />
             <p className="text-xs text-muted-foreground">
               Supports <code className="font-mono">**bold**</code>,{" "}
@@ -395,12 +396,10 @@ export default function AdminSolutionsPage() {
           {/* Save */}
           <div className="flex flex-col gap-2 pt-2 border-t border-border">
             {saveMessage && (
-              <p className="text-sm text-green-600 dark:text-green-400">
-                {saveMessage}
-              </p>
+              <p className="font-mono text-sm text-green">{saveMessage}</p>
             )}
             {saveError && (
-              <p className="text-sm text-destructive">{saveError}</p>
+              <p className="font-mono text-sm text-destructive">{saveError}</p>
             )}
             <Button
               type="button"
@@ -415,8 +414,8 @@ export default function AdminSolutionsPage() {
 
         {/* Right — preview */}
         <div className="sticky top-6 flex flex-col gap-2">
-          <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            Preview
+          <span className="font-mono text-xs text-muted-foreground">
+            {"// preview"}
           </span>
 
           {previewCodes.length === 0 ? (
@@ -424,7 +423,7 @@ export default function AdminSolutionsPage() {
               Add code above to see a live preview
             </div>
           ) : (
-            <div className="flex flex-col gap-3 rounded border border-border bg-card text-card-foreground shadow-sm overflow-hidden">
+            <div className="flex flex-col gap-3 rounded border border-border bg-card text-card-foreground overflow-hidden">
               {/* Header row */}
               <div className="flex items-center gap-3 px-5 pt-4 pb-3 border-b border-border">
                 <span className="font-semibold text-sm">Code Solution</span>
@@ -478,11 +477,11 @@ export default function AdminSolutionsPage() {
               {previewCodeVisible && (
                 <div className="px-5">
                   {activePreview?.code ? (
-                    <div className="overflow-hidden rounded-md border border-input">
+                    <div className="code-editor overflow-hidden rounded border border-input">
                       <pre
                         style={{
-                          background: "#272822",
-                          color: "#f8f8f2",
+                          background: "oklch(0.115 0.006 285)",
+                          color: "var(--color-foreground)",
                           fontFamily:
                             '"JetBrains Mono","Fira Code","Fira Mono",ui-monospace,monospace',
                           fontSize: 13,
