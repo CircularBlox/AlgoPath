@@ -130,25 +130,28 @@ export default function SetupUsernamePage() {
             required
             minLength={3}
             maxLength={32}
+            className="font-mono"
           />
           {availability === "checking" && (
-            <p className="text-xs text-muted-foreground">Checking…</p>
+            <p className="font-mono text-xs text-muted-foreground">Checking…</p>
           )}
           {availability === "available" && (
-            <p className="text-xs text-green-600">Username is available.</p>
+            <p className="font-mono text-xs text-green">
+              Username is available.
+            </p>
           )}
           {availability === "taken" && (
-            <p className="text-xs text-destructive">
+            <p className="font-mono text-xs text-destructive">
               Username is already taken.
             </p>
           )}
           {availability === "idle" && (
-            <p className="text-xs text-muted-foreground">
+            <p className="font-mono text-xs text-muted-foreground">
               3–32 characters. Letters (A–Z), numbers, and underscores only.
             </p>
           )}
         </div>
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {error && <p className="font-mono text-sm text-destructive">{error}</p>}
         <Button
           type="submit"
           disabled={
