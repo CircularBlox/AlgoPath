@@ -169,7 +169,7 @@ export default function AddHintsPage() {
   }
 
   const textareaClass =
-    "w-full min-h-[7rem] rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none transition-[color,box-shadow] placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:opacity-50 resize-y";
+    "w-full min-h-[7rem] rounded border border-input bg-input/30 px-3 py-2 text-sm outline-none transition-[color,box-shadow] placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:opacity-50 resize-y";
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-12">
@@ -190,7 +190,7 @@ export default function AddHintsPage() {
               type="number"
               min={1}
               placeholder="e.g. 1"
-              className="max-w-[10rem]"
+              className="max-w-[10rem] rounded font-mono shadow-none"
               value={problemNumber}
               onChange={(e) => setProblemNumber(e.target.value)}
             />
@@ -199,6 +199,7 @@ export default function AddHintsPage() {
               variant="outline"
               onClick={handleLoad}
               disabled={!problemNumber || loadStatus === "loading"}
+              className="rounded shadow-none"
             >
               {loadStatus === "loading" ? "Loading…" : "Load"}
             </Button>
@@ -207,6 +208,7 @@ export default function AddHintsPage() {
               variant="outline"
               onClick={handleGenerate}
               disabled={!problemNumber || genStatus === "loading"}
+              className="rounded shadow-none"
             >
               {genStatus === "loading" ? "Generating…" : "Generate with AI"}
             </Button>
@@ -214,16 +216,16 @@ export default function AddHintsPage() {
         </div>
 
         {loadStatus === "error" && loadError && (
-          <p className="text-sm text-destructive">{loadError}</p>
+          <p className="font-mono text-sm text-destructive">{loadError}</p>
         )}
         {loadStatus === "loaded" && (
-          <p className="text-sm text-muted-foreground">Hints loaded.</p>
+          <p className="font-mono text-sm text-green">Hints loaded.</p>
         )}
         {genStatus === "error" && genError && (
-          <p className="text-sm text-destructive">{genError}</p>
+          <p className="font-mono text-sm text-destructive">{genError}</p>
         )}
         {genStatus === "done" && (
-          <p className="text-sm text-muted-foreground">
+          <p className="font-mono text-sm text-green">
             AI hints generated — review and save below.
           </p>
         )}
@@ -258,8 +260,16 @@ export default function AddHintsPage() {
             },
           ] as const
         ).map(({ n, label, value, set, name }) => (
-          <div key={n} className="flex flex-col gap-2">
-            <Label htmlFor={name}>{label}</Label>
+          <div
+            key={n}
+            className="flex flex-col gap-2 border-l-2 border-l-violet pl-4"
+          >
+            <Label htmlFor={name} className="flex items-baseline gap-2">
+              <span className="font-mono text-xs text-cyan">hint {n}</span>
+              <span className="text-muted-foreground">
+                {label.replace(/^Hint \d+ — /, "")}
+              </span>
+            </Label>
             <input type="hidden" name={name} value={value} />
             <textarea
               id={name}
@@ -272,18 +282,16 @@ export default function AddHintsPage() {
         ))}
 
         {state.error && (
-          <p className="text-sm text-destructive">{state.error}</p>
+          <p className="font-mono text-sm text-destructive">{state.error}</p>
         )}
         {state.success && state.message && (
-          <p className="text-sm text-green-600 dark:text-green-400">
-            {state.message}
-          </p>
+          <p className="font-mono text-sm text-green">{state.message}</p>
         )}
 
         <Button
           type="submit"
           disabled={isPending || !problemNumber}
-          className="self-start"
+          className="self-start rounded"
         >
           {isPending ? "Saving…" : "Save Hints"}
         </Button>
@@ -306,6 +314,7 @@ export default function AddHintsPage() {
           variant="outline"
           onClick={handleBulkFill}
           disabled={bulkStatus === "running"}
+          className="rounded shadow-none"
         >
           {bulkStatus === "running" ? "Running…" : "Fill All Missing Hints"}
         </Button>
@@ -315,14 +324,14 @@ export default function AddHintsPage() {
             {/* Progress bar */}
             {bulkProgress.total > 0 && (
               <div className="flex flex-col gap-1">
-                <p className="text-sm text-muted-foreground">
+                <p className="font-mono text-sm text-muted-foreground">
                   {bulkStatus === "done"
                     ? `Done — ${bulkProgress.succeeded} succeeded, ${bulkProgress.failed} failed`
                     : `Processing ${bulkProgress.current} / ${bulkProgress.total}`}
                 </p>
-                <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                <div className="h-2 w-full rounded bg-muted overflow-hidden">
                   <div
-                    className="h-full rounded-full bg-primary transition-all duration-300"
+                    className="h-full rounded bg-primary transition-all duration-300"
                     style={{
                       width:
                         bulkProgress.total > 0
@@ -335,20 +344,20 @@ export default function AddHintsPage() {
             )}
 
             {bulkProgress.total === 0 && bulkStatus === "done" && (
-              <p className="text-sm text-muted-foreground">
+              <p className="font-mono text-sm text-muted-foreground">
                 All problems already have hints.
               </p>
             )}
 
             {bulkError && (
-              <p className="text-sm text-destructive">{bulkError}</p>
+              <p className="font-mono text-sm text-destructive">{bulkError}</p>
             )}
 
             {/* Live log */}
             {bulkLog.length > 0 && (
               <div
                 ref={logRef}
-                className="max-h-64 overflow-y-auto rounded-md border border-border bg-muted/30 px-3 py-2 flex flex-col gap-1"
+                className="max-h-64 overflow-y-auto rounded border border-border bg-muted/30 px-3 py-2 flex flex-col gap-1"
               >
                 {bulkLog.map((entry) => (
                   <div
@@ -358,13 +367,13 @@ export default function AddHintsPage() {
                     <span
                       className={
                         entry.success
-                          ? "text-green-600 dark:text-green-400 shrink-0"
+                          ? "text-green shrink-0"
                           : "text-destructive shrink-0"
                       }
                     >
                       {entry.success ? "✓" : "✗"}
                     </span>
-                    <span className="text-muted-foreground shrink-0">
+                    <span className="text-cyan shrink-0">
                       #{entry.problem_number}
                     </span>
                     <span className="text-foreground">{entry.title}</span>
