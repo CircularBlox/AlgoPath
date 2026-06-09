@@ -51,6 +51,9 @@ export default function SettingsPage() {
       <div className="flex flex-col gap-10">
         {/* Notes section */}
         <section>
+          <p className="font-mono text-xs text-muted-foreground">
+            {"// notes"}
+          </p>
           <h2 className="text-base font-semibold">Notes</h2>
           <p className="mt-0.5 text-sm text-muted-foreground">
             Configure how your notes behave.
@@ -81,6 +84,9 @@ export default function SettingsPage() {
 
         {/* General section */}
         <section>
+          <p className="font-mono text-xs text-muted-foreground">
+            {"// general"}
+          </p>
           <h2 className="text-base font-semibold">General</h2>
           <p className="mt-0.5 text-sm text-muted-foreground">
             Application-wide preferences.
@@ -110,9 +116,8 @@ export default function SettingsPage() {
 
         {/* Danger Zone */}
         <section>
-          <h2 className="text-base font-semibold text-destructive">
-            Danger Zone
-          </h2>
+          <p className="font-mono text-xs text-destructive">{"// danger"}</p>
+          <h2 className="text-base font-semibold">Danger Zone</h2>
           <p className="mt-0.5 text-sm text-muted-foreground">
             Permanent actions that cannot be undone.
           </p>
@@ -135,7 +140,7 @@ export default function SettingsPage() {
                 </Button>
               </div>
             ) : (
-              <div className="rounded border border-destructive/40 bg-destructive/5 p-4 flex flex-col gap-3">
+              <div className="border-l-2 border-l-destructive bg-destructive/5 p-4 flex flex-col gap-3">
                 <p className="text-sm font-medium">
                   Are you sure? This will permanently delete your account,
                   profile, and all solved problem history.
