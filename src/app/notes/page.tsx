@@ -321,13 +321,13 @@ export default function NotesPage() {
         <button
           type="button"
           onClick={createNote}
-          className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+          className="rounded bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
         >
           New Note
         </button>
       </div>
 
-      <div className="grid flex-1 grid-cols-[240px_1fr] gap-4 overflow-hidden rounded-lg border border-border">
+      <div className="grid flex-1 grid-cols-[240px_1fr] gap-4 overflow-hidden rounded border border-border">
         {/* Sidebar */}
         <div className="flex flex-col gap-1 overflow-y-auto border-r border-border p-2">
           {loading && (
@@ -343,7 +343,7 @@ export default function NotesPage() {
               type="button"
               key={note.id}
               onClick={() => selectNote(note)}
-              className={`rounded-md px-3 py-2 text-left text-sm transition-colors ${
+              className={`rounded px-3 py-2 text-left text-sm transition-colors ${
                 note.id === selectedId
                   ? "bg-accent text-accent-foreground"
                   : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
@@ -351,16 +351,16 @@ export default function NotesPage() {
             >
               <span className="block truncate font-medium">{note.title}</span>
               <div className="mt-0.5 flex items-center gap-1.5 flex-wrap">
-                <span className="text-xs opacity-60">
+                <span className="font-mono text-xs opacity-60">
                   {new Date(note.updatedAt).toLocaleDateString()}
                 </span>
                 {note.problem_number && (
-                  <span className="rounded-full bg-primary/10 px-1.5 py-px text-[10px] text-primary">
+                  <span className="rounded bg-violet/10 px-1.5 py-px font-mono text-[10px] text-violet">
                     #{note.problem_number}
                   </span>
                 )}
                 {note.code && (
-                  <span className="rounded-full bg-muted px-1.5 py-px text-[10px] text-muted-foreground font-mono">
+                  <span className="rounded bg-muted px-1.5 py-px text-[10px] text-muted-foreground font-mono">
                     {note.code_language}
                   </span>
                 )}
@@ -456,14 +456,14 @@ export default function NotesPage() {
                         {lang}
                       </button>
                     ))}
-                    <span className="ml-auto text-[11px] text-muted-foreground">
+                    <span className="ml-auto font-mono text-[11px] text-muted-foreground">
                       {code.length}/50000
                     </span>
                   </div>
                   {/* Prism overlay editor */}
                   <div
-                    className="relative flex-1 overflow-hidden"
-                    style={{ background: "#1e1e2e" }}
+                    className="code-editor relative flex-1 overflow-hidden"
+                    style={{ background: "oklch(0.115 0.006 285)" }}
                   >
                     <pre
                       aria-hidden="true"
@@ -480,7 +480,7 @@ export default function NotesPage() {
                         overflowY: "auto",
                         overflowX: "hidden",
                         pointerEvents: "none",
-                        color: "#cdd6f4",
+                        color: "var(--color-foreground)",
                         background: "transparent",
                         tabSize: 2,
                       }}
@@ -521,7 +521,7 @@ export default function NotesPage() {
                         resize: "none",
                         background: "transparent",
                         color: "transparent",
-                        caretColor: "#cdd6f4",
+                        caretColor: "var(--color-foreground)",
                         outline: "none",
                         tabSize: 2,
                         zIndex: 1,
@@ -545,7 +545,7 @@ export default function NotesPage() {
                     <button
                       type="button"
                       onClick={updateNote}
-                      className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                      className="rounded bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
                     >
                       {saveStatus === "saving" ? "Saving…" : "Save"}
                     </button>
@@ -553,7 +553,7 @@ export default function NotesPage() {
                   <button
                     type="button"
                     onClick={deleteNote}
-                    className="rounded-md px-3 py-1.5 text-sm text-destructive transition-colors hover:bg-destructive/10"
+                    className="rounded px-3 py-1.5 text-sm text-destructive transition-colors hover:bg-destructive/10"
                   >
                     Delete
                   </button>

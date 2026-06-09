@@ -36,15 +36,17 @@ type Event =
   | { kind: "note"; ts: string; data: NoteActivity }
   | { kind: "review"; ts: string; data: Review };
 
+// Each activity kind maps to one §1 role: solved → green (success),
+// note → violet (brand/selected), AI review → teal (secondary accent).
 function kindLabel(kind: Event["kind"]) {
   if (kind === "solve")
-    return { label: "Solved", color: "text-green-500", bg: "bg-green-500/10" };
+    return { label: "Solved", color: "text-green", bg: "bg-green/10" };
   if (kind === "note")
-    return { label: "Note", color: "text-primary", bg: "bg-primary/10" };
+    return { label: "Note", color: "text-violet", bg: "bg-violet/10" };
   return {
     label: "AI Review",
-    color: "text-purple-500",
-    bg: "bg-purple-500/10",
+    color: "text-teal",
+    bg: "bg-teal/10",
   };
 }
 
@@ -112,23 +114,24 @@ export default function ActivityPage() {
             {
               label: "Solves",
               value: data.solves.length,
-              color: "text-green-500",
+              color: "text-green",
             },
-            { label: "Notes", value: data.notes.length, color: "text-primary" },
+            { label: "Notes", value: data.notes.length, color: "text-violet" },
             {
               label: "AI Reviews",
               value: data.reviews.length,
-              color: "text-purple-500",
+              color: "text-teal",
             },
           ].map(({ label, value, color }) => (
             <div
               key={label}
-              className="flex flex-col gap-0.5 rounded-lg border border-border bg-card px-4 py-3"
+              className="flex flex-col gap-0.5 rounded border border-border bg-card px-4 py-3"
             >
-              <span className={`text-2xl font-bold tabular-nums ${color}`}>
+              {/* cyan owns the figure; the category color lives on the label */}
+              <span className="font-mono text-2xl font-bold tabular-nums text-cyan">
                 {value}
               </span>
-              <span className="text-xs text-muted-foreground">{label}</span>
+              <span className={`font-mono text-xs ${color}`}>{label}</span>
             </div>
           ))}
         </div>
@@ -141,7 +144,7 @@ export default function ActivityPage() {
             key={id}
             type="button"
             onClick={() => setFilter(id)}
-            className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+            className={`rounded px-3 py-1 font-mono text-xs font-medium transition-colors ${
               filter === id
                 ? "bg-primary text-primary-foreground"
                 : "bg-muted text-muted-foreground hover:text-foreground"
@@ -214,13 +217,13 @@ export default function ActivityPage() {
                   <span className="truncate text-sm font-medium">{title}</span>
                 )}
                 {detail && (
-                  <span className="text-xs text-muted-foreground">
+                  <span className="font-mono text-xs text-muted-foreground">
                     {detail}
                   </span>
                 )}
               </div>
               <span
-                className="shrink-0 text-xs text-muted-foreground"
+                className="shrink-0 font-mono text-xs text-dim"
                 title={new Date(event.ts).toLocaleString()}
               >
                 {timeAgo(event.ts)}

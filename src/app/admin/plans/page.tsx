@@ -13,7 +13,7 @@ type UserResult = {
 const PLAN_COLORS: Record<string, string> = {
   free: "text-muted-foreground bg-muted/40 border-border",
   pro: "text-primary bg-primary/10 border-primary/40",
-  elite: "text-amber-400 bg-amber-400/10 border-amber-400/40",
+  elite: "text-amber bg-amber/10 border-amber/40",
 };
 
 export default function AdminPlansPage() {
@@ -90,29 +90,33 @@ export default function AdminPlansPage() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Username or email…"
-          className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          className="flex-1 rounded border border-input bg-input/30 px-3 py-2 text-sm outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/50"
         />
         <Button type="submit" size="sm" disabled={searching}>
           {searching ? "Searching…" : "Search"}
         </Button>
       </form>
 
-      {searchError && <p className="text-sm text-destructive">{searchError}</p>}
+      {searchError && (
+        <p className="font-mono text-sm text-destructive">{searchError}</p>
+      )}
 
       {result && (
-        <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5">
+        <div className="flex flex-col gap-4 rounded border border-border bg-card p-5">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-sm font-semibold">
+            <div className="flex h-10 w-10 items-center justify-center rounded bg-muted font-mono text-sm font-semibold">
               {result.username[0]?.toUpperCase() ?? "U"}
             </div>
             <div className="flex flex-col gap-0.5">
               <p className="text-sm font-semibold">{result.username}</p>
               {result.email && (
-                <p className="text-xs text-muted-foreground">{result.email}</p>
+                <p className="font-mono text-xs text-muted-foreground">
+                  {result.email}
+                </p>
               )}
             </div>
             <span
-              className={`ml-auto rounded-full border px-2.5 py-0.5 text-xs font-semibold ${PLAN_COLORS[result.plan] ?? PLAN_COLORS.free}`}
+              className={`ml-auto rounded border px-2.5 py-0.5 font-mono text-xs font-semibold ${PLAN_COLORS[result.plan] ?? PLAN_COLORS.free}`}
             >
               {result.plan}
             </span>
@@ -129,7 +133,7 @@ export default function AdminPlansPage() {
               id="plan-select"
               value={selectedPlan}
               onChange={(e) => setSelectedPlan(e.target.value)}
-              className="flex-1 rounded-md border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              className="flex-1 rounded border border-input bg-input/30 px-3 py-1.5 text-sm outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/50"
             >
               <option value="free">Free</option>
               <option value="pro">Pro</option>
@@ -146,7 +150,7 @@ export default function AdminPlansPage() {
 
           {saveMsg && (
             <p
-              className={`text-xs ${saveMsg.startsWith("Error") ? "text-destructive" : "text-primary"}`}
+              className={`font-mono text-xs ${saveMsg.startsWith("Error") ? "text-destructive" : "text-green"}`}
             >
               {saveMsg}
             </p>

@@ -2,10 +2,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { AdminDropdown } from "~/components/admin-dropdown";
-import { ThemeToggle } from "~/components/theme-toggle";
 import { isAdmin } from "~/lib/is-admin";
 import { streakStatus } from "~/lib/streak";
 import { createClient, getUser } from "~/lib/supabase/server";
+import { levelFromXp } from "~/lib/xp";
 
 const navLinks = [
   { href: "/display-problem", label: "Problems" },
@@ -22,6 +22,9 @@ const publicNavLinks = [
   { href: "/pricing", label: "Pricing" },
 ];
 
+const navLink =
+  "font-mono text-xs text-muted-foreground transition-colors hover:text-foreground";
+
 async function signOut() {
   "use server";
   const supabase = await createClient();
@@ -35,11 +38,7 @@ async function NavbarAuthLinks() {
   return (
     <>
       {navLinks.map((link) => (
-        <Link
-          key={link.href}
-          href={link.href}
-          className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-        >
+        <Link key={link.href} href={link.href} className={navLink}>
           {link.label}
         </Link>
       ))}
@@ -48,24 +47,47 @@ async function NavbarAuthLinks() {
   );
 }
 
+/** Mono stat chip: `streak {N}d · Lv.{X}`. Renders nothing on fetch failure. */
+async function NavbarStatChip() {
+  try {
+    const user = await getUser();
+    if (!user) return null;
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("streak, level, xp")
+      .eq("id", user.id)
+      .single<{
+        streak: number | null;
+        level: number | null;
+        xp: number | null;
+      }>();
+    if (error || !data) return null;
+    const streak = data.streak ?? 0;
+    const level = data.level ?? levelFromXp(data.xp ?? 0);
+    return (
+      <span className="hidden font-mono text-xs text-dim sm:inline">
+        streak <span className="text-amber">{streak}d</span> ·{" "}
+        <span className="text-cyan">Lv.{level}</span>
+      </span>
+    );
+  } catch {
+    return null;
+  }
+}
+
 async function NavbarSignButton() {
   const user = await getUser();
   if (!user) {
     return (
-      <Link
-        href="/auth/login"
-        className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-      >
+      <Link href="/auth/login" className={navLink}>
         Sign in
       </Link>
     );
   }
   return (
     <form action={signOut}>
-      <button
-        type="submit"
-        className="whitespace-nowrap text-sm text-muted-foreground transition-colors hover:text-foreground"
-      >
+      <button type="submit" className={`${navLink} whitespace-nowrap`}>
         Sign out
       </button>
     </form>
@@ -90,12 +112,7 @@ async function NavbarBanner() {
     return (
       <div className="animate-banner-in border-b border-primary/20 bg-primary/5">
         <div className="mx-auto flex max-w-3xl items-center justify-center gap-3 px-4 py-2.5">
-          <span
-            className="animate-fire-flicker text-base"
-            style={{ display: "inline-block" }}
-          >
-            🔥
-          </span>
+          <span className="font-mono text-base font-bold text-amber">!</span>
           <p className="text-sm text-foreground/80">
             Your {streak}-day streak is at risk —{" "}
             <Link
@@ -114,9 +131,7 @@ async function NavbarBanner() {
     return (
       <div className="animate-banner-in border-b border-destructive/20 bg-destructive/5">
         <div className="mx-auto flex max-w-3xl items-center justify-center gap-3 px-4 py-2.5">
-          <span className="text-base" style={{ display: "inline-block" }}>
-            💔
-          </span>
+          <span className="font-mono text-base font-bold text-rose">×</span>
           <p className="text-sm text-foreground/80">
             Your {streak}-day streak was broken —{" "}
             <Link
@@ -138,21 +153,17 @@ export function Navbar() {
   return (
     <header>
       <nav className="border-b border-border bg-background/95 backdrop-blur-sm">
-        <div className="mx-auto flex h-14 max-w-3xl items-center gap-6 px-4">
+        <div className="mx-auto flex h-10 max-w-6xl items-center gap-5 px-4">
           <Link
             href="/"
-            className="font-bold tracking-tight text-foreground transition-colors hover:text-primary"
+            className="font-mono font-bold tracking-tight text-foreground transition-colors hover:text-primary"
           >
-            AlgoPath
+            <span className="text-primary">~/</span>AlgoPath
           </Link>
 
-          <div className="flex gap-4">
+          <div className="flex gap-3">
             {publicNavLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-              >
+              <Link key={link.href} href={link.href} className={navLink}>
                 {link.label}
               </Link>
             ))}
@@ -161,14 +172,13 @@ export function Navbar() {
             </Suspense>
           </div>
 
-          <div className="ml-auto flex items-center gap-2">
-            <ThemeToggle />
+          <div className="ml-auto flex items-center gap-3">
+            <Suspense fallback={null}>
+              <NavbarStatChip />
+            </Suspense>
             <Suspense
               fallback={
-                <Link
-                  href="/auth/login"
-                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                >
+                <Link href="/auth/login" className={navLink}>
                   Sign in
                 </Link>
               }

@@ -36,7 +36,7 @@ function HtmlPreview({
   return (
     <div
       className={cn(
-        "cf-problem overflow-auto rounded-lg border border-border bg-muted/20 p-4 text-sm",
+        "cf-problem overflow-auto rounded border border-border bg-muted/20 p-4 text-sm",
         className,
       )}
       // biome-ignore lint/security/noDangerouslySetInnerHtml: admin-only page, content from our own DB
@@ -105,16 +105,14 @@ function IssueRow({
 
   if (applied) {
     return (
-      <div className="flex items-center gap-4 rounded-xl border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 opacity-60">
+      <div className="flex items-center gap-4 rounded border border-green/30 bg-green/5 px-4 py-3 opacity-60">
         <span className="w-10 font-mono text-xs text-muted-foreground">
           #{issue.problem_number}
         </span>
         <span className="flex-1 truncate text-sm font-medium text-muted-foreground">
           {issue.title}
         </span>
-        <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
-          ✓ Applied
-        </span>
+        <span className="text-xs font-medium text-green">✓ Applied</span>
       </div>
     );
   }
@@ -122,10 +120,8 @@ function IssueRow({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-xl border transition-colors",
-        approved
-          ? "border-emerald-500/40 bg-emerald-500/5"
-          : "border-border bg-card",
+        "overflow-hidden rounded border transition-colors",
+        approved ? "border-green/40 bg-green/5" : "border-border bg-card",
       )}
     >
       {/* Row header */}
@@ -148,16 +144,16 @@ function IssueRow({
           </a>
         </div>
 
-        <span className="shrink-0 rounded-full border border-border bg-muted px-2 py-0.5 text-xs text-muted-foreground capitalize">
+        <span className="shrink-0 rounded border border-border bg-muted px-2 py-0.5 font-mono text-xs text-muted-foreground capitalize">
           {issue.platform}
         </span>
 
         <span
           className={cn(
-            "shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium",
+            "shrink-0 rounded border px-2 py-0.5 text-xs font-medium",
             issue.issue_type === "no-newlines"
-              ? "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400"
-              : "border-sky-500/40 bg-sky-500/10 text-sky-700 dark:text-sky-400",
+              ? "border-amber/40 bg-amber/10 text-amber"
+              : "border-cyan/40 bg-cyan/10 text-cyan",
           )}
         >
           {issue.issue_type === "no-newlines" ? "no newlines" : "merged I/O"}
@@ -168,9 +164,9 @@ function IssueRow({
           type="button"
           onClick={() => onChange({ approved: !approved })}
           className={cn(
-            "shrink-0 flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+            "shrink-0 flex items-center gap-1.5 rounded border px-3 py-1 text-xs font-medium transition-colors",
             approved
-              ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+              ? "border-green/40 bg-green/10 text-green"
               : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground",
           )}
         >
@@ -201,7 +197,7 @@ function IssueRow({
         <button
           type="button"
           onClick={onDeny}
-          className="shrink-0 rounded-full border border-border px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:border-destructive/40 hover:text-destructive"
+          className="shrink-0 rounded border border-border px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:border-destructive/40 hover:text-destructive"
         >
           Deny
         </button>
@@ -237,8 +233,8 @@ function IssueRow({
       {expanded && (
         <div className="border-t border-border px-4 pb-4 pt-3">
           {issue.issue_type === "no-newlines" && (
-            <div className="mb-3 flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2">
-              <p className="flex-1 text-xs text-amber-700 dark:text-amber-400">
+            <div className="mb-3 flex items-start gap-3 border-l-2 border-l-amber bg-amber/5 px-3 py-2">
+              <p className="flex-1 text-xs text-amber">
                 Newlines were stripped by the scraper. Use{" "}
                 <strong>Fetch from CF</strong> to pull correct content, or add
                 newlines manually in the <strong>Edit HTML</strong> tab.
@@ -248,7 +244,7 @@ function IssueRow({
                   type="button"
                   onClick={handleRefetch}
                   disabled={refetching}
-                  className="shrink-0 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-500/20 disabled:opacity-50 dark:text-amber-400"
+                  className="shrink-0 rounded border border-amber/40 bg-amber/10 px-3 py-1 text-xs font-medium text-amber transition-colors hover:bg-amber/20 disabled:opacity-50"
                 >
                   {refetching ? "Fetching…" : "Fetch from CF"}
                 </button>
@@ -257,22 +253,22 @@ function IssueRow({
           )}
 
           {refetchError && (
-            <div className="mb-3 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+            <div className="mb-3 border-l-2 border-l-destructive bg-destructive/5 px-3 py-2 font-mono text-xs text-destructive">
               {refetchError}
             </div>
           )}
 
           {/* Tabs */}
-          <div className="mb-3 flex gap-1 rounded-lg border border-border bg-muted/40 p-1 w-fit">
+          <div className="mb-3 flex gap-1 rounded border border-border bg-muted/40 p-1 w-fit">
             {(["current", "proposed", "edit"] as const).map((tab) => (
               <button
                 key={tab}
                 type="button"
                 onClick={() => onChange({ activeTab: tab })}
                 className={cn(
-                  "rounded-md px-3 py-1 text-xs font-medium transition-colors capitalize",
+                  "rounded px-3 py-1 text-xs font-medium transition-colors capitalize",
                   activeTab === tab
-                    ? "bg-background text-foreground shadow-sm"
+                    ? "bg-background text-foreground"
                     : "text-muted-foreground hover:text-foreground",
                 )}
               >
@@ -297,13 +293,13 @@ function IssueRow({
             <textarea
               value={editedContent}
               onChange={(e) => onChange({ editedContent: e.target.value })}
-              className="h-96 w-full rounded-lg border border-border bg-muted/20 p-3 font-mono text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50 resize-y"
+              className="h-96 w-full rounded border border-border bg-muted/20 p-3 font-mono text-xs text-foreground outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/50 resize-y"
               spellCheck={false}
             />
           )}
 
           {activeTab === "edit" && editedContent !== issue.proposed_content && (
-            <p className="mt-1.5 text-xs text-amber-600 dark:text-amber-400">
+            <p className="mt-1.5 font-mono text-xs text-amber">
               Manually edited — differs from auto-generated fix.
             </p>
           )}
@@ -443,18 +439,14 @@ export default function FixIOPage() {
         </h1>
         <p className="text-sm text-muted-foreground">
           Detects two scraper issues:{" "}
-          <span className="text-sky-700 dark:text-sky-400 font-medium">
-            merged I/O
-          </span>{" "}
-          (Input and Output in a single{" "}
+          <span className="font-medium text-cyan">merged I/O</span> (Input and
+          Output in a single{" "}
           <code className="rounded bg-muted px-1 py-0.5 text-xs">
             &lt;pre&gt;
           </code>
           , auto-fixable) and{" "}
-          <span className="text-amber-700 dark:text-amber-400 font-medium">
-            no newlines
-          </span>{" "}
-          (newlines stripped from{" "}
+          <span className="font-medium text-amber">no newlines</span> (newlines
+          stripped from{" "}
           <code className="rounded bg-muted px-1 py-0.5 text-xs">
             &lt;pre&gt;
           </code>{" "}
@@ -499,23 +491,22 @@ export default function FixIOPage() {
 
         {totalScanned !== null && (
           <span className="text-sm text-muted-foreground">
-            {totalScanned} problems scanned
+            <span className="font-mono">{totalScanned}</span> problems scanned
             {issues !== null && (
               <>
                 {" · "}
                 <span
                   className={cn(
-                    issues.length > 0
-                      ? "text-amber-600 dark:text-amber-400"
-                      : "text-emerald-600 dark:text-emerald-400",
+                    issues.length > 0 ? "text-amber" : "text-green",
                   )}
                 >
-                  {issues.length} issue{issues.length !== 1 ? "s" : ""} found
+                  <span className="font-mono">{issues.length}</span> issue
+                  {issues.length !== 1 ? "s" : ""} found
                 </span>
                 {appliedCount > 0 && (
-                  <span className="text-emerald-600 dark:text-emerald-400">
+                  <span className="text-green">
                     {" · "}
-                    {appliedCount} applied
+                    <span className="font-mono">{appliedCount}</span> applied
                   </span>
                 )}
               </>
@@ -526,20 +517,20 @@ export default function FixIOPage() {
 
       {/* Scan error */}
       {scanError && (
-        <div className="mb-6 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+        <div className="mb-6 border-l-2 border-l-destructive bg-destructive/5 px-4 py-3 font-mono text-sm text-destructive">
           {scanError}
         </div>
       )}
 
       {/* Apply result */}
       {applyResult && (
-        <div className="mb-6 rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 text-sm">
-          <span className="font-medium text-emerald-700 dark:text-emerald-400">
+        <div className="mb-6 border-l-2 border-l-green bg-green/5 px-4 py-3 text-sm">
+          <span className="font-medium text-green">
             {applyResult.applied} fix{applyResult.applied !== 1 ? "es" : ""}{" "}
             applied.
           </span>
           {applyResult.errors.length > 0 && (
-            <ul className="mt-1 text-destructive">
+            <ul className="mt-1 font-mono text-destructive">
               {applyResult.errors.map((e) => (
                 <li key={e.problem_number}>
                   #{e.problem_number}: {e.error}
@@ -552,14 +543,14 @@ export default function FixIOPage() {
 
       {/* Apply error */}
       {applyError && (
-        <div className="mb-6 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+        <div className="mb-6 border-l-2 border-l-destructive bg-destructive/5 px-4 py-3 font-mono text-sm text-destructive">
           {applyError}
         </div>
       )}
 
       {/* Issues list */}
       {issues !== null && issues.length === 0 && (
-        <div className="rounded-xl border border-border bg-muted/30 px-6 py-10 text-center text-sm text-muted-foreground">
+        <div className="rounded border border-border bg-muted/30 px-6 py-10 text-center text-sm text-muted-foreground">
           No I/O issues detected.
         </div>
       )}
@@ -608,11 +599,7 @@ export default function FixIOPage() {
             </div>
 
             {approvedCount > 0 && (
-              <Button
-                onClick={handleApply}
-                disabled={applying}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white"
-              >
+              <Button onClick={handleApply} disabled={applying}>
                 {applying ? (
                   <span className="flex items-center gap-2">
                     <svg
@@ -658,11 +645,7 @@ export default function FixIOPage() {
 
           {approvedCount > 0 && (
             <div className="mt-6 flex justify-end">
-              <Button
-                onClick={handleApply}
-                disabled={applying}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white"
-              >
+              <Button onClick={handleApply} disabled={applying}>
                 {applying ? "Applying…" : `Apply ${approvedCount} approved`}
               </Button>
             </div>

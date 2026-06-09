@@ -71,7 +71,7 @@ export default function ResetPasswordPage() {
             minLength={8}
           />
         </div>
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {error && <p className="font-mono text-sm text-destructive">{error}</p>}
         <Button type="submit" disabled={loading}>
           {loading ? "Saving…" : "Set new password"}
         </Button>

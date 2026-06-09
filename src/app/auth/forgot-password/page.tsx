@@ -35,7 +35,7 @@ export default function ForgotPasswordPage() {
     return (
       <main className="mx-auto flex max-w-sm flex-col gap-6 px-6 py-16 text-center">
         <div className="flex flex-col gap-3">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded bg-green/10 text-green">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="20"
@@ -57,8 +57,8 @@ export default function ForgotPasswordPage() {
           </h1>
           <p className="text-sm text-muted-foreground">
             We sent a password reset link to{" "}
-            <span className="font-medium text-foreground">{email}</span>. Click
-            it to set a new password.
+            <span className="font-mono text-foreground">{email}</span>. Click it
+            to set a new password.
           </p>
         </div>
         <Link
@@ -90,9 +90,10 @@ export default function ForgotPasswordPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            className="font-mono"
           />
         </div>
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {error && <p className="font-mono text-sm text-destructive">{error}</p>}
         <Button type="submit" disabled={loading}>
           {loading ? "Sending…" : "Send reset link"}
         </Button>

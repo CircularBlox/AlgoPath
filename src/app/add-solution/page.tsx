@@ -1,8 +1,7 @@
 "use client";
 
-import Editor from "react-simple-code-editor";
-import "prismjs/themes/prism-okaidia.css";
 import { useActionState, useState } from "react";
+import Editor from "react-simple-code-editor";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -50,7 +49,7 @@ export default function AddSolutionPage() {
             type="number"
             min={1}
             placeholder="e.g. 1"
-            className="max-w-[12rem]"
+            className="max-w-[12rem] font-mono"
             required
           />
         </div>
@@ -91,7 +90,7 @@ export default function AddSolutionPage() {
             onChange={(e) => setExplanation(e.target.value)}
             placeholder="Describe the approach, complexity, key observations…"
             rows={6}
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm leading-relaxed placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-y"
+            className="w-full rounded border border-input bg-input/30 px-3 py-2 text-sm leading-relaxed placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 resize-y"
           />
           <p className="text-xs text-muted-foreground">
             Supports <code className="font-mono">**bold**</code>,{" "}
@@ -107,7 +106,7 @@ export default function AddSolutionPage() {
           <Label>Solution Code</Label>
           {/* Hidden input carries the code value into the server action */}
           <input type="hidden" name="solution_code" value={code} />
-          <div className="overflow-hidden rounded-md border border-input">
+          <div className="code-editor overflow-hidden rounded border border-input">
             <Editor
               value={code}
               onValueChange={setCode}
@@ -153,8 +152,8 @@ export default function AddSolutionPage() {
                 }, 0);
               }}
               style={{
-                background: "#272822",
-                color: "#f8f8f2",
+                background: "oklch(0.115 0.006 285)",
+                color: "var(--color-foreground)",
                 fontFamily:
                   '"JetBrains Mono","Fira Code","Fira Mono",ui-monospace,monospace',
                 fontSize: 13,
@@ -166,12 +165,10 @@ export default function AddSolutionPage() {
         </div>
 
         {state.error && (
-          <p className="text-sm text-destructive">{state.error}</p>
+          <p className="font-mono text-sm text-destructive">{state.error}</p>
         )}
         {state.success && state.message && (
-          <p className="text-sm text-green-600 dark:text-green-400">
-            {state.message}
-          </p>
+          <p className="font-mono text-sm text-green">{state.message}</p>
         )}
 
         <Button type="submit" disabled={isPending} className="self-start">
