@@ -55,7 +55,7 @@ export function BugReportButton() {
           setStatus("idle");
         }}
         title="Report a bug"
-        className="fixed bottom-5 right-5 z-50 flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background shadow-lg transition-colors hover:bg-muted"
+        className="fixed bottom-5 right-5 z-50 flex h-10 w-10 items-center justify-center rounded border border-border bg-card transition-colors hover:bg-muted"
         aria-label="Report a bug"
       >
         <svg
@@ -89,7 +89,7 @@ export function BugReportButton() {
             role="dialog"
             aria-modal="true"
             aria-label="Report a bug"
-            className="fixed bottom-20 right-5 z-50 w-full max-w-sm rounded border border-border bg-background p-5 shadow-2xl sm:bottom-auto sm:right-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2"
+            className="fixed bottom-20 right-5 z-50 w-full max-w-sm rounded border border-border bg-card p-5 sm:bottom-auto sm:right-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2"
           >
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-sm font-semibold">Report a bug</h2>
@@ -117,7 +117,7 @@ export function BugReportButton() {
             </div>
 
             {status === "sent" ? (
-              <p className="py-4 text-center text-sm text-muted-foreground">
+              <p className="py-4 text-center text-sm text-green">
                 Thanks — report received.
               </p>
             ) : (
@@ -129,7 +129,7 @@ export function BugReportButton() {
                   rows={4}
                   maxLength={2000}
                   disabled={status === "sending"}
-                  className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                  className="w-full resize-none rounded border border-input bg-input/30 px-3 py-2 text-sm placeholder:text-muted-foreground outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/50 disabled:opacity-50"
                 />
                 {status === "error" && (
                   <p className="mt-1 text-xs text-destructive">

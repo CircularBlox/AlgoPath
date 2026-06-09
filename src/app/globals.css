@@ -422,6 +422,12 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* shadcn / tailwindcss-animate overlay enter/exit (select, future dialogs) */
+  .animate-in,
+  .animate-out {
+    /* biome-ignore lint/complexity/noImportantStyles: must override tailwindcss-animate utility classes for reduced-motion a11y */
+    animation: none !important;
+  }
   .landing-root .rise,
   .landing-root .caret,
   .landing-root .marquee-track,
