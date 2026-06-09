@@ -1,4 +1,3 @@
-import "prismjs/themes/prism-okaidia.css";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { generateCsrfToken } from "~/lib/csrf";
