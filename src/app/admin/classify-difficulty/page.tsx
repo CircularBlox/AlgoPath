@@ -17,27 +17,16 @@ interface ClassificationResult {
 }
 
 function ratingLabel(r: number): { label: string; cls: string } {
-  if (r <= 1200)
-    return {
-      label: "Easy",
-      cls: "text-emerald-600 dark:text-emerald-400",
-    };
-  if (r <= 2000)
-    return {
-      label: "Medium",
-      cls: "text-amber-600 dark:text-amber-400",
-    };
-  return {
-    label: "Hard",
-    cls: "text-red-600 dark:text-red-400",
-  };
+  if (r <= 1200) return { label: "Easy", cls: "text-cyan" };
+  if (r <= 2000) return { label: "Medium", cls: "text-amber" };
+  return { label: "Hard", cls: "text-rose" };
 }
 
 function RatingBadge({ rating }: { rating: number }) {
   const { label, cls } = ratingLabel(rating);
   return (
     <span className="inline-flex items-center gap-1.5 tabular-nums">
-      <span className={cn("font-bold", cls)}>{rating}</span>
+      <span className={cn("font-mono font-bold", cls)}>{rating}</span>
       <span className="text-xs text-muted-foreground">({label})</span>
     </span>
   );
@@ -56,7 +45,7 @@ function ResultsTable({ results }: { results: ClassificationResult[] }) {
   }
 
   return (
-    <div className="overflow-hidden rounded border border-border shadow-sm">
+    <div className="overflow-hidden rounded border border-border">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -122,7 +111,7 @@ function ResultsTable({ results }: { results: ClassificationResult[] }) {
                     <td className="max-w-64 truncate px-4 py-3 font-medium">
                       {r.title ?? "—"}
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">
+                    <td className="px-4 py-3 font-mono text-muted-foreground">
                       {r.old ?? <span className="text-xs italic">none</span>}
                     </td>
                     <td className="px-4 py-3">
@@ -130,26 +119,24 @@ function ResultsTable({ results }: { results: ClassificationResult[] }) {
                         <RatingBadge rating={r.new_rating} />
                         {r.api_error ? (
                           <span
-                            className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium text-red-700 bg-red-500/10 border border-red-500/20 dark:text-red-400 cursor-default max-w-48 truncate"
+                            className="inline-flex max-w-48 cursor-default items-center truncate rounded border border-destructive/20 bg-destructive/10 px-1.5 py-0.5 font-mono text-xs font-medium text-destructive"
                             title={r.api_error}
                           >
                             error: {r.api_error}
                           </span>
                         ) : r.fallback ? (
                           <span
-                            className="text-xs text-muted-foreground"
+                            className="font-mono text-xs text-muted-foreground"
                             title="Response unparseable — kept existing rating"
                           >
-                            ↩ unparseable
+                            unparseable
                           </span>
                         ) : null}
                       </span>
                     </td>
                     <td className="px-4 py-3">
                       {r.had_solution ? (
-                        <span className="text-xs text-emerald-600 dark:text-emerald-400">
-                          ✓
-                        </span>
+                        <span className="text-xs text-green">✓</span>
                       ) : (
                         <span className="text-xs text-muted-foreground">—</span>
                       )}
@@ -203,7 +190,7 @@ function Toggle({
         />
         <span
           className={cn(
-            "absolute top-0.5 h-3.5 w-3.5 rounded-full bg-foreground shadow transition-transform",
+            "absolute top-0.5 h-3.5 w-3.5 rounded-full bg-foreground transition-transform",
             checked ? "translate-x-3.5" : "translate-x-0.5",
           )}
         />
@@ -276,9 +263,9 @@ export default function ClassifyDifficultyPage() {
     "Hard (≥2100)",
   ] as const;
   const BUCKET_COLORS = {
-    "Easy (≤1200)": "text-emerald-600 dark:text-emerald-400",
-    "Medium (1300–2000)": "text-amber-600 dark:text-amber-400",
-    "Hard (≥2100)": "text-red-600 dark:text-red-400",
+    "Easy (≤1200)": "text-cyan",
+    "Medium (1300–2000)": "text-amber",
+    "Hard (≥2100)": "text-rose",
   };
 
   return (
@@ -298,7 +285,7 @@ export default function ClassifyDifficultyPage() {
       </div>
 
       {/* Controls */}
-      <div className="mb-8 rounded border border-border bg-card p-6 shadow-sm">
+      <div className="mb-8 rounded border border-border bg-card p-6">
         <div className="flex flex-wrap items-end gap-6">
           {/* Dry run toggle */}
           <div className="flex items-center gap-3">
@@ -363,7 +350,7 @@ export default function ClassifyDifficultyPage() {
         </div>
 
         {!dryRun && (
-          <p className="mt-4 rounded border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+          <p className="mt-4 border-l-2 border-l-amber bg-amber/5 px-3 py-2 text-xs text-amber">
             Live mode — numeric ratings will be written to the database.
           </p>
         )}
@@ -371,7 +358,7 @@ export default function ClassifyDifficultyPage() {
 
       {/* Error */}
       {error && (
-        <div className="mb-6 rounded border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+        <div className="mb-6 border-l-2 border-l-destructive bg-destructive/5 px-4 py-3 font-mono text-sm text-destructive">
           {error}
         </div>
       )}
@@ -391,17 +378,18 @@ export default function ClassifyDifficultyPage() {
             {BUCKETS.map((bucket) => (
               <div
                 key={bucket}
-                className="rounded border border-border bg-card px-5 py-4 shadow-sm"
+                className="rounded border border-border bg-card px-5 py-4"
               >
+                {/* cyan owns the figure; the tier color lives on the label */}
+                <div className="mb-1 font-mono text-3xl font-bold tabular-nums text-cyan">
+                  {distribution[bucket] ?? 0}
+                </div>
                 <div
                   className={cn(
-                    "mb-1 text-3xl font-bold tabular-nums",
+                    "text-xs font-medium uppercase tracking-wide",
                     BUCKET_COLORS[bucket],
                   )}
                 >
-                  {distribution[bucket] ?? 0}
-                </div>
-                <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   {bucket}
                 </div>
               </div>
@@ -410,19 +398,20 @@ export default function ClassifyDifficultyPage() {
 
           <div className="flex items-center gap-3">
             <span className="text-sm text-muted-foreground">
-              {classified} problem{classified !== 1 ? "s" : ""} classified
+              <span className="font-mono">{classified}</span> problem
+              {classified !== 1 ? "s" : ""} classified
               {fallbacks > 0 && (
-                <span className="ml-1.5 text-amber-600 dark:text-amber-400">
+                <span className="ml-1.5 text-amber">
                   · {fallbacks} used fallback rating
                 </span>
               )}
             </span>
             {wasApplied ? (
-              <span className="inline-flex items-center rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+              <span className="inline-flex items-center rounded border border-green/20 bg-green/10 px-2.5 py-0.5 text-xs font-medium text-green">
                 Saved to database
               </span>
             ) : (
-              <span className="inline-flex items-center rounded-full border border-border bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+              <span className="inline-flex items-center rounded border border-border bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
                 Dry run — not saved
               </span>
             )}
