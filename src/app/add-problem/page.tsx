@@ -26,13 +26,7 @@ export default function AddProblemPage() {
       <form action={formAction} className="flex flex-col gap-5">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="title">Title</Label>
-          <Input
-            id="title"
-            name="title"
-            placeholder="The Equalizer"
-            required
-            className="rounded shadow-none"
-          />
+          <Input id="title" name="title" placeholder="The Equalizer" required />
         </div>
 
         <div className="flex flex-col gap-1.5">
@@ -43,7 +37,7 @@ export default function AddProblemPage() {
             type="url"
             placeholder="https://codeforces.com/contest/2217/problem/A"
             required
-            className="rounded font-mono shadow-none"
+            className="font-mono"
           />
         </div>
 
@@ -96,12 +90,7 @@ export default function AddProblemPage() {
               (comma-separated, optional)
             </span>
           </Label>
-          <Input
-            id="tags"
-            name="tags"
-            placeholder="games, math, greedy"
-            className="rounded shadow-none"
-          />
+          <Input id="tags" name="tags" placeholder="games, math, greedy" />
         </div>
 
         <div className="flex flex-col gap-1.5">
@@ -142,11 +131,7 @@ export default function AddProblemPage() {
           </p>
         )}
 
-        <Button
-          type="submit"
-          disabled={isPending}
-          className="self-start rounded"
-        >
+        <Button type="submit" disabled={isPending} className="self-start">
           {isPending ? "Adding..." : "Add Problem"}
         </Button>
       </form>

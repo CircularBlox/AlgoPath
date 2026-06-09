@@ -190,7 +190,7 @@ export default function AddHintsPage() {
               type="number"
               min={1}
               placeholder="e.g. 1"
-              className="max-w-[10rem] rounded font-mono shadow-none"
+              className="max-w-[10rem] font-mono"
               value={problemNumber}
               onChange={(e) => setProblemNumber(e.target.value)}
             />
@@ -199,7 +199,6 @@ export default function AddHintsPage() {
               variant="outline"
               onClick={handleLoad}
               disabled={!problemNumber || loadStatus === "loading"}
-              className="rounded shadow-none"
             >
               {loadStatus === "loading" ? "Loading…" : "Load"}
             </Button>
@@ -208,7 +207,6 @@ export default function AddHintsPage() {
               variant="outline"
               onClick={handleGenerate}
               disabled={!problemNumber || genStatus === "loading"}
-              className="rounded shadow-none"
             >
               {genStatus === "loading" ? "Generating…" : "Generate with AI"}
             </Button>
@@ -291,7 +289,7 @@ export default function AddHintsPage() {
         <Button
           type="submit"
           disabled={isPending || !problemNumber}
-          className="self-start rounded"
+          className="self-start"
         >
           {isPending ? "Saving…" : "Save Hints"}
         </Button>
@@ -314,7 +312,6 @@ export default function AddHintsPage() {
           variant="outline"
           onClick={handleBulkFill}
           disabled={bulkStatus === "running"}
-          className="rounded shadow-none"
         >
           {bulkStatus === "running" ? "Running…" : "Fill All Missing Hints"}
         </Button>
