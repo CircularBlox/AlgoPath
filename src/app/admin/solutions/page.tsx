@@ -23,6 +23,7 @@ type Problem = {
   title: string;
   difficulty: string | null;
   tags: string[] | null;
+  platform: string | null;
 };
 
 type SolutionCode = {
@@ -49,6 +50,8 @@ export default function AdminSolutionsPage() {
 
   const [generating, setGenerating] = useState<string | null>(null);
   const [generatingExplanation, setGeneratingExplanation] = useState(false);
+  const [fetchingEditorial, setFetchingEditorial] = useState(false);
+  const [editorialNote, setEditorialNote] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -167,6 +170,39 @@ export default function AdminSolutionsPage() {
       alert("Network error during generation.");
     } finally {
       setGeneratingExplanation(false);
+    }
+  }
+
+  async function handleFetchEditorial() {
+    if (!problemNumber || !problem) return;
+    setFetchingEditorial(true);
+    setEditorialNote(null);
+    try {
+      const res = await fetch("/api/admin/fetch-editorial", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ problem_number: Number(problemNumber) }),
+      });
+      const data = (await res.json()) as {
+        content?: string;
+        sliced?: boolean;
+        editorial_url?: string;
+        error?: string;
+      };
+      if (!res.ok || !data.content) {
+        setEditorialNote(data.error ?? "Failed to fetch editorial.");
+        return;
+      }
+      setExplanation(data.content);
+      setEditorialNote(
+        data.sliced
+          ? "Scraped this problem's editorial section — review before saving."
+          : "Couldn't isolate this problem — pasted the full contest editorial; trim before saving.",
+      );
+    } catch {
+      setEditorialNote("Network error while fetching the editorial.");
+    } finally {
+      setFetchingEditorial(false);
     }
   }
 
@@ -383,15 +419,38 @@ export default function AdminSolutionsPage() {
             </p>
           </div>
 
-          <Button
-            type="button"
-            variant="outline"
-            disabled={!problem || generatingExplanation}
-            onClick={handleGenerateExplanation}
-            className="self-start"
-          >
-            {generatingExplanation ? "Generating…" : "Generate Explanation"}
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={!problem || generatingExplanation}
+              onClick={handleGenerateExplanation}
+            >
+              {generatingExplanation ? "Generating…" : "Generate Explanation"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={
+                !problem ||
+                fetchingEditorial ||
+                problem.platform !== "codeforces"
+              }
+              onClick={handleFetchEditorial}
+              title={
+                problem && problem.platform !== "codeforces"
+                  ? "Editorial scraping is Codeforces-only"
+                  : "Scrape the Codeforces editorial into the explanation"
+              }
+            >
+              {fetchingEditorial ? "Fetching…" : "Fetch CF Editorial"}
+            </Button>
+          </div>
+          {editorialNote && (
+            <p className="font-mono text-xs text-muted-foreground">
+              {editorialNote}
+            </p>
+          )}
 
           {/* Save */}
           <div className="flex flex-col gap-2 pt-2 border-t border-border">
