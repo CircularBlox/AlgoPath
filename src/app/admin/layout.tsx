@@ -10,6 +10,7 @@ const NAV_LINKS = [
   { href: "/add-hints", label: "Bulk Hints" },
   { href: "/add-solution", label: "Add Solution" },
   { href: "/admin/solutions", label: "Solutions" },
+  { href: "/admin/editorials", label: "Editorials" },
 ] as const;
 
 export default async function AdminLayout({

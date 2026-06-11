@@ -275,3 +275,73 @@ export async function fetchCfHtml(url: string, attempts = 3): Promise<string> {
       : "Failed to fetch the Codeforces page.",
   );
 }
+
+export type ScrapeInput = {
+  url: string | null;
+  title?: string | null;
+  /** A previously-resolved editorial blog URL, if any. */
+  editorial_url?: string | null;
+};
+
+export type ScrapeResult = {
+  /** The resolved Codeforces editorial blog URL. */
+  editorial_url: string;
+  /** Whether the content was narrowed to this problem's section. */
+  sliced: boolean;
+  /** The editorial body as the app's lightweight markdown. */
+  content: string;
+};
+
+/** Hard cap on stored editorial markdown to keep rows/payloads bounded. */
+const MAX_CONTENT = 16000;
+
+/**
+ * End-to-end editorial scrape for a single Codeforces problem: resolve the blog
+ * URL (explicit override → stored editorial_url → the problem page's "Contest
+ * materials" sidebar), fetch it, slice out this problem's section, and convert
+ * to markdown. Shared by the single and bulk admin routes. Throws an Error with
+ * a human-readable message on any failure.
+ */
+export async function scrapeEditorial(
+  problem: ScrapeInput,
+  override?: string | null,
+): Promise<ScrapeResult> {
+  const ref = problem.url ? parseContestRef(problem.url) : null;
+  if (!ref) {
+    throw new Error(
+      `Could not parse a contest/problem id from "${problem.url ?? ""}".`,
+    );
+  }
+
+  // 1. Resolve the editorial blog URL.
+  let blogUrl =
+    (override && isCodeforcesUrl(override) ? override : null) ??
+    (problem.editorial_url && isCodeforcesUrl(problem.editorial_url)
+      ? problem.editorial_url
+      : null);
+
+  if (!blogUrl) {
+    const problemHtml = await fetchCfHtml(problem.url as string);
+    blogUrl = extractEditorialLink(problemHtml);
+  }
+  if (!blogUrl) {
+    throw new Error(
+      "No editorial link found in the problem's contest materials.",
+    );
+  }
+
+  // 2. Fetch + parse the editorial blog.
+  const blogHtml = await fetchCfHtml(blogUrl);
+  const typography = extractTypography(blogHtml);
+  const { html, sliced } = sliceProblemSection(
+    typography,
+    ref,
+    problem.title ?? undefined,
+  );
+  const content = htmlToMarkdown(html).slice(0, MAX_CONTENT);
+  if (!content.trim()) {
+    throw new Error("Fetched the editorial but extracted no readable content.");
+  }
+
+  return { editorial_url: blogUrl, sliced, content };
+}

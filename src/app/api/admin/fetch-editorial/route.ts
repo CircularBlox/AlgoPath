@@ -1,14 +1,6 @@
 import * as Sentry from "@sentry/nextjs";
 import { type NextRequest, NextResponse } from "next/server";
-import {
-  extractEditorialLink,
-  extractTypography,
-  fetchCfHtml,
-  htmlToMarkdown,
-  isCodeforcesUrl,
-  parseContestRef,
-  sliceProblemSection,
-} from "~/lib/cf-editorial";
+import { scrapeEditorial } from "~/lib/cf-editorial";
 import { getAuthContext } from "~/lib/is-admin";
 import { createAdminClient } from "~/lib/supabase/admin";
 
@@ -16,16 +8,28 @@ import { createAdminClient } from "~/lib/supabase/admin";
 // with retries — well past Vercel's default 10s budget.
 export const maxDuration = 30;
 
+type ProblemRow = {
+  problem_number: number;
+  title: string | null;
+  url: string | null;
+  platform: string | null;
+  editorial_url: string | null;
+};
+
 /**
  * POST /api/admin/fetch-editorial
  *
- * Scrapes the Codeforces editorial for a problem and returns it as markdown the
- * admin can review and save into the solution explanation. Resolves the
- * editorial blog from the problem's "Contest materials" sidebar when no
- * editorial_url is stored, and backfills editorial_url when it finds one.
+ * Scrapes the Codeforces editorial for one problem and returns it as markdown.
+ * Resolves the editorial blog from the problem's "Contest materials" sidebar
+ * when no editorial_url is stored, and always backfills editorial_url. With
+ * `save: true` it also stores the body in problems.editorial_content.
  *
- * Body: { problem_number: number, editorial_url?: string }
- *   - editorial_url: optional override when auto-resolution fails.
+ * Body:
+ *   - problem_number: number — the problem to scrape (omit when random)
+ *   - random: boolean — pick a random Codeforces problem instead
+ *   - missing_only: boolean — with random, only pick ones without an editorial
+ *   - editorial_url: string — override the resolved blog URL
+ *   - save: boolean — persist editorial_content (default false)
  */
 export async function POST(request: NextRequest) {
   const { admin } = await getAuthContext();
@@ -33,38 +37,75 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Forbidden." }, { status: 403 });
   }
 
-  let body: { problem_number?: unknown; editorial_url?: unknown };
+  let body: {
+    problem_number?: unknown;
+    random?: unknown;
+    missing_only?: unknown;
+    editorial_url?: unknown;
+    save?: unknown;
+  };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
   }
 
-  const problemNumber = Number(body.problem_number);
-  if (!problemNumber || Number.isNaN(problemNumber)) {
-    return NextResponse.json(
-      { error: "problem_number is required." },
-      { status: 400 },
-    );
-  }
+  const random = body.random === true;
+  const missingOnly = body.missing_only === true;
+  const save = body.save === true;
   const override =
     typeof body.editorial_url === "string" && body.editorial_url.trim()
       ? body.editorial_url.trim()
       : null;
 
   const supabase = createAdminClient();
-  const { data: problem } = await supabase
-    .from("problems")
-    .select("title, url, platform, editorial_url")
-    .eq("problem_number", problemNumber)
-    .single();
+  const cols = "problem_number, title, url, platform, editorial_url";
+  let problem: ProblemRow | null = null;
 
-  if (!problem) {
-    return NextResponse.json(
-      { error: `Problem #${problemNumber} not found.` },
-      { status: 404 },
-    );
+  if (random) {
+    // Pull candidate Codeforces problems and pick one client-of-DB-side.
+    let query = supabase
+      .from("problems")
+      .select(cols)
+      .eq("platform", "codeforces");
+    if (missingOnly) query = query.is("editorial_content", null);
+
+    const { data: candidates } = await query;
+    if (!candidates || candidates.length === 0) {
+      return NextResponse.json(
+        {
+          error: missingOnly
+            ? "No Codeforces problems without an editorial left."
+            : "No Codeforces problems found.",
+        },
+        { status: 404 },
+      );
+    }
+    problem = candidates[
+      Math.floor(Math.random() * candidates.length)
+    ] as ProblemRow;
+  } else {
+    const problemNumber = Number(body.problem_number);
+    if (!problemNumber || Number.isNaN(problemNumber)) {
+      return NextResponse.json(
+        { error: "problem_number is required (or set random: true)." },
+        { status: 400 },
+      );
+    }
+    const { data } = await supabase
+      .from("problems")
+      .select(cols)
+      .eq("problem_number", problemNumber)
+      .single();
+    if (!data) {
+      return NextResponse.json(
+        { error: `Problem #${problemNumber} not found.` },
+        { status: 404 },
+      );
+    }
+    problem = data as ProblemRow;
   }
+
   if (problem.platform !== "codeforces") {
     return NextResponse.json(
       { error: "Editorial scraping is only supported for Codeforces." },
@@ -72,67 +113,30 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const ref = parseContestRef(problem.url ?? "");
-  if (!ref) {
-    return NextResponse.json(
-      { error: `Could not parse a contest/problem id from "${problem.url}".` },
-      { status: 422 },
-    );
-  }
-
   try {
-    // 1. Resolve the editorial blog URL: explicit override → stored value →
-    //    scrape the problem page's "Contest materials" sidebar.
-    let blogUrl =
-      override ??
-      (problem.editorial_url && isCodeforcesUrl(problem.editorial_url)
-        ? problem.editorial_url
-        : null);
-
-    if (!blogUrl) {
-      const problemHtml = await fetchCfHtml(problem.url);
-      blogUrl = extractEditorialLink(problemHtml);
-    }
-
-    if (!blogUrl) {
-      return NextResponse.json(
-        {
-          error:
-            "No editorial link found in the problem's contest materials. Paste the blog URL manually.",
-        },
-        { status: 404 },
-      );
-    }
-
-    // 2. Fetch and parse the editorial blog.
-    const blogHtml = await fetchCfHtml(blogUrl);
-    const typography = extractTypography(blogHtml);
-    const { html: section, sliced } = sliceProblemSection(
-      typography,
-      ref,
-      problem.title ?? undefined,
+    const { editorial_url, sliced, content } = await scrapeEditorial(
+      problem,
+      override,
     );
-    const content = htmlToMarkdown(section).slice(0, 12000);
 
-    if (!content.trim()) {
-      return NextResponse.json(
-        { error: "Fetched the editorial but extracted no readable content." },
-        { status: 422 },
-      );
-    }
-
-    // 3. Backfill editorial_url so the public "Read editorial ↗" link works.
-    if (problem.editorial_url !== blogUrl) {
+    // Always backfill editorial_url; persist content only when asked.
+    const update: { editorial_url: string; editorial_content?: string } = {
+      editorial_url,
+    };
+    if (save) update.editorial_content = content;
+    if (problem.editorial_url !== editorial_url || save) {
       await supabase
         .from("problems")
-        .update({ editorial_url: blogUrl })
-        .eq("problem_number", problemNumber);
+        .update(update)
+        .eq("problem_number", problem.problem_number);
     }
 
     return NextResponse.json({
-      editorial_url: blogUrl,
-      problem_index: ref.index,
+      problem_number: problem.problem_number,
+      title: problem.title,
+      editorial_url,
       sliced,
+      saved: save,
       content,
     });
   } catch (err) {
@@ -140,7 +144,7 @@ export async function POST(request: NextRequest) {
       err instanceof Error ? err.message : "Failed to fetch the editorial.";
     Sentry.captureException(err, {
       tags: { route: "admin/fetch-editorial" },
-      extra: { problemNumber, url: problem.url },
+      extra: { problemNumber: problem.problem_number, url: problem.url },
     });
     return NextResponse.json({ error: message }, { status: 502 });
   }
