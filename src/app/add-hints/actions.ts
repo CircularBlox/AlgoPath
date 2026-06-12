@@ -1,7 +1,7 @@
 "use server";
 
 import * as Sentry from "@sentry/nextjs";
-import { isAdmin } from "~/lib/is-admin";
+import { isAdmin } from "~/lib/security/is-admin";
 import { createAdminClient } from "~/lib/supabase/admin";
 import { getUser } from "~/lib/supabase/server";
 

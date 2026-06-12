@@ -1,6 +1,6 @@
 import * as Sentry from "@sentry/nextjs";
 import { type NextRequest, NextResponse } from "next/server";
-import { ADMIN_EMAIL } from "~/lib/is-admin";
+import { ADMIN_EMAIL } from "~/lib/security/is-admin";
 import { createMiddlewareClient } from "~/lib/supabase/middleware";
 
 const PUBLIC_PATHS = ["/", "/auth", "/display-problem", "/changelog"];

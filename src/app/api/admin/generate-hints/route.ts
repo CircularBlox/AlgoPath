@@ -2,8 +2,8 @@ import * as Sentry from "@sentry/nextjs";
 import { type NextRequest, NextResponse } from "next/server";
 import { env } from "~/env";
 import { buildHintPrompt } from "~/lib/hint-prompt";
-import { isAdmin } from "~/lib/is-admin";
 import { routedCompletion } from "~/lib/model-router";
+import { isAdmin } from "~/lib/security/is-admin";
 import { createClient, getUser } from "~/lib/supabase/server";
 
 export async function POST(request: NextRequest) {

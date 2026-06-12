@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { CSRF_HEADER, validateCsrfToken } from "~/lib/csrf";
 import { getPostHogClient } from "~/lib/posthog-server";
+import { CSRF_HEADER, validateCsrfToken } from "~/lib/security/csrf";
 import { createClient, getUser } from "~/lib/supabase/server";
 
 export async function GET(

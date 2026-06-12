@@ -1,10 +1,10 @@
 import * as Sentry from "@sentry/nextjs";
 import { type NextRequest, NextResponse } from "next/server";
-import { CSRF_HEADER, validateCsrfToken } from "~/lib/csrf";
 import { difficultyBuckets } from "~/lib/difficulty";
-import { getPostHogClient } from "~/lib/posthog-server";
-import { createClient } from "~/lib/supabase/server";
 import { calcXpGain, levelFromXp } from "~/lib/gamification/xp";
+import { getPostHogClient } from "~/lib/posthog-server";
+import { CSRF_HEADER, validateCsrfToken } from "~/lib/security/csrf";
+import { createClient } from "~/lib/supabase/server";
 
 /** K-factor: high at the start, decays toward 10 as the user accumulates solves. */
 function kFactor(solvedCount: number): number {

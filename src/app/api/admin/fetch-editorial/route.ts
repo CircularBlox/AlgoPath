@@ -1,7 +1,7 @@
 import * as Sentry from "@sentry/nextjs";
 import { type NextRequest, NextResponse } from "next/server";
 import { scrapeEditorial } from "~/lib/codeforces/cf-editorial";
-import { getAuthContext } from "~/lib/is-admin";
+import { getAuthContext } from "~/lib/security/is-admin";
 import { createAdminClient } from "~/lib/supabase/admin";
 
 // Scraping does up to two sequential CF fetches (problem page + blog), each

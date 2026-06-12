@@ -1,7 +1,7 @@
 import * as Sentry from "@sentry/nextjs";
 import { type NextRequest, NextResponse } from "next/server";
-import { CSRF_HEADER, validateCsrfToken } from "~/lib/csrf";
-import { isAdmin } from "~/lib/is-admin";
+import { CSRF_HEADER, validateCsrfToken } from "~/lib/security/csrf";
+import { isAdmin } from "~/lib/security/is-admin";
 import { createClient, getUser } from "~/lib/supabase/server";
 
 export async function POST(

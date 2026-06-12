@@ -6,9 +6,9 @@ import {
   REVIEW_COOLDOWN_MS,
   REVIEW_DAILY_LIMIT,
 } from "~/lib/constants";
-import { CSRF_HEADER, validateCsrfToken } from "~/lib/csrf";
-import { getAuthContext } from "~/lib/is-admin";
-import { isSameOrigin } from "~/lib/security";
+import { CSRF_HEADER, validateCsrfToken } from "~/lib/security/csrf";
+import { getAuthContext } from "~/lib/security/is-admin";
+import { isSameOrigin } from "~/lib/security/security";
 import { createClient } from "~/lib/supabase/server";
 
 export async function POST(

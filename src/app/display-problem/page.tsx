@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { generateCsrfToken } from "~/lib/csrf";
+import { generateCsrfToken } from "~/lib/security/csrf";
 import { createClient, getUser } from "~/lib/supabase/server";
 import { ProblemViewer } from "./problem-viewer";
 import type { Problem } from "./types";

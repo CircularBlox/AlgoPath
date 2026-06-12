@@ -1,6 +1,6 @@
 import * as Sentry from "@sentry/nextjs";
 import { type NextRequest, NextResponse } from "next/server";
-import { CSRF_HEADER, validateCsrfToken } from "~/lib/csrf";
+import { CSRF_HEADER, validateCsrfToken } from "~/lib/security/csrf";
 import { createClient } from "~/lib/supabase/server";
 
 const VALID_FOCUS = ["interviews", "comp_programming", "both"] as const;

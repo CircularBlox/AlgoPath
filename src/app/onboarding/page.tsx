@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { generateCsrfToken } from "~/lib/csrf";
+import { generateCsrfToken } from "~/lib/security/csrf";
 import { createClient, getUser } from "~/lib/supabase/server";
 import { OnboardingForm } from "./onboarding-form";
 

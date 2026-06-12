@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { isAdmin } from "~/lib/is-admin";
+import { isAdmin } from "~/lib/security/is-admin";
 import { getUser } from "~/lib/supabase/server";
 
 export default async function ReportsLayout({

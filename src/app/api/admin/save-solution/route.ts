@@ -1,6 +1,6 @@
 import * as Sentry from "@sentry/nextjs";
 import { type NextRequest, NextResponse } from "next/server";
-import { getAuthContext } from "~/lib/is-admin";
+import { getAuthContext } from "~/lib/security/is-admin";
 import { createAdminClient } from "~/lib/supabase/admin";
 
 export async function POST(request: NextRequest) {

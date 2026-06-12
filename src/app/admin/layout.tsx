@@ -1,7 +1,7 @@
 import "katex/dist/katex.min.css";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getAuthContext } from "~/lib/is-admin";
+import { getAuthContext } from "~/lib/security/is-admin";
 
 const NAV_LINKS = [
   { href: "/admin/fix-io", label: "Fix Sample I/O" },

@@ -1,8 +1,8 @@
 import * as Sentry from "@sentry/nextjs";
 import { type NextRequest, NextResponse } from "next/server";
 import { env } from "~/env";
-import { getAuthContext } from "~/lib/is-admin";
 import { routedCompletion } from "~/lib/model-router";
+import { getAuthContext } from "~/lib/security/is-admin";
 import { createClient } from "~/lib/supabase/server";
 
 export async function POST(request: NextRequest) {
