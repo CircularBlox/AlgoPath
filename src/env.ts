@@ -7,7 +7,14 @@ export const env = createEnv({
       .enum(["development", "test", "production"])
       .default("development"),
     SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
-    OPENROUTER_API_KEY: z.string().min(1),
+    OPENROUTER_API_KEY: z.string().min(1).optional(),
+    // Optional local-Ollama path for admin hint generation only. When
+    // HINT_PROVIDER="ollama", the add-hints routes call a local Ollama server
+    // instead of OpenRouter. Unset everywhere else (incl. Vercel prod), so
+    // default behavior is unchanged.
+    HINT_PROVIDER: z.enum(["openrouter", "ollama"]).default("openrouter"),
+    OLLAMA_BASE_URL: z.string().url().default("http://localhost:11434"),
+    OLLAMA_MODEL: z.string().default("qwen2.5-coder:7b"),
     ADMIN_EMAIL: z.string().email(),
     CSRF_SECRET: z.string().min(32),
     CRON_SECRET: z.string().optional(),
@@ -35,6 +42,9 @@ export const env = createEnv({
     NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
     OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
+    HINT_PROVIDER: process.env.HINT_PROVIDER,
+    OLLAMA_BASE_URL: process.env.OLLAMA_BASE_URL,
+    OLLAMA_MODEL: process.env.OLLAMA_MODEL,
     ADMIN_EMAIL: process.env.ADMIN_EMAIL,
     CSRF_SECRET: process.env.CSRF_SECRET,
     CRON_SECRET: process.env.CRON_SECRET,
