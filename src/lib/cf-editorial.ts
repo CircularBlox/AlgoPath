@@ -205,6 +205,21 @@ export function htmlToMarkdown(html: string): string {
     (_m, inner) => `\n**${stripTags(String(inner)).trim()}**\n`,
   );
 
+  // Codeforces tags emphasis with class-marked spans in statements/editorials
+  // (not <b>/<i>), e.g. <span class="tex-font-style-bf">. Convert those first.
+  s = s.replace(
+    /<span[^>]*tex-font-style-bf[^>]*>([\s\S]*?)<\/span>/gi,
+    (_m, x) => `**${x}**`,
+  );
+  s = s.replace(
+    /<span[^>]*tex-font-style-it[^>]*>([\s\S]*?)<\/span>/gi,
+    (_m, x) => `*${x}*`,
+  );
+  s = s.replace(
+    /<span[^>]*tex-font-style-tt[^>]*>([\s\S]*?)<\/span>/gi,
+    (_m, x) => "`" + stripTags(String(x)).trim() + "`",
+  );
+
   // Block-level tags → newlines; list items → bullets.
   s = s.replace(/<li[^>]*>/gi, "\n- ");
   s = s.replace(/<\/(p|div|h[1-6]|li|ul|ol|blockquote|tr|table)>/gi, "\n");
