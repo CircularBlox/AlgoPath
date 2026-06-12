@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Button } from "~/components/ui/button";
-import type { Sample } from "~/lib/extract-samples";
+import type { Sample } from "~/lib/codeforces/extract-samples";
 import { highlight, languages } from "~/lib/prism-setup";
 import type { ChatMessage, NoteItem } from "./types";
 

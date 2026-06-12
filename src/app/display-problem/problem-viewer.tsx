@@ -17,7 +17,7 @@ import {
   extractSamples,
   normalizeOutput,
   type Sample,
-} from "~/lib/extract-samples";
+} from "~/lib/codeforces/extract-samples";
 import { processHtmlLatex } from "~/lib/latex";
 import { highlight, languages } from "~/lib/prism-setup";
 import { timeAgo } from "~/lib/time";

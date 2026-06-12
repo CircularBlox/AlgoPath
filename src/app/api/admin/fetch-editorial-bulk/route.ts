@@ -1,6 +1,6 @@
 import * as Sentry from "@sentry/nextjs";
 import { type NextRequest, NextResponse } from "next/server";
-import { scrapeEditorial } from "~/lib/cf-editorial";
+import { scrapeEditorial } from "~/lib/codeforces/cf-editorial";
 import { isAdmin } from "~/lib/is-admin";
 import { createAdminClient } from "~/lib/supabase/admin";
 import { getUser } from "~/lib/supabase/server";

@@ -22,7 +22,7 @@
 
 import { existsSync, readFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
-import { extractTypography, htmlToMarkdown } from "../src/lib/cf-editorial";
+import { extractTypography, htmlToMarkdown } from "../src/lib/codeforces/cf-editorial";
 
 // ── env ──────────────────────────────────────────────────────────────────────
 function loadEnv(path = ".env.local") {
