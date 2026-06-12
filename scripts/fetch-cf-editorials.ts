@@ -1,48 +1,32 @@
 #!/usr/bin/env node
-// fetch-cf-editorials.ts — fetch Codeforces editorials from YOUR machine (past
-// Cloudflare's anti-bot block) using your logged-in browser's cookie, and write
-// editorial_content straight to Supabase. Fully resumable: re-running skips
-// problems that already have editorial_content.
+// fetch-cf-editorials.ts — backfill Codeforces editorials into editorial_content.
 //
-// Uses Codeforces' own AJAX endpoint POST /data/problemTutorial, which returns
-// exactly one problem's editorial as JSON {public, success, html} — no contest
-// blog scraping or section-slicing needed. The `rv` query param is a throwaway
-// random nonce (CF's JS generates it; the server doesn't validate it), so this
-// script makes its own. The real credentials are your session cookie + the
-// page's csrf_token (sent both as a form field and the X-Csrf-Token header).
+// Codeforces is behind Cloudflare, which binds cf_clearance to the browser's TLS
+// fingerprint — so a plain Node fetch is 403'd even with a valid cookie. The
+// reliable path runs the fetch loop IN YOUR BROWSER (same session, cookies and
+// TLS as the page), then imports the results with Node:
 //
-// ── One-time setup ──────────────────────────────────────────────────────────
-// 1. Open https://codeforces.com in your browser, signed in, and let the
-//    "Just a moment" check finish so you see the real site.
-// 2. DevTools → Application → Cookies → https://codeforces.com → copy the whole
-//    cookie (at least `cf_clearance` and the session cookie `JSESSIONID`).
-//    DevTools → Console → run `navigator.userAgent` and copy it.
-// 3. Add to .env.local (the UA MUST match the browser that got the cookie):
-//      CF_COOKIE="cf_clearance=…; JSESSIONID=…"
-//      CF_UA="Mozilla/5.0 (… exact UA …) Chrome/120.0.0.0 Safari/537.36"
-//    The csrf_token is auto-read from a CF page using your cookie. If that ever
-//    fails, grab it yourself (DevTools → Network → click a problem's "Tutorial"
-//    → the problemTutorial request's `csrf_token` form field) and set CF_CSRF.
-//    Cookies expire after a while; if a run starts failing, re-copy and re-run.
+//   1. Generate a browser script for the problems still missing editorials:
+//        npx tsx scripts/fetch-cf-editorials.ts --emit-browser
+//      (respects --limit / --only / --all). Writes scripts/cf-editorials-browser.js.
+//   2. Open https://codeforces.com signed in (past the "Just a moment" check),
+//      open DevTools → Console, paste the whole generated script, run it. It
+//      hits CF's own /data/problemTutorial endpoint for each problem and, when
+//      done, downloads cf-editorials.json to your Downloads folder.
+//   3. Import that file into the DB (parses with the app's own parser):
+//        npx tsx scripts/fetch-cf-editorials.ts --import ~/Downloads/cf-editorials.json
 //
-// ── Run ─────────────────────────────────────────────────────────────────────
-//   npx tsx scripts/fetch-cf-editorials.ts --dry-run     # show the to-do list
-//   npx tsx scripts/fetch-cf-editorials.ts               # fetch + store missing
-//   npx tsx scripts/fetch-cf-editorials.ts --limit 5     # quick test
-//   npx tsx scripts/fetch-cf-editorials.ts --only 42,108 # specific problems
-//   npx tsx scripts/fetch-cf-editorials.ts --all         # re-scrape everything
+// Resumable: --emit-browser only lists problems without editorial_content (unless
+// --all), and --import upserts by problem_number so re-imports are safe.
+//
+// Needs in .env.local: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY.
+// (No cookie/UA needed — your browser provides the session.)
 
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
-import {
-  extractTypography,
-  htmlToMarkdown,
-  isChallengePage,
-  parseContestRef,
-} from "../src/lib/cf-editorial";
+import { extractTypography, htmlToMarkdown } from "../src/lib/cf-editorial";
 
 // ── env ──────────────────────────────────────────────────────────────────────
-// Load .env.local into process.env (so `npx tsx` works without --env-file).
 function loadEnv(path = ".env.local") {
   if (!existsSync(path)) return;
   for (const raw of readFileSync(path, "utf8").split("\n")) {
@@ -65,12 +49,6 @@ loadEnv();
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const CF_COOKIE = process.env.CF_COOKIE;
-const CF_UA =
-  process.env.CF_UA ||
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
-let CF_CSRF = process.env.CF_CSRF || "";
-
 if (!SUPABASE_URL || !SERVICE_KEY) {
   console.error(
     "Missing NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY in .env.local.",
@@ -89,119 +67,21 @@ const ONLY = getArg("--only", "")
   .split(",")
   .map((x) => Number.parseInt(x, 10))
   .filter((x) => !Number.isNaN(x));
-const ALL = argv.includes("--all"); // re-scrape problems that already have content
-const DRY_RUN = argv.includes("--dry-run");
-const DELAY_MS = Number(getArg("--delay", "1200"));
+const ALL = argv.includes("--all");
+const EMIT_BROWSER = argv.includes("--emit-browser");
+const IMPORT_FILE = getArg("--import", "");
+const BROWSER_OUT = getArg("--browser-out", "scripts/cf-editorials-browser.js");
 const MAX_CONTENT = 16000;
-
-if (!CF_COOKIE && !DRY_RUN) {
-  console.error(
-    "Missing CF_COOKIE in .env.local — see the setup notes at the top of this file.",
-  );
-  process.exit(1);
-}
 
 const supabase = createClient(SUPABASE_URL, SERVICE_KEY, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
-
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-const randomRv = () => Math.random().toString(36).slice(2, 11);
-
-const BASE_HEADERS = {
-  "User-Agent": CF_UA,
-  "Accept-Language": "en-US,en;q=0.9",
-  Cookie: CF_COOKIE as string,
-};
-
-/** GET a Codeforces page with the browser cookie. Throws if blocked. */
-async function fetchPage(url: string): Promise<string> {
-  const resp = await fetch(url, {
-    headers: {
-      ...BASE_HEADERS,
-      Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-      Referer: "https://codeforces.com/",
-    },
-  });
-  const text = await resp.text();
-  if (!resp.ok || isChallengePage(text)) {
-    throw new Error(
-      `blocked (HTTP ${resp.status}) — cookie likely expired; re-copy cf_clearance`,
-    );
-  }
-  return text;
-}
-
-/** Read the session csrf_token off any CF page (cookie required). */
-async function resolveCsrf(): Promise<string> {
-  if (CF_CSRF) return CF_CSRF;
-  const html = await fetchPage("https://codeforces.com/problemset");
-  const m =
-    html.match(/X-Csrf-Token"\s+content="([0-9a-f]{32})"/i) ??
-    html.match(/csrf_token['"]?\s*[:=]\s*['"]([0-9a-f]{32})['"]/i);
-  if (!m) {
-    throw new Error(
-      "couldn't read csrf_token from the page — set CF_CSRF manually (see setup notes)",
-    );
-  }
-  CF_CSRF = m[1];
-  return CF_CSRF;
-}
-
-/**
- * Calls POST /data/problemTutorial for one problem (e.g. "2233B") and returns
- * the editorial HTML. Throws "no tutorial" when CF has none, or "blocked" when
- * the anti-bot/cookie fails.
- */
-async function fetchTutorialHtml(
-  problemCode: string,
-  refUrl: string,
-): Promise<string> {
-  const resp = await fetch(
-    `https://codeforces.com/data/problemTutorial?rv=${randomRv()}`,
-    {
-      method: "POST",
-      headers: {
-        ...BASE_HEADERS,
-        Accept: "application/json, text/javascript, */*; q=0.01",
-        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-        "X-Csrf-Token": CF_CSRF,
-        "X-Requested-With": "XMLHttpRequest",
-        Origin: "https://codeforces.com",
-        Referer: refUrl,
-      },
-      body: new URLSearchParams({
-        csrf_token: CF_CSRF,
-        problemCode,
-      }).toString(),
-    },
-  );
-
-  const text = await resp.text();
-  if (isChallengePage(text)) {
-    throw new Error("blocked (anti-bot) — cookie likely expired; re-copy");
-  }
-  let json: { success?: unknown; html?: unknown };
-  try {
-    json = JSON.parse(text);
-  } catch {
-    // A 403/302 to an HTML page usually means the csrf/cookie is stale.
-    throw new Error(
-      `blocked or bad csrf (HTTP ${resp.status}) — re-copy cookie/CF_CSRF`,
-    );
-  }
-  if (String(json.success) !== "true" || typeof json.html !== "string") {
-    throw new Error("no tutorial available for this problem");
-  }
-  return json.html;
-}
 
 type Row = {
   problem_number: number;
   title: string | null;
   url: string | null;
   platform: string | null;
-  editorial_url: string | null;
   editorial_content: string | null;
 };
 
@@ -212,9 +92,7 @@ async function fetchAllProblems(): Promise<Row[]> {
   for (let from = 0; ; from += PAGE) {
     const { data, error } = await supabase
       .from("problems")
-      .select(
-        "problem_number, title, url, platform, editorial_url, editorial_content",
-      )
+      .select("problem_number, title, url, platform, editorial_content")
       .eq("platform", "codeforces")
       .order("problem_number")
       .range(from, from + PAGE - 1);
@@ -233,90 +111,151 @@ async function fetchAllProblems(): Promise<Row[]> {
   return out;
 }
 
-async function main() {
+/** Codeforces problemCode (e.g. "2233B") from a problem URL. */
+function problemCodeFromUrl(url: string | null): string | null {
+  if (!url) return null;
+  const m =
+    url.match(/(?:contest|gym)\/(\d+)\/problem\/([A-Za-z0-9]+)/i) ??
+    url.match(/problemset\/problem\/(\d+)\/([A-Za-z0-9]+)/i);
+  return m ? `${m[1]}${m[2].toUpperCase()}` : null;
+}
+
+// ── browser script template ──────────────────────────────────────────────────
+// Runs in the Codeforces tab's console: same-origin fetch, real session + TLS.
+function buildBrowserScript(jobs: { n: number; code: string }[]): string {
+  return `// Paste this whole block into the DevTools Console on https://codeforces.com
+// (signed in, past the "Just a moment" check). It fetches ${jobs.length} editorial(s)
+// and downloads cf-editorials.json. Then import it with:
+//   npx tsx scripts/fetch-cf-editorials.ts --import ~/Downloads/cf-editorials.json
+(async () => {
+  const JOBS = ${JSON.stringify(jobs)};
+  const csrf =
+    document.querySelector('meta[name="X-Csrf-Token"]')?.getAttribute("content") ||
+    (window.Codeforces && Codeforces.csrf && Codeforces.csrf());
+  if (!csrf) { console.error("No csrf token on this page — open a normal CF page and retry."); return; }
+  const out = [];
+  let ok = 0, none = 0, fail = 0;
+  for (let i = 0; i < JOBS.length; i++) {
+    const { n, code } = JOBS[i];
+    try {
+      const r = await fetch("/data/problemTutorial?rv=" + Math.random().toString(36).slice(2), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+          "X-Csrf-Token": csrf,
+          "X-Requested-With": "XMLHttpRequest",
+        },
+        body: new URLSearchParams({ csrf_token: csrf, problemCode: code }).toString(),
+        credentials: "include",
+      });
+      const j = await r.json();
+      if (String(j.success) === "true" && j.html) { out.push({ n, code, html: j.html }); ok++; console.log("✓ " + (i+1) + "/" + JOBS.length + " " + code); }
+      else { none++; console.log("– " + code + " (no editorial)"); }
+    } catch (e) { fail++; console.log("✗ " + code + " — " + (e && e.message)); }
+    await new Promise((res) => setTimeout(res, 700));
+  }
+  const blob = new Blob([JSON.stringify(out)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "cf-editorials.json";
+  document.body.appendChild(a); a.click(); a.remove();
+  console.log("Done — " + ok + " editorials, " + none + " none, " + fail + " failed. Downloaded cf-editorials.json");
+})();
+`;
+}
+
+async function emitBrowser() {
   const all = await fetchAllProblems();
+  let rows = all;
+  if (ONLY.length) rows = all.filter((p) => ONLY.includes(p.problem_number));
+  else if (!ALL) rows = all.filter((p) => !p.editorial_content);
+  if (LIMIT > 0) rows = rows.slice(0, LIMIT);
 
-  let todo = all;
-  if (ONLY.length) {
-    todo = all.filter((p) => ONLY.includes(p.problem_number));
-  } else if (!ALL) {
-    todo = all.filter((p) => !p.editorial_content);
+  const jobs: { n: number; code: string }[] = [];
+  let skipped = 0;
+  for (const p of rows) {
+    const code = problemCodeFromUrl(p.url);
+    if (code) jobs.push({ n: p.problem_number, code });
+    else skipped++;
   }
-  if (LIMIT > 0) todo = todo.slice(0, LIMIT);
 
+  if (jobs.length === 0) {
+    console.log("Nothing to fetch (all caught up, or no parseable CF URLs).");
+    return;
+  }
+  writeFileSync(BROWSER_OUT, buildBrowserScript(jobs));
   console.log(
-    `Codeforces problems: ${all.length} total, ${todo.length} to fetch` +
-      (ONLY.length ? ` (--only ${ONLY.join(",")})` : ALL ? " (--all)" : "") +
-      ".",
+    `Wrote ${BROWSER_OUT} for ${jobs.length} problem(s)` +
+      (skipped ? ` (skipped ${skipped} with unparseable URLs)` : "") +
+      ".\n\nNext:\n" +
+      `  1. Open https://codeforces.com signed in (past the Cloudflare check).\n` +
+      `  2. DevTools → Console → paste the entire contents of ${BROWSER_OUT} and run it.\n` +
+      `  3. It downloads cf-editorials.json — then run:\n` +
+      `       npx tsx scripts/fetch-cf-editorials.ts --import ~/Downloads/cf-editorials.json`,
   );
-  if (DRY_RUN) {
-    for (const p of todo) console.log(`  #${p.problem_number}  ${p.title}`);
-    console.log("\n(dry run — nothing fetched or written)");
-    return;
-  }
-  if (todo.length === 0) {
-    console.log("Nothing to do.");
-    return;
-  }
+}
 
+async function importFile() {
+  if (!existsSync(IMPORT_FILE)) {
+    console.error(`File not found: ${IMPORT_FILE}`);
+    process.exit(1);
+  }
+  let items: { n?: number; code?: string; html?: string }[];
   try {
-    await resolveCsrf();
-    console.log(`Using csrf_token ${CF_CSRF.slice(0, 8)}… (session).`);
-  } catch (err) {
-    console.error(err instanceof Error ? err.message : String(err));
+    items = JSON.parse(readFileSync(IMPORT_FILE, "utf8"));
+  } catch {
+    console.error("Could not parse the JSON file.");
+    process.exit(1);
+  }
+  if (!Array.isArray(items)) {
+    console.error("Expected a JSON array of { n, html } objects.");
     process.exit(1);
   }
 
   let ok = 0;
   let failed = 0;
-  let skipped = 0;
-  for (let i = 0; i < todo.length; i++) {
-    const p = todo[i];
-    const tag = `#${p.problem_number} ${p.title ?? ""}`.trim();
+  for (const item of items) {
+    const n = Number(item.n);
+    if (!n || typeof item.html !== "string") {
+      failed++;
+      continue;
+    }
     try {
-      const ref = p.url ? parseContestRef(p.url) : null;
-      if (!ref) throw new Error(`unparseable url: ${p.url}`);
-
-      const problemCode = `${ref.contestId}${ref.index}`;
-      const html = await fetchTutorialHtml(problemCode, p.url as string);
-
-      const content = htmlToMarkdown(extractTypography(html)).slice(
+      const content = htmlToMarkdown(extractTypography(item.html)).slice(
         0,
         MAX_CONTENT,
       );
-      if (!content.trim()) throw new Error("empty editorial after parse");
-
+      if (!content.trim()) throw new Error("empty after parse");
       const { error } = await supabase
         .from("problems")
         .update({ editorial_content: content })
-        .eq("problem_number", p.problem_number);
+        .eq("problem_number", n);
       if (error) throw new Error(error.message);
-
       ok++;
-      console.log(`✓ ${tag} — ${content.length} chars`);
+      console.log(`✓ #${n} — ${content.length} chars`);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      if (/no tutorial/.test(msg)) {
-        skipped++;
-        console.log(`– ${tag} — no editorial`);
-      } else {
-        failed++;
-        console.log(`✗ ${tag} — ${msg}`);
-        // A block almost always means the cookie/csrf died; stop early so we
-        // don't hammer Cloudflare and rack up failures.
-        if (/blocked|bad csrf/.test(msg)) {
-          console.error(
-            "\nStopping: Codeforces is blocking requests. Re-copy your cf_clearance cookie (and CF_CSRF if set) and run again — finished problems are skipped.",
-          );
-          break;
-        }
-      }
+      failed++;
+      console.log(`✗ #${n} — ${err instanceof Error ? err.message : err}`);
     }
-    if (i < todo.length - 1) await sleep(DELAY_MS);
   }
+  console.log(`\nImported ${ok}, failed ${failed}, of ${items.length}.`);
+}
 
+async function main() {
+  if (IMPORT_FILE) return importFile();
+  if (EMIT_BROWSER) return emitBrowser();
+
+  // Default: just show what's missing and how to proceed (direct Node fetch is
+  // blocked by Cloudflare's TLS fingerprinting, so we don't attempt it).
+  const all = await fetchAllProblems();
+  const missing = all.filter((p) => !p.editorial_content).length;
   console.log(
-    `\nDone — ${ok} stored, ${skipped} no editorial, ${failed} failed.`,
+    `Codeforces problems: ${all.length} total, ${missing} missing an editorial.\n\n` +
+      "Codeforces is behind Cloudflare, which blocks plain Node fetches even with a\n" +
+      "valid cookie (TLS fingerprinting). Use the browser-based flow instead:\n\n" +
+      "  npx tsx scripts/fetch-cf-editorials.ts --emit-browser   # then paste into the CF console\n" +
+      "  npx tsx scripts/fetch-cf-editorials.ts --import <file>  # load the downloaded JSON\n\n" +
+      "Add --limit N / --only 2233 / --all to scope --emit-browser.",
   );
 }
 
