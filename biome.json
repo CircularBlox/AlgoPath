@@ -1,7 +1,13 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.4.10/schema.json",
   "files": {
-    "includes": ["**", "!.next", "!.agents"]
+    "includes": [
+      "**",
+      "!.next",
+      "!.agents",
+      "!scripts/cf-editorials-browser.js",
+      "!**/cf-editorials*.json"
+    ]
   },
   "assist": {
     "actions": {

@@ -196,7 +196,7 @@ export function htmlToMarkdown(html: string): string {
   // Inline code.
   s = s.replace(
     /<code[^>]*>([\s\S]*?)<\/code>/gi,
-    (_m, inner) => "`" + decodeEntities(stripTags(String(inner))).trim() + "`",
+    (_m, inner) => `\`${decodeEntities(stripTags(String(inner))).trim()}\``,
   );
 
   // Spoiler title (e.g. "Tutorial", "Solution") — surface it as a bold line.
@@ -217,7 +217,7 @@ export function htmlToMarkdown(html: string): string {
   );
   s = s.replace(
     /<span[^>]*tex-font-style-tt[^>]*>([\s\S]*?)<\/span>/gi,
-    (_m, x) => "`" + stripTags(String(x)).trim() + "`",
+    (_m, x) => `\`${stripTags(String(x)).trim()}\``,
   );
 
   // Block-level tags → newlines; list items → bullets.
