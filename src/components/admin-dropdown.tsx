@@ -50,7 +50,7 @@ export function AdminDropdown() {
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full z-50 mt-1.5 w-40 overflow-hidden rounded-md border border-border bg-background shadow-md">
+        <div className="absolute left-0 top-full z-50 mt-1.5 w-40 overflow-hidden rounded border border-border bg-popover">
           {adminLinks.map((link) => (
             <Link
               key={link.href}

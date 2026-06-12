@@ -162,7 +162,7 @@ function ReportCard({ report }: { report: Report }) {
   }
 
   return (
-    <div className="flex flex-col gap-4 rounded-lg border border-border bg-card p-5">
+    <div className="flex flex-col gap-4 rounded border border-border bg-card p-5">
       <div className="flex items-start justify-between gap-4">
         <div className="flex flex-col gap-0.5">
           <span className="text-sm font-semibold">

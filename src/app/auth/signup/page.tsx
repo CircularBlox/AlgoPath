@@ -86,7 +86,7 @@ export default function SignupPage() {
     return (
       <main className="mx-auto flex max-w-sm flex-col gap-6 px-6 py-16 text-center">
         <div className="flex flex-col gap-3">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded bg-green/10 text-green">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="20"
@@ -108,8 +108,8 @@ export default function SignupPage() {
           </h1>
           <p className="text-sm text-muted-foreground">
             We sent a confirmation link to{" "}
-            <span className="font-medium text-foreground">{email}</span>. Click
-            it to activate your account.
+            <span className="font-mono text-foreground">{email}</span>. Click it
+            to activate your account.
           </p>
         </div>
         <Link
@@ -202,15 +202,18 @@ export default function SignupPage() {
             required
             minLength={3}
             maxLength={32}
+            className="font-mono"
           />
           {usernameAvailability === "checking" && (
-            <p className="text-xs text-muted-foreground">Checking…</p>
+            <p className="font-mono text-xs text-muted-foreground">Checking…</p>
           )}
           {usernameAvailability === "available" && (
-            <p className="text-xs text-green-600">Username is available.</p>
+            <p className="font-mono text-xs text-green">
+              Username is available.
+            </p>
           )}
           {usernameAvailability === "taken" && (
-            <p className="text-xs text-destructive">
+            <p className="font-mono text-xs text-destructive">
               Username is already taken.
             </p>
           )}
@@ -224,6 +227,7 @@ export default function SignupPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            className="font-mono"
           />
         </div>
         <div className="flex flex-col gap-1.5">
@@ -239,7 +243,7 @@ export default function SignupPage() {
           />
           <p className="text-xs text-muted-foreground">Minimum 8 characters</p>
         </div>
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {error && <p className="font-mono text-sm text-destructive">{error}</p>}
         <Button
           type="submit"
           disabled={

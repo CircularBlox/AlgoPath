@@ -128,7 +128,7 @@ export default function LoginPage() {
       </div>
 
       {resetSuccess && (
-        <div className="rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm text-foreground">
+        <div className="border-l-2 border-l-green bg-green/10 px-4 py-3 text-sm text-foreground">
           Password updated successfully. Sign in with your new password.
         </div>
       )}
@@ -143,6 +143,7 @@ export default function LoginPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            className="font-mono"
           />
         </div>
         <div className="flex flex-col gap-1.5">
@@ -164,7 +165,7 @@ export default function LoginPage() {
             required
           />
         </div>
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {error && <p className="font-mono text-sm text-destructive">{error}</p>}
         <Button type="submit" disabled={loading}>
           {loading ? "Signing in…" : "Sign in"}
         </Button>

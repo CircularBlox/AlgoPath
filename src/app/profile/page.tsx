@@ -1,15 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { generateCsrfToken } from "~/lib/csrf";
 import { difficultyBuckets, difficultyLabel } from "~/lib/difficulty";
 import { effectiveStreak, streakStatus } from "~/lib/streak";
 import { createClient, getUser } from "~/lib/supabase/server";
 import { displayTag } from "~/lib/tags";
-import { levelFromXp, levelTitle, rankConfig, xpProgress } from "~/lib/xp";
+import { levelFromXp, levelTitle, xpProgress } from "~/lib/xp";
 import { CfLinkSection } from "./cf-link-section";
 import { ManageSubscriptionButton } from "./manage-subscription-button";
 import { SkillLevelEditor } from "./skill-level-editor";
@@ -48,6 +46,42 @@ type Problem = {
   tags: string[];
   platform: string;
 };
+
+// §1 difficulty palette: numeric ratings ramp cyan → amber → rose; named tiers
+// map to green / amber / rose. Everything else (unknown) stays cyan.
+function diffClass(d: string): string {
+  if (/^\d+$/.test(d)) {
+    const n = Number(d);
+    return n >= 2000 ? "text-rose" : n >= 1700 ? "text-amber" : "text-cyan";
+  }
+  const k = d.toLowerCase();
+  if (k === "easy" || k === "bronze") return "text-green";
+  if (k === "medium" || k === "silver") return "text-amber";
+  if (k === "hard" || k === "gold" || k === "platinum") return "text-rose";
+  return "text-cyan";
+}
+
+const platformLabel = (p: string) =>
+  p === "codeforces" ? "CF" : p === "usaco" ? "USACO" : "LC";
+
+/** Terminal section eyebrow — `// label`, full-foreground at rest. */
+function SectionLabel({
+  children,
+  count,
+}: {
+  children: React.ReactNode;
+  count?: React.ReactNode;
+}) {
+  return (
+    <div className="mb-3 flex items-baseline gap-2 font-mono text-xs">
+      <span className="text-dim">{"//"}</span>
+      <h2 className="font-semibold tracking-wide text-foreground">
+        {children}
+      </h2>
+      {count != null && <span className="tabular-nums text-cyan">{count}</span>}
+    </div>
+  );
+}
 
 async function getRecommendation(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -137,7 +171,7 @@ function CheckIcon() {
       strokeWidth="2.5"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="shrink-0 text-muted-foreground"
+      className="shrink-0 text-green"
       aria-hidden="true"
     >
       <polyline points="20 6 9 17 4 12" />
@@ -156,7 +190,7 @@ function ChevronRightIcon() {
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="shrink-0 text-muted-foreground"
+      className="shrink-0 text-dim"
       aria-hidden="true"
     >
       <path d="m9 18 6-6-6-6" />
@@ -187,8 +221,8 @@ async function RecommendedProblem({
 
   if (!recommended) {
     return (
-      <div className="flex items-center justify-center rounded-lg border border-dashed border-border py-10">
-        <p className="text-sm text-muted-foreground">
+      <div className="flex items-center justify-center rounded border border-dashed border-border py-10">
+        <p className="font-mono text-sm text-muted-foreground">
           No recommendations available yet.
         </p>
       </div>
@@ -196,55 +230,51 @@ async function RecommendedProblem({
   }
 
   return (
-    <Card className="border-l-[3px] border-l-foreground/20">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex flex-col gap-1">
-            <CardTitle className="text-base leading-snug">
-              {recommended.title}
-            </CardTitle>
-            {recommended.problem_number != null && (
-              <span className="text-xs text-muted-foreground">
-                Problem #{recommended.problem_number}
-              </span>
-            )}
-          </div>
-          <Badge variant="secondary" className="shrink-0 text-xs">
-            {recommended.platform === "codeforces"
-              ? "Codeforces"
-              : recommended.platform === "usaco"
-                ? "USACO"
-                : "LeetCode"}
-          </Badge>
+    <div className="rounded border border-l-2 border-border border-l-violet bg-card">
+      <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-3">
+        <div className="flex flex-col gap-0.5">
+          <h3 className="text-base font-semibold leading-snug">
+            {recommended.title}
+          </h3>
+          {recommended.problem_number != null && (
+            <span className="font-mono text-xs text-dim">
+              #{recommended.problem_number}
+            </span>
+          )}
         </div>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-3 pb-4">
-        <div className="flex flex-wrap items-center gap-2">
+        <span className="shrink-0 rounded border border-border px-1.5 py-0.5 font-mono text-[10px] tracking-widest text-teal">
+          {platformLabel(recommended.platform)}
+        </span>
+      </div>
+      <div className="flex flex-col gap-3 px-5 py-4">
+        <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
           {recommended.difficulty && (
-            <Badge variant="outline" className="text-xs">
+            <span
+              className={`font-semibold ${diffClass(recommended.difficulty)}`}
+            >
               {recommended.difficulty}
-            </Badge>
+            </span>
           )}
           {(recommended.tags ?? []).slice(0, 4).map((tag) => (
             <span
               key={tag}
-              className="rounded-sm bg-muted px-1.5 py-0.5 text-xs text-muted-foreground"
+              className="rounded border border-border px-1.5 py-0.5 text-dim"
             >
-              {tag}
+              {displayTag(tag)}
             </span>
           ))}
         </div>
-        <p className="text-xs text-muted-foreground">
-          Matched to your rating ({rating}) — a {difficultyLabel(rating)}{" "}
-          problem with fresh topics for you.
+        <p className="font-mono text-xs text-muted-foreground">
+          Matched to your rating (<span className="text-cyan">{rating}</span>) —
+          a {difficultyLabel(rating)} problem with fresh topics for you.
         </p>
         <Button asChild className="self-start" size="sm">
           <Link href={`/display-problem?p=${recommended.problem_number}`}>
             Practice this problem
           </Link>
         </Button>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
@@ -252,12 +282,12 @@ function SkillAndSolvedSkeleton() {
   return (
     <>
       <div className="flex flex-col gap-3">
-        <div className="h-3 w-24 animate-pulse rounded-md bg-muted" />
-        <div className="h-56 w-full animate-pulse rounded-xl bg-muted" />
+        <div className="h-3 w-24 animate-pulse rounded bg-muted" />
+        <div className="h-56 w-full animate-pulse rounded bg-muted" />
       </div>
       <div className="flex flex-col gap-3">
-        <div className="h-3 w-32 animate-pulse rounded-md bg-muted" />
-        <div className="h-64 w-full animate-pulse rounded-lg bg-muted" />
+        <div className="h-3 w-32 animate-pulse rounded bg-muted" />
+        <div className="h-64 w-full animate-pulse rounded bg-muted" />
       </div>
     </>
   );
@@ -271,14 +301,12 @@ async function SkillAndSolvedSection({
   if (solvedProblems.length === 0) {
     return (
       <section>
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-          Solved Problems
-        </h2>
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-12 text-center">
-          <p className="text-sm text-muted-foreground">
+        <SectionLabel>Solved Problems</SectionLabel>
+        <div className="flex flex-col items-center justify-center rounded border border-dashed border-border py-12 text-center">
+          <p className="font-mono text-sm text-muted-foreground">
             No problems solved yet.
           </p>
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p className="mt-1 font-mono text-xs text-dim">
             Head to the Problems tab to get started.
           </p>
         </div>
@@ -314,10 +342,8 @@ async function SkillAndSolvedSection({
     <>
       {topTags.length > 0 && (
         <section>
-          <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            Skill Web
-          </h2>
-          <div className="overflow-hidden rounded-xl border border-border divide-y divide-border">
+          <SectionLabel>Skill Web</SectionLabel>
+          <div className="divide-y divide-border overflow-hidden rounded border border-border">
             {topTags.length >= 3 && (
               <div className="p-4">
                 <TopicRadar tags={topTags} maxCount={maxTagCount} />
@@ -325,16 +351,16 @@ async function SkillAndSolvedSection({
             )}
             {topTags.map(([tag, count]) => (
               <div key={tag} className="flex items-center gap-3 px-4 py-2.5">
-                <span className="text-sm w-40 shrink-0 truncate">
+                <span className="w-40 shrink-0 truncate font-mono text-sm text-foreground">
                   {displayTag(tag)}
                 </span>
-                <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
+                <div className="h-1.5 flex-1 overflow-hidden rounded bg-muted">
                   <div
-                    className="h-full rounded-full bg-foreground/60 transition-all"
+                    className="h-full rounded bg-violet transition-all"
                     style={{ width: `${(count / maxTagCount) * 100}%` }}
                   />
                 </div>
-                <span className="text-xs text-muted-foreground tabular-nums w-14 text-right shrink-0">
+                <span className="w-16 shrink-0 text-right font-mono text-xs tabular-nums text-cyan">
                   {count} solved
                 </span>
               </div>
@@ -344,41 +370,34 @@ async function SkillAndSolvedSection({
       )}
 
       <section>
-        <div className="mb-3 flex items-baseline gap-2">
-          <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            Solved Problems
-          </h2>
-          <span className="text-xs text-muted-foreground">
-            {solvedProblems.length}
-          </span>
-        </div>
-        <div className="flex flex-col divide-y divide-border overflow-hidden rounded-lg border border-border">
+        <SectionLabel count={solvedProblems.length}>
+          Solved Problems
+        </SectionLabel>
+        <div className="flex flex-col overflow-hidden rounded border border-border">
           {solvedOrdered.map((problem) => (
             <Link
               key={problem.problem_number}
               href={`/display-problem?p=${problem.problem_number}`}
-              className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/50"
+              className="flex items-center gap-3 border-b border-l-2 border-border border-l-transparent px-4 py-3 transition-colors last:border-b-0 hover:border-l-violet hover:bg-muted"
             >
               <CheckIcon />
-              <span className="w-8 shrink-0 font-mono text-xs text-muted-foreground">
+              <span className="w-10 shrink-0 font-mono text-xs text-cyan">
                 #{problem.problem_number}
               </span>
               <span className="flex-1 truncate text-sm font-medium">
                 {problem.title}
               </span>
-              <div className="flex shrink-0 items-center gap-1.5">
+              <div className="flex shrink-0 items-center gap-2 font-mono text-xs">
                 {problem.difficulty && (
-                  <Badge variant="outline" className="text-xs">
+                  <span
+                    className={`font-semibold ${diffClass(problem.difficulty)}`}
+                  >
                     {problem.difficulty}
-                  </Badge>
+                  </span>
                 )}
-                <Badge variant="secondary" className="text-xs">
-                  {problem.platform === "codeforces"
-                    ? "CF"
-                    : problem.platform === "usaco"
-                      ? "USACO"
-                      : "LC"}
-                </Badge>
+                <span className="text-dim">
+                  {platformLabel(problem.platform)}
+                </span>
               </div>
               <ChevronRightIcon />
             </Link>
@@ -413,7 +432,6 @@ export default async function ProfilePage() {
   const xp = profile?.xp ?? 0;
   const level = profile?.level ?? levelFromXp(xp);
   const title = levelTitle(level);
-  const config = rankConfig(level);
   const progress = xpProgress(xp, level);
   const skillLevel = profile?.skill_level ?? "intermediate";
   const solvedProblems: number[] = profile?.solved_problems ?? [];
@@ -468,110 +486,103 @@ export default async function ProfilePage() {
     elite: "Elite",
   };
   const planColors: Record<string, string> = {
-    free: "text-muted-foreground border-border bg-muted/40",
-    pro: "text-primary border-primary/40 bg-primary/10",
-    elite: "text-amber-400 border-amber-400/40 bg-amber-400/10",
+    free: "text-muted-foreground border-border bg-muted",
+    pro: "text-violet border-violet/40 bg-violet/10",
+    elite: "text-amber border-amber/40 bg-amber/10",
   };
-  const statItems = [
-    { label: "Level", value: String(level), fire: false, fireActive: false },
-    { label: "XP", value: xp.toLocaleString(), fire: false, fireActive: false },
+
+  // Stat figures are mono + cyan (numbers); the streak is amber when active,
+  // dim when not — never an emoji.
+  const statItems: { label: string; value: string; tone: string }[] = [
+    { label: "level", value: String(level), tone: "text-cyan" },
+    { label: "xp", value: xp.toLocaleString(), tone: "text-cyan" },
     {
-      label: "Solved",
+      label: "solved",
       value: String(solvedProblems.length),
-      fire: false,
-      fireActive: false,
+      tone: "text-cyan",
     },
     {
-      label: "Streak",
-      value: String(streak),
-      fire: true,
-      fireActive: status === "active",
+      label: "streak",
+      value: `${streak}d`,
+      tone: status === "active" ? "text-amber" : "text-dim",
     },
     {
-      label: "Avg Hints",
+      label: "avg hints",
       value: avgHints ?? "—",
-      fire: false,
-      fireActive: false,
+      tone: avgHints ? "text-cyan" : "text-dim",
     },
   ];
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-12 flex flex-col gap-10">
+    <main className="mx-auto flex max-w-3xl flex-col gap-10 px-6 py-12">
       {/* ── Profile hero ───────────────────────────────────────── */}
-      <div className="overflow-hidden rounded-xl border border-border">
-        <div className="flex items-start gap-5 p-6">
-          <div
-            className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full text-2xl font-bold"
-            style={{
-              background: config.bg,
-              color: config.color,
-              boxShadow: `0 0 0 3px ${config.color}30`,
-            }}
+      <div className="overflow-hidden rounded border border-border bg-card">
+        {/* terminal header bar */}
+        <div className="flex items-center justify-between border-b border-border px-5 py-2.5">
+          <span className="font-mono text-[11px] text-dim">~/profile</span>
+          <span
+            className={`inline-flex items-center rounded border px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-widest ${planColors[plan] ?? planColors.free}`}
           >
+            {planLabel[plan] ?? "Free"}
+          </span>
+        </div>
+
+        <div className="flex items-start gap-5 p-6">
+          <div className="flex size-16 shrink-0 items-center justify-center rounded border border-border-bright bg-muted font-mono text-2xl font-semibold text-violet">
             {initial}
           </div>
-          <div className="flex flex-col gap-1 pt-1 min-w-0 flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-2xl font-bold tracking-tight leading-none">
+          <div className="flex min-w-0 flex-1 flex-col gap-1 pt-0.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-2xl font-bold leading-none tracking-tight">
                 {username}
               </h1>
-              <span
-                className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold"
-                style={{
-                  color: config.color,
-                  backgroundColor: config.bg,
-                  border: `1px solid ${config.color}40`,
-                }}
-              >
-                {config.icon} Lv.{level} · {title}
+              <span className="inline-flex items-center rounded border border-violet/40 bg-violet/10 px-2 py-0.5 font-mono text-[11px] font-semibold text-violet">
+                Lv.{level} · {title}
               </span>
             </div>
             {joinedDate && (
-              <p className="text-sm text-muted-foreground">
-                Joined {joinedDate}
+              <p className="font-mono text-xs text-dim">
+                {"// joined "}
+                {joinedDate}
               </p>
             )}
 
             {/* XP progress bar */}
             <div className="mt-2.5 flex flex-col gap-1">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">
-                  {progress.current.toLocaleString()} /{" "}
-                  {progress.needed.toLocaleString()} XP to Lv.{level + 1}
+              <div className="flex items-center justify-between font-mono text-xs">
+                <span className="text-muted-foreground">
+                  <span className="text-cyan">
+                    {progress.current.toLocaleString()}
+                  </span>{" "}
+                  / {progress.needed.toLocaleString()} XP → Lv.{level + 1}
                 </span>
-                <span className="text-xs" style={{ color: config.color }}>
+                <span className="tabular-nums text-cyan">
                   {progress.percent}%
                 </span>
               </div>
-              <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+              <div className="h-1.5 w-full overflow-hidden rounded bg-muted">
                 <div
-                  className="h-full rounded-full transition-all duration-500"
-                  style={{
-                    width: `${progress.percent}%`,
-                    background: config.gradient,
-                  }}
+                  className="h-full rounded bg-violet transition-all duration-500"
+                  style={{ width: `${progress.percent}%` }}
                 />
               </div>
             </div>
 
             <div className="mt-2 flex flex-col gap-0.5">
               <SkillLevelEditor initialLevel={skillLevel} />
-              <span className="text-xs text-muted-foreground">Skill Level</span>
+              <span className="font-mono text-xs text-muted-foreground">
+                skill level
+              </span>
             </div>
 
-            {/* Plan */}
-            <div className="mt-3 flex items-center gap-2 flex-wrap">
-              <span
-                className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${planColors[plan] ?? planColors.free}`}
-              >
-                {planLabel[plan] ?? "Free"} Plan
-              </span>
+            {/* Plan action */}
+            <div className="mt-3 flex items-center gap-3 font-mono text-xs">
               {plan === "free" ? (
                 <Link
                   href="/pricing"
-                  className="text-xs text-primary underline underline-offset-2 hover:opacity-80"
+                  className="text-violet underline underline-offset-2 hover:opacity-80"
                 >
-                  Upgrade
+                  Upgrade →
                 </Link>
               ) : hasStripeCustomer ? (
                 <ManageSubscriptionButton />
@@ -581,8 +592,8 @@ export default async function ProfilePage() {
             {/* Streak freeze (Pro+) */}
             {plan !== "free" && (
               <div className="mt-3 flex flex-col gap-1">
-                <span className="text-xs text-muted-foreground font-medium">
-                  Streak Freeze
+                <span className="font-mono text-xs font-medium text-muted-foreground">
+                  streak freeze
                 </span>
                 <StreakFreezeButton
                   csrfToken={csrfToken}
@@ -590,7 +601,7 @@ export default async function ProfilePage() {
                   freezeUsedThisMonth={freezeUsedThisMonth}
                   streak={streak}
                 />
-                <span className="text-[10px] text-muted-foreground">
+                <span className="font-mono text-[10px] text-dim">
                   1 free per month · absorbs one missed day
                 </span>
               </div>
@@ -599,28 +610,17 @@ export default async function ProfilePage() {
         </div>
 
         {/* Stats bar */}
-        <div className="flex divide-x divide-border border-t border-border bg-muted/30">
+        <div className="grid grid-cols-5 divide-x divide-border border-t border-border">
           {statItems.map((s) => (
-            <div
-              key={s.label}
-              className="flex flex-1 flex-col gap-0.5 px-6 py-4"
-            >
-              <span className="text-2xl font-bold leading-none">
+            <div key={s.label} className="flex flex-col gap-1 px-4 py-4">
+              <span
+                className={`font-mono text-2xl font-semibold leading-none tabular-nums ${s.tone}`}
+              >
                 {s.value}
-                {s.fire && (
-                  <span
-                    style={
-                      s.fireActive
-                        ? {}
-                        : { filter: "grayscale(1) opacity(0.35)" }
-                    }
-                  >
-                    {" "}
-                    🔥
-                  </span>
-                )}
               </span>
-              <span className="text-xs text-muted-foreground">{s.label}</span>
+              <span className="font-mono text-[11px] text-muted-foreground">
+                {s.label}
+              </span>
             </div>
           ))}
         </div>
@@ -628,11 +628,9 @@ export default async function ProfilePage() {
 
       {/* ── Streak nudge ────────────────────────────────────────── */}
       {status === "at_risk" && (
-        <div className="flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
-          <span
-            style={{ filter: "grayscale(1) opacity(0.4)", fontSize: "1.1rem" }}
-          >
-            🔥
+        <div className="flex items-start gap-3 rounded border border-l-2 border-border border-l-amber bg-card px-4 py-3">
+          <span className="mt-0.5 font-mono text-sm font-bold text-amber">
+            !
           </span>
           <div className="flex flex-col gap-0.5">
             <p className="text-sm font-medium">
@@ -642,7 +640,7 @@ export default async function ProfilePage() {
               Solve a problem today to keep it going.{" "}
               <Link
                 href="/display-problem"
-                className="text-foreground underline underline-offset-2"
+                className="text-violet underline underline-offset-2"
               >
                 Practice now
               </Link>
@@ -652,8 +650,10 @@ export default async function ProfilePage() {
       )}
 
       {status === "broken" && (
-        <div className="flex items-start gap-3 rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3">
-          <span style={{ fontSize: "1.1rem" }}>💔</span>
+        <div className="flex items-start gap-3 rounded border border-l-2 border-border border-l-rose bg-card px-4 py-3">
+          <span className="mt-0.5 font-mono text-sm font-bold text-rose">
+            ×
+          </span>
           <div className="flex flex-col gap-0.5">
             <p className="text-sm font-medium">
               Your {rawStreak}-day streak was broken
@@ -662,7 +662,7 @@ export default async function ProfilePage() {
               You missed a day. Solve a problem today to start a new streak.{" "}
               <Link
                 href="/display-problem"
-                className="text-foreground underline underline-offset-2"
+                className="text-violet underline underline-offset-2"
               >
                 Practice now
               </Link>
@@ -672,19 +672,15 @@ export default async function ProfilePage() {
       )}
 
       {status === "none" && (
-        <div className="flex items-start gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3">
-          <span
-            style={{ filter: "grayscale(1) opacity(0.4)", fontSize: "1.1rem" }}
-          >
-            🔥
-          </span>
+        <div className="flex items-start gap-3 rounded border border-l-2 border-border border-l-border bg-card px-4 py-3">
+          <span className="mt-0.5 font-mono text-sm font-bold text-dim">·</span>
           <div className="flex flex-col gap-0.5">
             <p className="text-sm font-medium">No streak yet</p>
             <p className="text-xs text-muted-foreground">
               Solve a problem today to start your streak.{" "}
               <Link
                 href="/display-problem"
-                className="text-foreground underline underline-offset-2"
+                className="text-violet underline underline-offset-2"
               >
                 Practice now
               </Link>
@@ -695,11 +691,9 @@ export default async function ProfilePage() {
 
       {/* ── Recommended for You ────────────────────────────────── */}
       <section>
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-          Recommended for You
-        </h2>
+        <SectionLabel>Recommended for You</SectionLabel>
         <Suspense
-          fallback={<div className="h-40 animate-pulse rounded-xl bg-muted" />}
+          fallback={<div className="h-40 animate-pulse rounded bg-muted" />}
         >
           <RecommendedProblem
             cachedRecNumber={cachedRecNumber}
@@ -712,11 +706,9 @@ export default async function ProfilePage() {
 
       {/* ── What to focus on next ─────────────────────────────── */}
       <section>
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-          What to Focus On Next
-        </h2>
+        <SectionLabel>What to Focus On Next</SectionLabel>
         <Suspense
-          fallback={<div className="h-24 animate-pulse rounded-xl bg-muted" />}
+          fallback={<div className="h-24 animate-pulse rounded bg-muted" />}
         >
           <TopicRecommendation />
         </Suspense>
@@ -724,10 +716,8 @@ export default async function ProfilePage() {
 
       {/* ── Codeforces Account ───────────────────────────────── */}
       <section>
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-          Codeforces Account
-        </h2>
-        <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+        <SectionLabel>Codeforces Account</SectionLabel>
+        <div className="rounded border border-border bg-card p-4">
           <CfLinkSection
             initialHandle={cfHandle}
             initialRating={cfRating}
@@ -735,9 +725,9 @@ export default async function ProfilePage() {
             initialRank={cfRank}
           />
           {cfHandle && (
-            <p className="mt-2 text-[11px] text-muted-foreground">
+            <p className="mt-2 font-mono text-[11px] text-dim">
               View your contest history on the{" "}
-              <Link href="/contests" className="text-primary hover:underline">
+              <Link href="/contests" className="text-violet hover:underline">
                 Contests page
               </Link>
               .
@@ -748,7 +738,7 @@ export default async function ProfilePage() {
 
       {/* ── Solve Activity Heatmap ────────────────────────────── */}
       <Suspense
-        fallback={<div className="h-28 animate-pulse rounded-lg bg-muted" />}
+        fallback={<div className="h-28 animate-pulse rounded bg-muted" />}
       >
         <SolveHeatmap />
       </Suspense>

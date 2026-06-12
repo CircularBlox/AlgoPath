@@ -1,8 +1,7 @@
 "use client";
 
-import Editor from "react-simple-code-editor";
-import "prismjs/themes/prism-okaidia.css";
 import { useCallback, useState } from "react";
+import Editor from "react-simple-code-editor";
 import { FormattedText } from "~/app/display-problem/formatting";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -24,6 +23,7 @@ type Problem = {
   title: string;
   difficulty: string | null;
   tags: string[] | null;
+  platform: string | null;
 };
 
 type SolutionCode = {
@@ -50,6 +50,8 @@ export default function AdminSolutionsPage() {
 
   const [generating, setGenerating] = useState<string | null>(null);
   const [generatingExplanation, setGeneratingExplanation] = useState(false);
+  const [fetchingEditorial, setFetchingEditorial] = useState(false);
+  const [editorialNote, setEditorialNote] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -171,6 +173,39 @@ export default function AdminSolutionsPage() {
     }
   }
 
+  async function handleFetchEditorial() {
+    if (!problemNumber || !problem) return;
+    setFetchingEditorial(true);
+    setEditorialNote(null);
+    try {
+      const res = await fetch("/api/admin/fetch-editorial", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ problem_number: Number(problemNumber) }),
+      });
+      const data = (await res.json()) as {
+        content?: string;
+        sliced?: boolean;
+        editorial_url?: string;
+        error?: string;
+      };
+      if (!res.ok || !data.content) {
+        setEditorialNote(data.error ?? "Failed to fetch editorial.");
+        return;
+      }
+      setExplanation(data.content);
+      setEditorialNote(
+        data.sliced
+          ? "Scraped this problem's editorial section — review before saving."
+          : "Couldn't isolate this problem — pasted the full contest editorial; trim before saving.",
+      );
+    } catch {
+      setEditorialNote("Network error while fetching the editorial.");
+    } finally {
+      setFetchingEditorial(false);
+    }
+  }
+
   async function handleSave() {
     if (!problemNumber || !problem) return;
     setSaving(true);
@@ -243,7 +278,7 @@ export default function AdminSolutionsPage() {
             onKeyDown={(e) => {
               if (e.key === "Enter") handleLoad();
             }}
-            className="w-40"
+            className="w-40 font-mono"
           />
         </div>
         <Button onClick={handleLoad} disabled={loading || !problemNumber}>
@@ -264,7 +299,9 @@ export default function AdminSolutionsPage() {
             )}
           </div>
         )}
-        {loadError && <p className="text-sm text-destructive">{loadError}</p>}
+        {loadError && (
+          <p className="font-mono text-sm text-destructive">{loadError}</p>
+        )}
       </div>
 
       {/* Two-column layout */}
@@ -287,7 +324,7 @@ export default function AdminSolutionsPage() {
                 >
                   {lang}
                   {codes[lang].trim() && (
-                    <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-green-500 align-middle" />
+                    <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-green align-middle" />
                   )}
                 </button>
                 {problem && (
@@ -307,7 +344,7 @@ export default function AdminSolutionsPage() {
           {/* Code editor */}
           <div className="flex flex-col gap-2">
             <Label>Code — {activeTab}</Label>
-            <div className="overflow-hidden rounded-md border border-input">
+            <div className="code-editor overflow-hidden rounded border border-input">
               <Editor
                 value={codes[activeTab]}
                 onValueChange={(val) =>
@@ -352,8 +389,8 @@ export default function AdminSolutionsPage() {
                   }, 0);
                 }}
                 style={{
-                  background: "#272822",
-                  color: "#f8f8f2",
+                  background: "oklch(0.115 0.006 285)",
+                  color: "var(--color-foreground)",
                   fontFamily:
                     '"JetBrains Mono","Fira Code","Fira Mono",ui-monospace,monospace',
                   fontSize: 13,
@@ -373,7 +410,7 @@ export default function AdminSolutionsPage() {
               onChange={(e) => setExplanation(e.target.value)}
               placeholder="Describe the approach, complexity, key observations…"
               rows={6}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm leading-relaxed placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-y"
+              className="w-full rounded border border-input bg-input/30 px-3 py-2 text-sm leading-relaxed placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 resize-y"
             />
             <p className="text-xs text-muted-foreground">
               Supports <code className="font-mono">**bold**</code>,{" "}
@@ -382,25 +419,46 @@ export default function AdminSolutionsPage() {
             </p>
           </div>
 
-          <Button
-            type="button"
-            variant="outline"
-            disabled={!problem || generatingExplanation}
-            onClick={handleGenerateExplanation}
-            className="self-start"
-          >
-            {generatingExplanation ? "Generating…" : "Generate Explanation"}
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={!problem || generatingExplanation}
+              onClick={handleGenerateExplanation}
+            >
+              {generatingExplanation ? "Generating…" : "Generate Explanation"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={
+                !problem ||
+                fetchingEditorial ||
+                problem.platform !== "codeforces"
+              }
+              onClick={handleFetchEditorial}
+              title={
+                problem && problem.platform !== "codeforces"
+                  ? "Editorial scraping is Codeforces-only"
+                  : "Scrape the Codeforces editorial into the explanation"
+              }
+            >
+              {fetchingEditorial ? "Fetching…" : "Fetch CF Editorial"}
+            </Button>
+          </div>
+          {editorialNote && (
+            <p className="font-mono text-xs text-muted-foreground">
+              {editorialNote}
+            </p>
+          )}
 
           {/* Save */}
           <div className="flex flex-col gap-2 pt-2 border-t border-border">
             {saveMessage && (
-              <p className="text-sm text-green-600 dark:text-green-400">
-                {saveMessage}
-              </p>
+              <p className="font-mono text-sm text-green">{saveMessage}</p>
             )}
             {saveError && (
-              <p className="text-sm text-destructive">{saveError}</p>
+              <p className="font-mono text-sm text-destructive">{saveError}</p>
             )}
             <Button
               type="button"
@@ -415,16 +473,16 @@ export default function AdminSolutionsPage() {
 
         {/* Right — preview */}
         <div className="sticky top-6 flex flex-col gap-2">
-          <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            Preview
+          <span className="font-mono text-xs text-muted-foreground">
+            {"// preview"}
           </span>
 
           {previewCodes.length === 0 ? (
-            <div className="flex items-center justify-center rounded-xl border border-border bg-card px-6 py-12 text-sm text-muted-foreground">
+            <div className="flex items-center justify-center rounded border border-border bg-card px-6 py-12 text-sm text-muted-foreground">
               Add code above to see a live preview
             </div>
           ) : (
-            <div className="flex flex-col gap-3 rounded-xl border border-border bg-card text-card-foreground shadow-sm overflow-hidden">
+            <div className="flex flex-col gap-3 rounded border border-border bg-card text-card-foreground overflow-hidden">
               {/* Header row */}
               <div className="flex items-center gap-3 px-5 pt-4 pb-3 border-b border-border">
                 <span className="font-semibold text-sm">Code Solution</span>
@@ -478,11 +536,11 @@ export default function AdminSolutionsPage() {
               {previewCodeVisible && (
                 <div className="px-5">
                   {activePreview?.code ? (
-                    <div className="overflow-hidden rounded-md border border-input">
+                    <div className="code-editor overflow-hidden rounded border border-input">
                       <pre
                         style={{
-                          background: "#272822",
-                          color: "#f8f8f2",
+                          background: "oklch(0.115 0.006 285)",
+                          color: "var(--color-foreground)",
                           fontFamily:
                             '"JetBrains Mono","Fira Code","Fira Mono",ui-monospace,monospace',
                           fontSize: 13,
