@@ -1,6 +1,6 @@
 import * as Sentry from "@sentry/nextjs";
 import { type NextRequest, NextResponse } from "next/server";
-import { PLAN_LIMITS, todayUtc } from "~/lib/plan";
+import { PLAN_LIMITS, todayUtc } from "~/lib/billing/plan";
 import { createClient, getUser } from "~/lib/supabase/server";
 
 export async function GET(request: NextRequest) {

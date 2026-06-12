@@ -1,0 +1,1426 @@
+1425 problems to do (model=qwen2.5-coder:7b):
+#88	2000	B. RReeppeettiittiioonn
+#89	1700	A. Interval Mod
+#101	2900	G. Rational Bubble Sort
+#102	2400	F. Learning Binary Search
+#103	2500	E. Minimum Path Cover
+#108	800	A. Antimedian Deletion
+#109	2700	F. A Simple Problem
+#110	2700	E. Binary Strings are Simple?
+#111	2100	D. A Simple RBS Problem
+#112	2100	C2. A Simple GCD Problem (Hard Version)
+#113	1200	C1. A Simple GCD Problem (Easy Version)
+#114	900	B. Simply Sitting on Chairs
+#115	800	A. A Simple Sequence
+#116	2700	F. Dynamic Values And Maximum Sum
+#117	2200	E. A Trivial String Problem
+#118	1800	D. Ghostfires
+#119	1400	C. Find the Zero
+#120	900	B. Array
+#121	800	A. Flip Flops
+#122	2700	E. Counting Cute Arrays
+#123	2200	D2. Tree Orientation (Hard Version)
+#124	1800	D1. Tree Orientation (Easy Version)
+#125	1300	C. Stamina and Tasks
+#126	1100	B. Cyclists
+#127	800	A. Bingo Candies
+#131	3300	G. Toothless
+#132	2900	F. Hanabi
+#133	2400	E2. N-MEX (Counting Version)
+#134	2100	E1. N-MEX (Constructive Version)
+#135	2200	D. Boxed Like a Fish
+#136	1600	C. Where's My Water?
+#137	1600	B. One Night At Freddy's
+#138	800	A. 1-1
+#139	2900	M. Deformed Balance
+#140	3500	L. Onion
+#141	1300	K. Time Display Stickers
+#142	1700	J. Worldwide Playlist
+#143	2900	I. Growth Factor
+#144	1800	H. Reflect Sort
+#145	3100	G. Extra Transition
+#146	2400	F. Minesweeper String
+#147	2500	E. Parallel Sums
+#148	2600	D. Christmas Tree Un-decoration
+#149	2200	C. Upside Down Dijkstra
+#150	2500	B. Subtree Removal Game
+#201	3000	G. Simons and Diophantus Equation
+#203	2400	F. Simons and Reconstructing His Roads
+#204	2100	E. Simons and Dividing the Rhythm
+#205	1700	D. Simons and Beating Peaks
+#206	1500	C. Simons and Posting Blogs
+#207	800	B. Simons and Cakes for Success
+#208	800	A. Simons and Making It Beautiful
+#209	2700	G. Grid Path
+#210	2200	F. Sum of Fractions
+#211	1800	E. Sum of Digits (and Again)
+#212	1400	D. Alternating Path
+#213	1000	C. Spring
+#214	800	B. Right Maximum
+#216	2600	F. Binary Search with One Swap
+#217	2200	E. Probabilistic Card Game
+#218	1700	D. Divisibility Game
+#219	1500	C. Test Generator
+#220	1000	B. Beautiful Numbers
+#221	800	A. Towers of Boxes
+#222	2500	G1. Monotone Monochrome Matrices (Easy Version)
+#223	1200	B. ABAB Construction
+#224	800	A. Parkour Design
+#225	3500	G. Codeforces Heuristic Contest 1001
+#226	2800	F2. Monotone Monochrome Matrices (Hard Version)
+#227	2900	F1. Monotone Monochrome Matrices (Medium Version)
+#228	2900	E. ABBA Counting
+#229	2500	D. Binary Not Search and Queries
+#230	2000	C. Rigged Bracket Sequence
+#231	1700	B. Recollect Numbers
+#232	1700	A2. Lost Civilization (Hard Version)
+#246	1300	A1. Lost Civilization (Easy Version)
+#247	2600	H. Six Seven
+#248	2200	G. Operation Permutation
+#249	1900	F. Mooclear Reactor 2
+#250	1500	E. Divisive Battle
+#251	1300	D. Portal
+#252	900	C. Specialty String
+#253	800	B. Deletion Sort
+#254	800	A. Eating Game
+#255	3000	I. Strange Process
+#256	2300	H. Sum of MEX
+#257	2500	G. Jammer
+#258	2000	F. Self-Produced Sequences
+#259	2100	E. Supersequence
+#260	1800	D. Two Arrays
+#261	1600	C. Minesweeper
+#262	1400	B. Two Towers
+#263	1000	A. Game
+#264	1100	B. Array and Permutation
+#265	800	A. Friendly Numbers
+#266	3300	F. Indivisible
+#267	3000	E2. Fuzzy Concatenation (Hard version)
+#268	2900	E1. Fuzzy Concatenation (Easy Version)
+#269	2500	D. Double Bracket Sequence
+#270	2000	C2. Interactive Graph (Hard Version)
+#271	1800	C1. Interactive Graph (Simple Version)
+#272	1600	B. Another Problem about Beautiful Pairs
+#273	1200	A. Game with a Fraction
+#274	2400	H. Codeforces Heuristic Contest 001
+#275	2300	G. Idiot First Search and Queries
+#276	2000	F. Parabola Independence
+#277	1500	E. Idiot First Search
+#278	1300	D. Absolute Cinema
+#279	1100	C. Dice Roll Sequence
+#280	900	B. Heapify 1
+#281	800	A. Sieve of Erato67henes
+#282	3000	F2. Again Trees... (hard version)
+#283	2400	Min Max Subarrays II
+#285	2600	E. Snaking Arrangement
+#286	2000	D. Magical Tiered Cake
+#287	1500	C2. Seating Arrangement (Hard Version)
+#288	1300	C1. Seating Arrangement (Easy Version)
+#289	900	B. Cake Leveling
+#290	800	A. Convergence
+#291	2600	F. Quadratic Jumps
+#292	2300	E. Graph Cutting
+#293	1900	D. Maximum Prefix Sums
+#294	1400	C. Chipmunk Theo and Equality
+#295	1100	B. Another Sorting Problem
+#296	800	A. Construct an Array
+#297	2700	F. Game on Growing Tree
+#298	2100	E. Minimum Influence
+#299	1700	D. Good Schedule
+#300	1300	C. Arrange the Numbers in a Circle
+#301	1000	B. Digit String
+#302	800	A. Optimal Purchase
+#303	3400	I. The Endians
+#304	3200	H. Wowee Binary String
+#305	2900	G. Roadworks
+#306	2400	F. Load Unbalancing
+#307	2100	E. Deconstruction Tree
+#308	1700	D. Me When Median Problem
+#309	1400	C2. We Be Flipping (Hard Version)
+#310	900	C1. We Be Flipping (Easy Version)
+#311	800	B. Absolute Cinema
+#312	800	A. Slimes on a Line
+#313	2700	F. Momoyo and the Network
+#314	2500	E2. Amanojaku and Sequence (Hard Version)
+#315	2400	E1. Amanojaku and Sequence (Easy Version)
+#316	1900	D. Sanae, Cross and Color
+#317	1600	C2. Cirno and Number (Hard Version)
+#318	1500	C1. Cirno and Number (Easy Version)
+#319	1100	B. Remilia Plays Soku
+#320	800	A. Marisa Steals Reimu's Takeout
+#321	2100	H. Fallen Leaves
+#322	2000	G. Drowning
+#323	1700	F. It Just Keeps Going Sideways
+#324	1400	E. It All Went Sideways
+#325	1200	D. Palindromex
+#326	800	C. Snowfall
+#327	800	B. Party Monster
+#328	800	A. Koshary
+#329	3000	G. Stop Spot
+#330	2800	F. Inversion Invasion
+#331	2300	E. Mental Monumental (Hard Version)
+#332	1900	D. Reserved Reversals
+#333	1500	C. Mental Monumental (Easy Version)
+#334	900	B. Everything Everywhere
+#335	800	A. Disturbing Distribution
+#336	1200	B. Zhily and Mex and Max
+#337	800	A. Zhily and Array Operating
+#338	3400	F. Zhily and Colorful Strings
+#339	3500	E. Zhily and Permutation
+#340	2800	D. Zhily and Cycle
+#341	2300	C. Zhily and Signpost
+#342	1600	B. Zhily and Barknights
+#343	1300	A. Zhily and Bracket Swapping
+#344	3500	H. Counting Sort?
+#345	3100	G. Statistics on Tree
+#346	2600	F. Building Tree
+#347	2000	E. Seek the Truth
+#348	1800	D. Permutation Construction
+#349	1500	C. Median Partition
+#350	1100	B. Artistic Balance Tree
+#351	800	A. A Wonderful Contest
+#352	1200	H3. Bowser's Castle (Hard Version)
+#353	1200	H2. Bowser's Castle (Medium Version)
+#354	1200	H1. Bowser's Castle (Easy Version)
+#355	3500	A. Compare Suffixes
+#356	3000	F. The Cake Is a Lie
+#357	800	A. Lawn Mower
+#358	1000	B. Offshores
+#359	1300	C. Secret message
+#360	1600	D. Table Cut
+#361	2000	E. The Turtle Strikes Back
+#362	2300	F1. Again Trees... (Easy Version)
+#363	800	A. DBMB and the Array
+#364	800	B. Reverse a Permutation
+#365	1000	C. Replace and Sum
+#366	1100	D. Monster Game
+#367	1300	E. Product Queries
+#368	1600	F. Pizza Delivery
+#369	2100	G. Paths in a Tree
+#370	2400	H. Remove the Grail Tree
+#371	800	A. String Rotation Game
+#372	1000	B. Flipping Binary String
+#373	1300	C. All-in-one Gun
+#374	1800	D. Cost of Tree
+#375	2100	E. Swap to Rearrange
+#376	2900	F. Fish Fight
+#377	800	A. Array Coloring
+#378	1000	B. MEX Reordering
+#379	1200	A. Sorting Game
+#380	1400	B1. Sub-RBS (Easy Version)
+#381	1900	B2. Sub-RBS (Hard Version)
+#382	2300	C. Comparable Permutations
+#383	2500	D. Prufer Vertex
+#384	3200	E. Median Permutation
+#385	3300	F. Xor Product
+#386	3300	G. Maximize Determinant
+#387	800	A. Table with Numbers
+#388	1200	B. The Curse of the Frog
+#389	1300	C1. XOR Convenience (Easy Version)
+#390	1800	C2. XOR-convenience (Hard Version)
+#391	1900	D1. Little String (Easy Version)
+#392	2200	D2. Little String (Hard Version)
+#393	2600	E. Majority Wins?
+#394	2800	F. Zhora the Vacuum Cleaner
+#395	800	A. Divisible Permutation
+#396	1000	B. Seats
+#397	1300	A. Restricted Sorting
+#398	1800	B. Shortest Statement Ever
+#399	2300	C. Jerry and Tom
+#400	2600	D. Cool Problem
+#401	3500	E. Doors and Keys
+#402	3100	F1. Al Fine (Maximizing Version)
+#403	3500	F2. Al Fine (Counting Version)
+#404	3500	G. Many Cartesian Trees
+#405	800	A. Perfect Root
+#406	800	B. Prefix Max
+#407	900	C. Shifted MEX
+#408	1100	D. OutOfMemoryError
+#409	1500	E. The Robotic Rush
+#410	1700	F. BattleCows
+#411	1800	G. Mixing MEXes
+#412	2500	H. BattleCows 2
+#413	800	A. Social Experiment
+#414	1100	B. Hourglass
+#415	1100	C. Huge Pile
+#416	1600	D. Unfair Game
+#417	1800	E. Exquisite Array
+#418	1900	F. Cherry Tree
+#419	1900	G. Nastiness of Segments
+#420	800	A. Binary Array Game
+#421	1100	B. Yet Another MEX Problem
+#422	1500	C. War Strategy
+#423	1500	D1. Tree Coloring (Easy Version)
+#424	2100	D2. Tree Coloring (Hard Version)
+#425	2100	E. LCM is Legendary Counting Master
+#426	2500	F. Jumping Man
+#427	3200	G. Snake Instructions
+#428	3500	H. Minimise Cost
+#429	3500	I1. Pairs Flipping (Easy Version)
+#430	3500	I2. Pairs Flipping (Hard Version)
+#431	800	A. New Year String
+#432	800	B. New Year Cake
+#433	1200	C. Production of Snowmen
+#434	1600	D. Christmas Tree Decoration
+#435	1800	E. New Year's Gifts
+#436	2300	F1. Christmas Reindeer (easy version)
+#437	2500	F2. Christmas Reindeer (hard version)
+#438	2800	G. Short Garland
+#439	1300	A. Alphabet City
+#440	1400	B. Battle of Arrays
+#441	3200	C. Cacti Classification
+#442	2000	D. Doorway
+#443	2900	E. Elevator Against Humanity
+#444	1600	F. Fragmented Nim
+#445	2400	G. Greta's Game
+#446	1200	H. Honey Cake
+#447	3500	I. Irrigation Interlock
+#448	2300	J. Jinx or Jackpot
+#449	3500	K. Knit the Grid
+#450	2800	L. LLM Training
+#451	1700	M. Medical Parity
+#452	800	A. Carnival Wheel
+#453	800	B. Ashmal
+#454	1900	C. XOR-factorization
+#455	1900	D. Insolvable Disks
+#456	2300	E. No Effect XOR
+#457	2800	F1. Control Car (Easy Version)
+#458	3200	F2. Control Car (Hard Version)
+#459	3500	G. Balance
+#460	3400	H1. Bug Is Feature (Unconditional Version)
+#461	3500	H2. Bug Is Feature (Conditional Version)
+#462	800	A. Blackslex and Password
+#463	800	B. Blackslex and Showering
+#464	1100	C. Blackslex and Number Theory
+#465	1300	D. Blackslex and Penguin Civilization
+#466	1800	E. Blackslex and Girls
+#467	2000	F. Blackslex and Another RGB Walking
+#468	2200	G. Blackslex and Penguin Migration
+#469	2200	H. Blackslex and Plants
+#470	800	A. Yes or Yes
+#471	900	B. Impost or Sus
+#472	1200	C. First or Second
+#473	1700	D. Xmas or Hysteria
+#474	2000	E. Flatten or Concatenate
+#475	2200	F. Conquer or of Forest
+#476	2800	G. deCH OR Dations
+#477	3300	H. Create or Duplicate
+#478	3300	I. Numbers or Fireworks
+#479	800	A. Operations with Inversions
+#480	1000	B. Optimal Shifts
+#481	1300	C. Odd Process
+#482	1800	D. Fibonacci Paths
+#483	2400	E. Remove at the lowest cost
+#484	2400	F. Omega Numbers
+#485	800	A. Little Fairy's Painting
+#486	1300	B. XOR Array
+#487	1200	A. Needle in a Haystack
+#488	1900	B. Wishing Cards
+#489	2400	C1. Beautiful Patterns (Easy Version)
+#490	2500	C2. Beautiful Patterns (Hard Version)
+#491	3400	D. Secret Message
+#492	3100	E1. Game of Scientists (Version 1)
+#493	3200	E2. Game of Scientists (Version 2)
+#494	2800	F. Mosaic Tree
+#495	800	A. Sleeping Through Classes
+#496	1100	B. Niko's Tactical Cards
+#497	1400	C. Kanade's Perfect Multiples
+#498	1900	D. Taiga's Carry Chains
+#499	2200	E. Shiro's Mirror Duel
+#500	2600	F. Isla's Memory Thresholds
+#501	800	A. ASCII Art Contest
+#502	1800	B. Buses
+#503	3100	C. Circles Are Far from Each Other
+#504	3100	D. Divisor Card Game
+#505	1200	E. Number Maze
+#506	1600	F. Cluster Computing System
+#507	3300	G. Gene Editor
+#508	2500	H. Shuffling Cards with Problem Solver 68!
+#509	2000	I. Birthday
+#510	2300	J. Sliding Tiles
+#511	2100	K. Kindergarten Homework
+#512	2300	L. Maximum Color Segment
+#513	1300	M. Maximum Distance To Port
+#514	2800	N. New Kingdom
+#515	800	A. Shizuku Hoshikawa and Farm Legs
+#516	900	B. Yuu Koito and Minimum Absolute Sum
+#517	1100	C1. Renako Amaori and XOR Game (easy version)
+#518	1400	C2. Renako Amaori and XOR Game (hard version)
+#519	1400	D. Rae Taylor and Trees (easy version)
+#520	2000	E. Anisphia Wynn Palettia and Good Permutations
+#521	1600	F. Rae Taylor and Trees (hard version)
+#522	2000	G. Sakura Adachi and Optimal Sequences
+#523	2400	H. Shiori Miyagi and Maximum Array Score
+#524	800	A. Maximum Neighborhood
+#525	1200	B. Addition on a Segment
+#526	1300	C. Quotient and Remainder
+#527	2200	D. Almost Roman
+#528	2100	E. Binary Strings and Blocks
+#529	2600	F. Build XOR on a Segment
+#530	900	A. Alice and Bob
+#531	1100	B. Drifting Away
+#532	1300	C. Range Operation
+#533	1500	D1. Removal of a Sequence (Easy Version)
+#534	2100	D2. Removal of a Sequence (Hard Version)
+#535	2400	E. Points Selection
+#536	2700	F. Subsequence Problem
+#537	1200	A1. Encode and Decode (Easy Version)
+#538	1200	A2. Encode and Decode (Hard Version)
+#539	1200	B. Locate
+#540	1200	C. Intercepting Butterflies
+#541	800	A. Square?
+#542	800	B. Your Name
+#543	800	C. Isamatdin and His Magic Wand!
+#544	1000	D. Yet Another Array Problem
+#545	1600	E. khba Loves to Sleep!
+#546	1600	F. Tree, TREE!!!
+#547	1600	G. Mukhammadali and the Smooth Array
+#548	800	A. Same Difference
+#549	900	B. Tab Closing
+#550	1300	A. Cyclic Merging
+#551	1900	B. Marble Council
+#552	2000	C. Binary Wine
+#553	2500	D. Path Split
+#554	3200	E. Rainbow Branch
+#555	3500	F. Arctic Acquisition
+#556	800	A. Sequence Game
+#557	1000	B. Even Modulo Pair
+#558	1400	C. Dungeon
+#559	1800	D. Copy String
+#560	2300	E. Journey
+#561	2600	F1. Chain Prefix Rank (Easy Version)
+#562	2900	F2. Chain Prefix Rank (Hard Version)
+#563	3300	G. Pointless Machine
+#564	3400	H. PalindromePalindrome
+#565	800	A. Souvlaki VS. Kalamaki
+#566	1700	B. Siga ta Kymata
+#567	1500	C. Monopati
+#568	2100	D1. Diadrash (Easy Version)
+#569	2500	D2. Diadrash (Hard Version)
+#570	2700	E. Plegma
+#571	800	A. Beautiful Average
+#572	1000	B. Beautiful String
+#573	1100	C. Beautiful XOR
+#574	1400	D. Beautiful Permutation
+#575	1600	E. Beautiful Palindromes
+#576	2100	F. Beautiful Intervals
+#577	2200	G. Beautiful Tree
+#578	2900	H. Beautiful Problem
+#579	800	A. Round Trip
+#580	1700	B. Make Connected
+#581	1200	C. Loyalty
+#582	2100	D. Locked Out
+#583	2400	E. Left is Always Right
+#584	3000	F. SubMST
+#585	3500	G. Bitwise And Equals
+#586	3500	H. Cycle Sort
+#587	800	A. MEX Partition
+#588	1100	B. Distinct Elements
+#589	1300	C. Reverse XOR
+#590	1700	A. MAD Interactive Problem
+#591	2100	B. Rectangles
+#592	2300	C. Twin Polynomials
+#593	2500	D1. Inverse Minimum Partition (Easy Version)
+#594	3200	D2. Inverse Minimum Partition (Hard Version)
+#595	3500	E. Super-Short-Polynomial-San
+#596	3500	F. Grand Finale: Snakes
+#597	800	A. Suspension
+#598	1200	B. Split
+#599	1400	C. Annoying Game
+#600	2000	D. Palindrome Flipping
+#601	2600	E. Sink
+#602	2600	F1. Distinct GCDs (Easy Version)
+#603	3000	F2. Distinct GCDs (Hard Version)
+#604	800	A. Dungeon Equilibrium
+#605	900	B. Expansion Plan 2
+#606	1400	C. Meximum Array 2
+#607	1600	D. Billion Players Game
+#608	1900	E. Adjusting Drones
+#609	2400	F. Git Gud
+#610	2800	G. Isaac's Queries
+#611	3200	H. Keygen 3
+#612	3500	I. Hyper Smawk Bros
+#613	800	A. Pizza Time
+#614	1000	B. Strange Machine
+#615	1400	C. Maximum GCD on Whiteboard
+#616	1900	D. Find the Last Number
+#617	2500	E. Best Time to Buy and Sell Stock
+#618	2200	F1. Strange Operation (Easy Version)
+#619	3000	F2. Strange Operation (Hard Version)
+#620	800	A. El fucho
+#621	1100	B. Abraham's Great Escape
+#622	1500	C. The Ancient Wizards' Capes
+#623	1800	D. Batteries
+#624	2200	E. Mimo & Yuyu
+#625	2800	F. Juan's Colorful Tree
+#626	800	A. Notelock
+#627	1000	B. Make it Zigzag
+#628	1400	C1. No Cost Too Great (Easy Version)
+#629	2000	C2. No Cost Too Great (Hard Version)
+#630	1900	D. Catshock
+#631	2500	E. No Mind To Think
+#632	2700	F1. Bombing (Easy Version)
+#633	3300	F2. Bombing (Hard Version)
+#634	800	A. Circle of Apple Trees
+#635	800	B. Bitwise Reversion
+#636	1500	C. Symmetrical Polygons
+#637	1800	D. Not Alone
+#638	2400	E. Zero Trailing Factorial
+#639	2900	F. Odd Queries on Odd Array
+#640	800	A. Increase or Smash
+#641	1300	B. Catching the Krug
+#642	1400	C. Triple Removal
+#643	1700	D. Division Versus Addition
+#644	2100	E. Monotone Subsequence
+#645	2500	F. Triple Attack
+#646	2900	G. Query Jungle
+#647	2900	H1. Victorious Coloring (Easy Version)
+#648	3500	H2. Victorious Coloring (Hard Version)
+#649	800	A. Incremental Subarray
+#650	1400	C. Incremental Stay
+#651	1300	A. Incremental Path
+#652	1700	B. Grid Counting
+#653	2100	C. Limited Edition Shop
+#654	2700	D. Attraction Theory
+#655	2600	E1. Hidden Single (Version 1)
+#656	2800	E2. Hidden Single (Version 2)
+#657	3000	F. Cycle Closing
+#658	3500	G. Counting Is Fun: The Finale
+#659	800	A. Be Positive
+#660	800	B. Unconventional Pairs
+#661	900	C. MEX rose
+#662	1200	D. A and B
+#663	1500	E. Hidden Knowledge of the Ancients
+#664	1900	F. Nezuko in the Clearing
+#665	2100	G. Buratsuta 3
+#666	800	A. Sublime Sequence
+#667	800	B. Lasers
+#668	900	C. Pacer
+#669	1000	D. Destruction of the Dandelion Fields
+#670	1200	E. Split
+#671	1800	F. Gravity Falls
+#672	1900	G. Farmer John's Last Wish
+#673	800	A. Shortest Increasing Path
+#674	1000	B. Multiple Construction
+#675	1500	C. Rabbits
+#676	1700	D. Game on Array
+#677	2300	E. Maximum OR Popcount
+#678	2800	F. Exchange Queries
+#679	3100	G. Modular Tetration
+#680	3500	H. Maxflow GCD Coloring
+#681	3300	I1. Longest Increasing Path (Easy Version)
+#682	3500	I2. Longest Increasing Path (Hard Version)
+#683	800	A. Equal Occurrences
+#684	1100	B. Merging the Sets
+#685	1300	C. Wrong Binary Search
+#686	1500	D1. Max Sum OR (Easy Version)
+#687	2000	D2. Max Sum OR (Hard Version)
+#688	2300	E. Yet Another MEX Problem
+#689	2900	F. Bubble Sort
+#690	800	A. Candies for Nephews
+#691	1000	B. Deck of Cards
+#692	1300	C. Monocarp's String
+#693	1800	D. Inversion Value of a Permutation
+#694	2100	E. Predicting Popularity
+#695	2500	F. Long Journey
+#696	2900	G. Cost of Coloring
+#697	800	A. Cut the Array
+#698	1000	B. Maximum Cost Permutation
+#699	1300	C. Non-Descending Arrays
+#700	1800	D. Price Tags
+#701	2200	E1. Looking at Towers (easy version)
+#702	2500	E2. Looking at Towers (difficult version)
+#703	2700	F. Bracket Groups
+#704	800	A. All Lengths Subtraction
+#705	1000	B. Discounts
+#706	1300	C. Max Tree
+#707	1800	D1. Inversion Graph Coloring (Easy Version)
+#708	2200	D2. Inversion Graph Coloring (Hard Version)
+#709	2400	E. Make Good
+#710	2700	F. Increasing Xor
+#711	800	A. Furniture Store
+#712	1200	B. Games
+#713	1800	C. Minimum on Subarrays
+#714	1800	D. Avoid Minimums
+#715	2100	E. Perfect Cut
+#716	2200	F. Array Reduction
+#717	2800	G. Good Robot Paths
+#718	2700	H. Merging Vertices in a Graph
+#719	3500	I. Color the Tree
+#720	800	A. Shift Sort
+#721	900	B. Another Divisibility Problem
+#722	1500	C. Ultimate Value
+#723	2000	D. A Cruel Segment's Thesis
+#724	2200	E1. Prime Gaming (Easy Version)
+#725	2500	E2. Prime Gaming (Hard Version)
+#726	2900	F. Sum Minimisation
+#727	800	A. Maple and Multiplication
+#728	800	B. Cake Collection
+#729	1100	A. Cake Assignment
+#730	1900	B. Antiamuny Wants to Learn Swap
+#731	1800	C1. Maple and Tree Beauty (Easy Version)
+#732	2000	C2. Maple and Tree Beauty (Hard Version)
+#733	2600	D. Antiamuny and Slider Movement
+#734	3100	E1. Determinant Construction (Easy Version)
+#735	3100	E2. Determinant Construction (Hard Version)
+#736	3500	F. Ode to the Bridge Builder
+#737	800	A. Collatz Conjecture
+#738	900	B. Fun Permutation
+#739	1100	C. Maximum Even Sum
+#740	1200	D. Replace with Occurrences
+#741	1500	E. Mexification
+#742	1900	F. Prefix Maximum Invariance
+#743	2200	G. Cry Me a River
+#744	800	A. In the Dream
+#745	900	B. Like the Bitset
+#746	1200	A. Against the Difference
+#747	1700	B. For the Champion
+#748	2000	C. By the Assignment
+#749	2100	D1. From the Unknown (Easy Version)
+#750	2500	D2. From the Unknown (Hard Version)
+#751	3300	E1. Beyond the Palindrome (Easy Version)
+#752	3500	E2. Beyond the Palindrome (Hard Version)
+#753	3500	F. To the Infinity
+#754	800	A. Painting With Two Colors
+#755	1200	B. Add 0 or K
+#756	1200	C. Even Larger
+#757	2300	D. Sliding Tree
+#758	2300	E. Power Boxes
+#759	2900	F. Permutation Oddness
+#760	800	A. Redstone?
+#761	800	B. Villagers
+#762	1400	C. The Nether
+#763	1900	D. Chicken Jockey
+#764	2500	E. I Yearned For The Mines
+#765	3000	F. Flint and Steel
+#766	800	A. Homework
+#767	900	B. The Secret Number
+#768	1000	C1. The Cunning Seller (easy version)
+#769	1400	C2. The Cunning Seller (hard version)
+#770	1600	D. From 1 to Infinity
+#771	1700	E. Arithmetics Competition
+#772	2100	F. Rada and the Chamomile Valley
+#773	2600	G. Famous Choreographer
+#774	800	A. Lever
+#775	800	B. Alternating Series
+#776	1100	C. Make it Equal
+#777	1400	D. Arboris Contractio
+#778	1400	E. Adjacent XOR
+#779	1900	F. Unjust Binary Life
+#780	2000	G. Wafu!
+#781	2600	H. Sea, You & copriMe
+#782	800	A. Submission is All You Need
+#783	1100	B. Pathless
+#784	1300	A. Double Perspective
+#785	1600	B. Stay or Mirror
+#786	1900	C1. Interactive RBS (Easy Version)
+#787	2000	C2. Interactive RBS (Medium Version)
+#788	2300	C3. Interactive RBS (Hard Version)
+#789	2600	D. Permutation Blackhole
+#790	3000	E. Induced Subgraph Queries
+#791	3500	F1. Top-K Tracker (Easy Version)
+#792	3500	F2. Top-K Tracker (Hard Version)
+#793	800	A. Recycling Center
+#794	1100	B. Deque Process
+#795	1200	C. Leftmost Below
+#796	1600	D. Sum of LDS
+#797	1900	E1. Submedians (Easy Version)
+#798	2600	E2. Submedians (Hard Version)
+#799	3200	F. Strict Triangle
+#800	800	A. Mix Mex Max
+#801	1300	B. Hamiiid, Haaamid... Hamid?
+#802	1400	C. Trip Shopping
+#803	1800	D. Root was Built by Love, Broken by Destiny
+#804	2100	E. Ancient Tree
+#805	2800	F. Hamed and AghaBalaSar
+#806	3400	G1. Inter Active (Easy Version)
+#807	3500	G2. Inter Active (Hard Version)
+#808	3100	H. 23 Rises Again
+#809	800	A. Only One Digit
+#810	800	B. No Casino in the Mountains
+#811	1100	C. I Will Definitely Make It
+#812	1200	D. This Is the Last Time
+#813	1400	E. G-C-D, Unlucky!
+#814	2000	F. 1-1-1, Free Tree!
+#815	2200	G1. Big Wins! (easy version)
+#816	2400	G2. Big Wins!  (hard version)
+#817	800	A. Difficult Contest
+#818	900	B. Left and Down
+#819	1100	C. Count Good Numbers
+#820	1600	D. Segments Covering
+#821	2500	E. Sets of Complementary Sums
+#822	3000	F. Timofey and Docker
+#823	800	A. Deranged Deletions
+#824	1000	B. Minimise Sum
+#825	1300	C. Subset Multiplication
+#826	1700	D. Make a Palindrome
+#827	2100	E. Make it Zero
+#828	2300	F1. Appending Permutations (Easy Version)
+#829	2800	F2. Appending Permutations (Hard Version)
+#830	3200	G. Maximise Sum
+#831	3400	H. Longest Good Subsequence
+#832	3500	I. Lexicographic Partition
+#833	800	A. Blackboard Game
+#834	800	B. Tournament
+#835	1000	C. Prefix Min and Suffix Max
+#836	1200	D. Binary String Battle
+#837	1400	E. MEX Count
+#838	1700	F. Minimize Fixed Points
+#839	2100	G. Modular Sorting
+#840	800	A. Greedy Grid
+#841	1100	B. Pile Shuffling
+#842	1700	C. Manhattan Pairs
+#843	2400	D. Traffic Lights
+#844	2600	E. Greedy Grid Counting
+#845	3400	F. Colorful Polygon
+#846	3300	G. Tree Parking
+#847	800	A. Letter Home
+#848	800	B. Above the Clouds
+#849	1200	C. Those Who Are With Us
+#850	1300	D. 1709
+#851	1500	E. Sponsor of Your Problems
+#852	1800	F. Yamakasi
+#853	1900	G. Gangsta
+#854	2300	H. Ice Baby
+#855	800	A. Square of Rectangles
+#856	1000	B. Square Pool
+#857	1400	C. Divine Tree
+#858	1800	D. Matrix game
+#859	2300	E. Lanes of Cars
+#860	2600	F. Superb Graphs
+#861	3000	G. Eulerian Line Graph
+#862	800	A. Add or XOR
+#863	1200	B. Line Segments
+#864	1300	C. A Good Problem
+#865	2100	D. Token Removing
+#866	2600	E. And Constraint
+#867	3300	F. Volcanic Eruptions
+#868	800	A. Equal Subsequences
+#869	1200	B. Make It Permutation
+#870	1300	C. Make It Beautiful
+#871	1700	D1. Red Light, Green Light (Easy version)
+#872	2200	D2. Red Light, Green Light (Hard version)
+#873	2400	E. Grid Coloring
+#874	3100	F. Shifts and Swaps
+#875	800	A. False Alarm
+#876	800	B. Shrink
+#877	1200	C. Cool Partition
+#878	1200	D. Retaliation
+#879	1600	E. Lost Soul
+#880	1800	F. Wildflower
+#881	1900	G. Omg Graph
+#882	2500	H. Incessant Rain
+#883	800	A. Gellyfish and Tricolor Pansy
+#884	1300	B. Gellyfish and Baby's Breath
+#885	1500	A. Gellyfish and Flaming Peony
+#886	2100	B. Gellyfish and Camellia Japonica
+#887	2700	C. Gellyfish and Eternal Violet
+#888	2900	D. Gellyfish and Forget-Me-Not
+#889	3500	E. Gellyfish and Mayflower
+#890	3500	F1. Gellyfish and Lycoris Radiata (Easy Version)
+#891	3500	F2. Gellyfish and Lycoris Radiata (Hard Version)
+#892	800	A. Square Year
+#893	900	B. Not Quite a Palindromic String
+#894	1000	C. Need More Arrays
+#895	1400	D. Come a Little Closer
+#896	1400	E. Kirei Attacks the Estate
+#897	2000	F. Small Operations
+#898	2200	G. Build an Array
+#899	800	A. Shashliks
+#900	1200	B. Good Start
+#901	1700	C. Smilo and Minecraft
+#902	2200	D. Cheater
+#903	2800	E. From Kazan with Love
+#904	2500	F. Two Arrays
+#905	800	A. Race
+#906	1100	B. Shrinking Array
+#907	1300	C. Coloring Game
+#908	1700	D. Reachability and Tree
+#909	2200	E. Tree Colorings
+#910	2800	F. Variables and Operations
+#911	800	A. Energy Crystals
+#912	1100	B. Fibonacci Cubes
+#913	1100	C. Equal Values
+#914	1400	D. Creating a Schedule
+#915	1900	E. Changing the String
+#916	2400	F. Puzzle
+#917	2900	G. Divisible Subarrays
+#918	800	A. Fashionable Array
+#919	900	B. Down with Brackets
+#920	1400	C. Racing
+#921	1700	D. Fewer Batteries
+#922	2300	E. Melody
+#923	2400	F. Faculty
+#924	800	A. It's Time To Duel
+#925	1200	B. Slice to Survive
+#926	1500	C1. Hacking Numbers (Easy Version)
+#927	1700	C2. Hacking Numbers (Medium Version)
+#928	2600	C3. Hacking Numbers (Hard Version)
+#929	1900	D. D/D/D
+#930	2400	E. Binary String Wowee
+#931	3000	F. Penguin Steps
+#932	800	A. Permutation Warm-Up
+#933	1300	B. SUMdamental Decomposition
+#934	1500	C. Neo's Escape
+#935	2200	D. Needle in a Numstack
+#936	2600	E. Spruce Dispute
+#937	2900	F. Fallen Towers
+#938	800	A. LRC and VIP
+#939	1100	B. Apples in Boxes
+#940	1500	C. Maximum Subarray Sum
+#941	2100	D. Apple Tree Traversing
+#942	2600	E. Ain and Apple Tree
+#943	2300	F1. Cycling (Easy Version)
+#944	2800	F2. Cycling (Hard Version)
+#945	800	A. Dr. TC
+#946	900	B. St. Chroma
+#947	1000	C. Cherry Bomb
+#948	1500	D. Flower Boy
+#949	1800	E. Wolf
+#950	1900	F. Goblin
+#951	2200	G1. Baudelaire (easy version)
+#952	2500	G2. Baudelaire (hard version)
+#953	800	A. Three Decks
+#954	1000	B. Move to the End
+#955	1100	C. Card Game
+#956	1400	D. Array and GCD
+#957	1700	E. Unpleasant Strings
+#958	2600	F. Numbers and Strings
+#959	2700	G. Modulo 3
+#960	800	A. Common Multiple
+#961	1100	B. Binary Typewriter
+#962	1600	C. Median Splits
+#963	2000	D. Local Construction
+#964	2600	E. Keep the Sum
+#965	2600	F. Maximize Nor
+#966	900	A. Dinner Time
+#967	900	B. The Picky Cat
+#968	1300	A. Mex in the Grid
+#969	1800	B. Quartet Swapping
+#970	2200	C. 23 Kingdom
+#971	2500	D. Mani and Segments
+#972	3100	E. Kia Bakes a Cake
+#973	3300	F. Shoo Shatters the Sunshine
+#974	800	A. Vadim's Collection
+#975	1400	B. Sasha and the Apartment Purchase
+#976	1400	A. Sports Betting
+#977	2300	B. Baggage Claim
+#978	2400	C. Bermuda Triangle
+#979	2800	D. Homework
+#980	3100	E. Clearing the Snowdrift
+#981	3500	F. Lost Luggage
+#982	800	A. Wonderful Sticks
+#983	1100	B. Wonderful Gloves
+#984	1700	C. Wonderful City
+#985	2000	D. Wonderful Lightbulbs
+#986	2400	E. Wonderful Teddy Bears
+#987	3100	F. Wonderful Impostors
+#988	3200	G. Wonderful Guessing Game
+#989	3200	H. Wonderful XOR Problem
+#990	1200	A. Piecing It Together
+#991	1200	B. Plinko
+#992	1200	C. Would It Be Unrated?
+#993	1200	D. Where Am I?
+#994	1200	E. Pair Count
+#995	1200	F. ⅓ оf а Рrоblеm
+#996	1200	G. Definitely a Geometry Problem
+#997	1200	H. Blurry Vision
+#998	1200	I. Mysterious Script
+#999	1200	J. Premiere at a Wrong Time
+#1000	800	A. Trippi Troppi
+#1001	800	B. Bobritto Bandito
+#1002	900	C. Brr Brrr Patapim
+#1003	1100	D. Tung Tung Sahur
+#1004	1200	E. Boneca Ambalabu
+#1005	1600	F. Trulimero Trulicina
+#1006	1700	G. Chimpanzini Bananini
+#1007	1900	H. La Vaca Saturno Saturnita
+#1008	800	A. Ideal Generator
+#1009	900	B. Expensive Number
+#1010	1000	C. Simple Repetition
+#1011	1400	D. Skibidi Table
+#1012	1500	E. Min Max MEX
+#1013	1800	F. Hackers and Neural Networks
+#1014	1900	G. Shorten the Array
+#1015	800	A. Kamilka and the Sheep
+#1016	1000	B. Lady Bug
+#1017	1200	C. Asuna and the Mosquitoes
+#1018	1800	D. Mishkin Energizer
+#1019	2100	E. She knows...
+#1020	2900	F. Andryusha and CCB
+#1021	800	A. Olympiad Date
+#1022	800	B. Team Training
+#1023	1000	C. Combination Lock
+#1024	1200	D. Place of the Olympiad
+#1025	1300	E. Interesting Ratio
+#1026	1800	F. Igor and Mountain
+#1027	2300	G. Gleb and Boating
+#1028	800	A. Treasure Hunt
+#1029	1000	B. Pushing Balls
+#1030	1700	C. Dining Hall
+#1031	1700	A. Simple Permutation
+#1032	1900	B1. Canteen (Easy Version)
+#1033	2300	B2. Canteen (Hard Version)
+#1034	2200	C1. Key of Like (Easy Version)
+#1035	3100	C2. Key of Like (Hard Version)
+#1036	3200	D. Conditional Operators
+#1037	3500	E. Black Cat Collapse
+#1038	1200	A. Password Generator
+#1039	1200	B. Showmatch
+#1040	1200	C. Coin Game
+#1041	1200	D. Uppercase or Lowercase?
+#1042	1200	E. Color the Arrows
+#1043	1200	F. Weapon Upgrade
+#1044	1200	G. Esports in Berland
+#1045	1200	H. Nim with Special Numbers
+#1046	1200	I. Hamiltonian Partition
+#1047	800	A. Cloudberry Jam
+#1048	1100	B. Large Array and Segments
+#1049	1300	C. Disappearing Permutation
+#1050	1700	D. Even String
+#1051	2400	E. Zebra-like Numbers
+#1052	3000	F. Online Palindrome
+#1053	900	A. Serval and String Theory
+#1054	1200	B. Serval and Final MEX
+#1055	1600	C. Serval and The Formula
+#1056	2000	D. Serval and Kaitenzushi Buffet
+#1057	2200	E. Serval and Modulo
+#1058	2600	F1. Serval and Colorful Array (Easy Version)
+#1059	2900	F2. Serval and Colorful Array (Hard Version)
+#1060	800	A. Max and Mod
+#1061	1100	B. MIN = GCD
+#1062	1400	C. You Soared Afar With Grace
+#1063	1600	D. Arcology On Permafrost
+#1064	2400	E. Blossom
+#1065	2900	F. Skyscape
+#1066	2600	G1. Wish Upon a Satellite (Easy Version)
+#1067	3500	G2. Wish Upon a Satellite (Hard Version)
+#1068	3500	H. Turtle and Nediam 2
+#1069	800	A. Binary Matrix
+#1070	1600	B. Floor or Ceil
+#1071	1800	A. Math Division
+#1072	2500	B. Balancing
+#1073	2700	C. Quaternary Matrix
+#1074	2600	D. MST in Modulo Graph
+#1075	3300	E. Quantifier
+#1076	3300	F. Hot Matrix
+#1077	3100	G1. Hard Formula
+#1078	3400	G2. Hard Formula (Hard Version)
+#1079	800	A. Final Verdict
+#1080	1100	B. Vicious Labyrinth
+#1081	1800	D. Scammy Game Ad
+#1082	1500	A. Breach of Faith
+#1083	1900	B. Finding OR Sum
+#1084	2300	C. Binary Subsequence Value Sum
+#1085	3100	D. Maximum Polygon
+#1086	2700	E. Another Folding Strip
+#1087	3300	F. AND x OR
+#1088	3500	G. RGB Walking
+#1089	800	A. To Zero
+#1090	1300	B. Array Recoloring
+#1091	1500	C. Two Colors
+#1092	2000	D. Equalization
+#1093	2500	E. XOR Matrix
+#1094	3000	F. Beautiful Sequence Returns
+#1095	800	A. Draw a Square
+#1096	800	B. The Third Side
+#1097	1100	C. XOR and Triangle
+#1098	1400	D. Counting Points
+#1099	1600	E. Empty Triangle
+#1100	2000	F. Counting Necessary Nodes
+#1101	2100	G. Game With Triangles: Season 2
+#1102	800	A. New World, New Me, New Array
+#1103	900	B. Having Been a Treasurer in the Past, I Help Goblins Deceive
+#1104	1200	C. Creating Keys for StORages Has Become My Main Skill
+#1105	1300	D. For Wizards, the Exam Is Easy, but I Couldn't Handle It
+#1106	1500	E. Do You Love Your Hero and His Two-Hit Multi-Target Attacks?
+#1107	1700	F. Goodbye, Banker Life
+#1108	2200	G. I've Been Flipping Numbers for 300 Years and Calculated the Sum
+#1109	800	A. The Play Never Ends
+#1110	1100	B. Perfecto
+#1111	1700	C. Trapmigiano Reggiano
+#1112	1800	D1. Infinite Sequence (Easy Version)
+#1113	2500	D2. Infinite Sequence (Hard Version)
+#1114	2600	E. LeaFall
+#1115	2700	F. Towering Arrays
+#1116	800	A. FizzBuzz Remixed
+#1117	1100	B. Robot Program
+#1118	1500	C. Limited Repainting
+#1119	1600	D. Tree Jumps
+#1120	2200	E. Game with Binary String
+#1121	3000	F. Friends and Pizza
+#1122	800	A. Was there an Array?
+#1123	1200	B. Set of Strangers
+#1124	1500	C. Beautiful Sequence
+#1125	1800	D. Palindrome Shuffle
+#1126	2300	E. A, B, AB and BA
+#1127	2800	F. Graph Inclusion
+#1128	2300	A. Condorcet Elections
+#1129	3100	B. Urban Planning
+#1130	2100	C. Ads
+#1131	3100	D. Morse Code
+#1132	2800	E. Porto Vs. Benfica
+#1133	1900	F. Mascot Naming
+#1134	3500	G. A Very Long Hike
+#1135	2700	H. Statues
+#1136	3500	I. Pinball
+#1137	2000	J. The Ultimate Wine Tasting Event
+#1138	3000	K. Amusement Park Rides
+#1139	800	A. Adjacent Digit Sums
+#1140	1200	B. Two Large Bags
+#1141	1500	C. Devyatkino
+#1142	1400	A. Object Identification
+#1143	1900	B. White Magic
+#1144	2300	C. Bitwise Slides
+#1145	2400	D1. Club of Young Aircraft Builders (easy version)
+#1146	2900	D2. Club of Young Aircraft Builders (hard version)
+#1147	3300	E. Tropical Season
+#1148	3300	F. Curse
+#1149	800	A. Skibidus and Amog'u
+#1150	800	B. Skibidus and Ohio
+#1151	1100	C1. Skibidus and Fanum Tax (easy version)
+#1152	1300	C2. Skibidus and Fanum Tax (hard version)
+#1153	1200	D. Skibidus and Sigma
+#1154	1600	E. Skibidus and Rizz
+#1155	1700	F. Skibidus and Slay
+#1156	1700	G. Skibidus and Capping
+#1157	2200	H. Bro Thinks He's Him
+#1158	800	A. Brogramming Contest
+#1159	1100	B. Variety is Discouraged
+#1160	1300	C. Remove the Ends
+#1161	1900	D. Eating
+#1162	2400	E. Mycraft Sand Sort
+#1163	2600	F. We Be Summing
+#1164	800	A. Minimal Coprime
+#1165	1100	B. Subsequence Update
+#1166	1600	C. Remove Exactly Two
+#1167	2000	D. Game With Triangles
+#1168	2300	E. Triangle Tree
+#1169	2400	F1. Counting Is Not Fun (Easy Version)
+#1170	2700	F2. Counting Is Not Fun (Hard Version)
+#1171	800	A. String
+#1172	900	B. Clockwork
+#1173	1200	C. Cirno and Operations
+#1174	2200	D. Balanced Tree
+#1175	2000	E1. The Game (Easy Version)
+#1176	3000	E2. The Game (Hard Version)
+#1177	2900	F. Traveling Salescat
+#1178	3500	G. Permutation Factory
+#1179	3500	H. Galaxy Generator
+#1180	800	A. Kevin and Arithmetic
+#1181	1100	B. Kevin and Geometry
+#1182	1600	C. Kevin and Puzzle
+#1183	1600	D. Kevin and Numbers
+#1184	2000	E. Kevin and And
+#1185	2100	F1. Kevin and Binary String (Easy Version)
+#1186	3500	F2. Kevin and Binary String (Hard Version)
+#1187	2900	G. Kevin and Teams
+#1188	3500	H1. Kevin and Stones (Easy Version)
+#1189	3500	H2. Kevin and Stones (Hard Version)
+#1190	3500	I. Kevin and Nivek
+#1191	800	A. Fibonacciness
+#1192	1000	B. Farmer John's Card Game
+#1193	900	C. Game of Mathletes
+#1194	1100	D. Subtract Min Sort
+#1195	1500	E. Graph Composition
+#1196	2200	F. Multiplicative Arrays
+#1197	2400	G. Bugged Sort
+#1198	800	A. Milya and Two Arrays
+#1199	1300	B. Cost of the Array
+#1200	1600	C. Customer Service
+#1201	1900	D. Graph and Graph
+#1202	2500	E1. Stop Gaming (Easy Version)
+#1203	2900	E2. Stop Gaming (Hard Version)
+#1204	800	A. MEX Table
+#1205	1000	B. Gorilla and the Exam
+#1206	1500	C. Trip to the Olympiad
+#1207	2000	D. Gifts Order
+#1208	2300	E1. Another Exercise on Graphs (Easy Version)
+#1209	2500	E2. Another Exercise on Graphs (hard version)
+#1210	3300	F. Formation
+#1211	3000	G. Secret Message
+#1212	3500	H. Coffee Break
+#1213	800	A. Shape Perimeter
+#1214	1300	B. Find the Permutation
+#1215	1200	C. Palindromic Subsequences
+#1216	2200	D. Unique Median
+#1217	2500	E. Nested Segments
+#1218	2700	F1. Xor of Median (Easy Version)
+#1219	3000	F2. Xor of Median (Hard Version)
+#1220	800	A. Two Frogs
+#1221	1000	B. Crafting
+#1222	1400	C. The Trail
+#1223	2000	D. Scarecrow
+#1224	2800	E. Haystacks
+#1225	3200	F. Cosmic Divide
+#1226	800	A. Tender Carpenter
+#1227	1200	B. Outstanding Impressionist
+#1228	1500	C. Bewitching Stargazer
+#1229	1700	D. Refined Product Optimality
+#1230	1900	E. Resourceful Caterpillar Sequence
+#1231	2600	F. Earnest Matrix Complement
+#1232	3400	G. Naive String Splits
+#1233	3500	H. Delicate Anti-monotonous Operations
+#1234	2800	I1. Affectionate Arrays (Easy Version)
+#1235	3500	I2. Affectionate Arrays (Hard Version)
+#1236	1600	A. Adrenaline Rush
+#1237	2100	D. DAG Serialization
+#1238	1900	E. Expression Correction
+#1239	1700	F. Fix Flooded Floor
+#1240	2800	G. Geometric Balance
+#1241	2000	J. Judicious Watching
+#1242	800	A. Preparing for the Olympiad
+#1243	800	B. Journey
+#1244	1000	C. Preparing for the Exam
+#1245	1200	D. Counting Pairs
+#1246	1600	E. Best Price
+#1247	2000	F. Joker
+#1248	2100	G. Snakes
+#1249	800	A. Line Breaks
+#1250	1100	B. Transfusion
+#1251	1200	C. Uninteresting Number
+#1252	1300	D. Digital string maximization
+#1253	1500	E. Three Strings
+#1254	1700	F. Maximum modulo equality
+#1255	1900	G. Tree Destruction
+#1256	800	A. MEX Destruction
+#1257	1300	B. pspspsps
+#1258	1500	C. MEX Cycle
+#1259	1900	D. Shift + Esc
+#1260	2400	E. Broken Queries
+#1261	2700	F. MEX OR Mania
+#1262	800	A. Kevin and Combination Lock
+#1263	900	B. Kevin and Permutation
+#1264	1200	C. Kevin and Binary Strings
+#1265	1600	D. Kevin and Competition Memories
+#1266	2000	E. Kevin and Bipartite Graph
+#1267	2500	F. Kevin and Math Class
+#1268	2800	G. Kevin and Matrices
+#1269	3100	H. Kevin and Strange Operation
+#1270	3500	I1. Kevin and Puzzle (Easy Version)
+#1271	3500	I2. Kevin and Puzzle (Hard Version)
+#1272	800	A. Alyona and a Square Jigsaw Puzzle
+#1273	900	B. Replace Character
+#1274	1200	A. Swap Columns and Find a Path
+#1275	1600	B. Move Back at a Cost
+#1276	2100	C. Adventurers
+#1277	3100	D. For the Emperor!
+#1278	2900	E1. Cheops and a Contest (Easy Version)
+#1279	3500	E2. Cheops and a Contest (Hard Version)
+#1280	3300	F1. Yandex Cuneiform (Easy Version)
+#1281	3500	F2. Yandex Cuneiform (Hard Version)
+#1282	1700	A. Scrambled Scrabble
+#1283	2000	B. ICPC Square
+#1284	1400	C. Saraga
+#1285	3500	D. Aquatic Dragon
+#1286	2700	E. Narrower Passageway
+#1287	3000	F. Grid Game 3-angle
+#1288	2200	G. X Aura
+#1289	2200	H. Missing Separators
+#1290	2100	I. Microwavable Subsequence
+#1291	2600	J. Xorderable Array
+#1292	2900	K. GCDDCG
+#1293	3000	L. Buggy DFS
+#1294	1800	M. Mirror Maze
+#1295	800	A. Easy Problem
+#1296	800	B. Normal Problem
+#1297	800	C. Hard Problem
+#1298	1100	D. Harder Problem
+#1299	1300	E. Insane Problem
+#1300	1900	F. Easy Demon Problem
+#1301	1700	G1. Medium Demon Problem (easy version)
+#1302	1900	G2. Medium Demon Problem (hard version)
+#1303	2100	H. Hard Demon Problem
+#1304	800	A. Coin Transformation
+#1305	1100	B. Digits
+#1306	1600	C. Sums on Segments
+#1307	1800	D. Problem about GCD
+#1308	2300	E. Matrix Transformation
+#1309	2700	F. Nim
+#1310	3000	G. Problem with Queries
+#1311	800	A. Greedy Monocarp
+#1312	900	B. Game with Colored Marbles
+#1313	1800	C. Competitive Fishing
+#1314	1900	D. Recommendations
+#1315	2900	E. Vertex Pairs
+#1316	2600	F. Two Subarrays
+#1317	1300	A. The Bento Box Adventure
+#1318	1200	B. Bowling Frame
+#1319	2000	C. Cube
+#1320	1700	D. Drunken Maze
+#1321	1200	E. Beautiful Array
+#1322	2400	F. Segmentation Folds
+#1323	3100	G. Grid Game
+#1324	2300	H. Sheet Music
+#1325	2300	I. Auto Complete
+#1326	2700	J. Bottle Arrangement
+#1327	3100	K. Trophic Balance Species
+#1328	2900	L. Building Castle
+#1329	2000	M. Selection Sort
+#1330	3300	N. Railway Construction
+#1331	800	A. Game of Division
+#1332	1000	B. Paint a Strip
+#1333	1600	C. Ordered Permutations
+#1334	1900	D. Non Prime Tree
+#1335	2100	E. Control of Randomness
+#1336	2700	F. Number of Cubes
+#1337	800	A. Shohag Loves Mod
+#1338	1000	B. Shohag Loves Strings
+#1339	1200	C1. Shohag Loves XOR (Easy Version)
+#1340	1800	C2. Shohag Loves XOR (Hard Version)
+#1341	1700	D. Shohag Loves GCD
+#1342	2200	E. Shohag Loves Inversions
+#1343	2800	F1. Shohag Loves Counting (Easy Version)
+#1344	3200	F2. Shohag Loves Counting (Hard Version)
+#1345	3500	G. Shohag Loves Pebae
+#1346	3500	H1. Cool Swap Walk (Easy Version)
+#1347	3500	H2. Cool Swap Walk (Hard Version)
+#1348	1400	A. Bonus Project
+#1349	2100	B. Make It Equal
+#1350	1400	C. DIY
+#1351	2400	D. Divide OR Conquer
+#1352	2900	E. Barrels
+#1353	2500	F. Alternative Platforms
+#1354	1900	G. Guess One Character
+#1355	3000	H. Galactic Council
+#1356	2500	I. Polyathlon
+#1357	800	J. Waiting for...
+#1358	2100	K. Grid Walk
+#1359	1400	L. Bridge Renovation
+#1360	2800	M. Royal Flush
+#1361	800	N. Fixing the Expression
+#1362	800	A. Twice
+#1363	800	B. Intercepted Inputs
+#1364	1000	C. Superultra's Favorite Permutation
+#1365	1300	D. Sharky Surfing
+#1366	1600	E. Kachina's Favorite Binary String
+#1367	2100	F. Ardent Flames
+#1368	2000	G. Natlan Exploring
+#1369	800	A. Quintomania
+#1370	800	B. Startup
+#1371	1100	C. Anya and 1100
+#1372	1300	D. I Love 1543
+#1373	1600	E. Reverse the Rivers
+#1374	1900	F. XORificator 3000
+#1375	2200	G. Library of Magic
+#1376	800	A. Sliding
+#1377	900	B. Everyone Loves Tres
+#1378	1400	C. Alya and Permutation
+#1379	1800	D. Yet Another Real Number Problem
+#1380	2300	E. Monster
+#1381	2500	F. Tree Operations
+#1382	3300	G1. Go Learn! (Easy Version)
+#1383	3500	G2. Go Learn! (Hard Version)
+#1384	3500	H. Peak Productivity Forces
+#1385	800	A. King Keykhosrow's Mystery
+#1386	1000	B. Rakhsh's Revival
+#1387	1400	C. Trapped in the Witch's Labyrinth
+#1388	1600	D. Darius' Wisdom
+#1389	2200	E. Permutations Harmony
+#1390	2500	F1. Khayyam's Royal Decree (Easy Version)
+#1391	2800	F2. Khayyam's Royal Decree (Hard Version)
+#1392	3500	G1. Simurgh's Watch (Easy Version)
+#1393	3500	G2. Simurgh's Watch (Hard Version)
+#1394	3300	H. Rayan vs. Rayaneh
+#1395	800	A. Sakurako and Kosuke
+#1396	900	B. Sakurako and Water
+#1397	1400	C. Sakurako's Field Trip
+#1398	1300	D. Kousuke's Assignment
+#1399	1400	E. Sakurako, Kosuke, and the Permutation
+#1400	1800	F. Kosuke's Sloth
+#1401	2200	G. Sakurako and Chefir
+#1402	800	A. Circuit
+#1403	1100	B. Medians
+#1404	1400	C. Trinity
+#1405	1800	D. Genokraken
+#1406	2400	E. Balanced
+#1407	2700	F. Peanuts
+#1408	800	A. Penchick and Modern Monument
+#1409	900	B. Penchick and Satay Sticks
+#1410	1300	C. Penchick and BBQ Buns
+#1411	1700	D. Penchick and Desert Rabbit
+#1412	2100	E. Penchick and Chloe's Trees
+#1413	2800	F. Penchick and Even Medians
+#1414	800	A. A Gift From Orangutan
+#1415	800	B. Minimise Oneness
+#1416	1100	C. A TRUE Battle
+#1417	1700	D. QED's Favorite Permutation
+#1418	2200	E. MEXimize the Score
+#1419	2400	F. Orangutan Approved Subarrays
+#1420	2900	G1. The Destruction of the Universe (Easy Version)
+#1421	3100	G2. The Destruction of the Universe (Hard Version)
+#1422	800	A. Set
+#1423	1100	B. Replacement
+#1424	1700	C. New Rating
+#1425	1900	D. Cool Graph
+#1426	2100	E. Common Generator
+#1427	2500	F. Palindrome Everywhere
+#1428	3000	G. Balanced Problem
+#1429	3500	H. Message Spread
+#1430	3400	I. Variance Challenge
+#1431	900	A. Alice's Adventures in ''Chess''
+#1432	1400	B. Alice's Adventures in Permuting
+#1433	1600	C. Alice's Adventures in Cutting Cake
+#1434	2000	D. Alice's Adventures in Cards
+#1435	2300	E. Alice's Adventures in the Rabbit Hole
+#1436	2700	F. Alice's Adventures in Addition
+#1437	800	A. Rectangle Arrangement
+#1438	1100	B. Stalin Sort
+#1439	1500	C. Add Zeros
+#1440	1700	D1. The Endspeaker (Easy Version)
+#1441	2200	D2. The Endspeaker (Hard Version)
+#1442	2800	E1. Bit Game (Easy Version)
+#1443	3100	E2. Bit Game (Hard Version)
+#1444	900	A. Perpendicular Segments
+#1445	1300	B. Black Cells
+#1446	1500	C. Action Figures
+#1447	1900	D. Sums of Segments
+#1448	2500	E. Best Subsequence
+#1449	2700	F. Bermart Ice Cream
+#1450	800	A. Two Screens
+#1451	1100	B. Binomial Coefficients, Kind Of
+#1452	1300	C. New Game
+#1453	1800	D. Attribute Checks
+#1454	2200	E. Card Game
+#1455	2700	F. Choose Your Queries
+#1456	3000	G. Variable Damage
+#1457	800	A. Profitable Interest Rate
+#1458	1100	B. Buying Lemonade
+#1459	1300	A. Concatenation of Arrays
+#1460	1700	B. Skipping
+#1461	2400	C. C+K+S
+#1462	2900	D. Many Games
+#1463	3300	E. Tree of Life
+#1464	3500	F. Hills and Pits
+#1465	800	A. Bus to Pénjamo
+#1466	1300	B. Kar Salesman
+#1467	1800	C. Gerrymandering
+#1468	1900	D1. Asesino (Easy Version)
+#1469	2700	D2. Asesino (Hard Version)
+#1470	2500	E1. Billetes MX (Easy Version)
+#1471	2600	E2. Billetes MX (Hard Version)
+#1472	800	A. Meaning Mean
+#1473	1200	B. Maximize Mex
+#1474	1300	C1. Adjust The Presentation (Easy Version)
+#1475	1900	C2. Adjust The Presentation (Hard Version)
+#1476	2500	D. Boss, Thirsty
+#1477	2300	E1. Digital Village (Easy Version)
+#1478	2500	E2. Digital Village (Hard Version)
+#1479	2800	E3. Digital Village (Extreme Version)
+#1480	800	A. Find Minimum Operations
+#1481	1200	B. Brightness Begins
+#1482	1400	C. Bitwise Balancing
+#1483	1800	D. Connect the Dots
+#1484	2000	E. Expected Power
+#1485	2900	F. Count Leaves
+#1486	800	A. Max Plus Size
+#1487	1200	B. All Pairs Segments
+#1488	1600	A. Cards Partition
+#1489	1900	B. Speedbreaker
+#1490	1700	C. Tree Pruning
+#1491	2200	D. Max Plus Min Plus Size
+#1492	3300	E1. Complex Segments (Easy Version)
+#1493	3400	E2. Complex Segments (Hard Version)
+#1494	2900	F1. Speedbreaker Counting (Easy Version)
+#1495	3000	F2. Speedbreaker Counting (Medium Version)
+#1496	3100	F3. Speedbreaker Counting (Hard Version)
+#1497	800	A. Robin Helps
+#1498	800	B. Robin Hood and the Major Oak
+#1499	1100	C. Robin Hood in Town
+#1500	1400	D. Robert Hood and Mrs Hood
+#1501	1800	E. Rendez-vous de Marian et Robin
+#1502	2000	F. Sheriff's Defense
+#1503	2200	G. Milky Days
+#1504	1900	H. Robin Hood Archery
+#1505	800	A. Zhan's Blender
+#1506	900	B. Battle for Survive
+#1507	1400	C. Password Cracking
+#1508	1900	D. Minimize the Difference
+#1509	2200	E. Prefix GCD
+#1510	2700	F1. Game in Tree (Easy Version)
+#1511	3500	F2. Game in Tree (Hard Version)
+#1512	1200	A. Problem Solving
+#1513	1200	B. Shuffle
+#1514	1200	C. Split the Expression
+#1515	1200	D. Among Wolves
+#1516	1200	E. Rock-Paper-Scissors Bot
+#1517	1200	F. Good Subarray
+#1518	1200	G. Removal of a Permutation
+#1519	1200	H. Strange Matrix
+#1520	1200	I. Stack and Queue
+#1521	800	A. Alternating Sum of Numbers
+#1522	800	B. Three Brothers
+#1523	1400	C1. Message Transmission Error (easy version)
+#1524	1700	C2. Message Transmission Error (hard version)
+#1525	800	A. Minimize!
+#1526	800	B. osu!mania
+#1527	1100	C. The Legend of Freya the Frog
+#1528	1400	D. Satyam and Counting
+#1529	1400	E. Klee's SUPER DUPER LARGE Array!!!
+#1530	1700	F. Firefly's Queries
+#1531	1900	G1. Yunli's Subarray Queries (easy version)
+#1532	2200	G2. Yunli's Subarray Queries (hard version)
+#1533	2700	G3. Yunli's Subarray Queries (extreme version)
+#1534	800	A. Sakurako's Exam
+#1535	800	B. Square or Not
+#1536	800	C. Longest Good Array
+#1537	1100	D. Sakurako's Hobby
+#1538	1500	E. Alternating String
+#1539	1400	F. Sakurako's Box
+#1540	1800	G. Sakurako's Task
+#1541	2100	H. Sakurako's Test
+#1542	800	A. Dora's Set
+#1543	900	B. Index and Maximum Value
+#1544	1500	C. Dora and C++
+#1545	1700	A. Iris and Game on the Tree
+#1546	1800	B. Iris and the Tree
+#1547	2300	C. Eri and Expanded Sets
+#1548	2600	D. Iris and Adjacent Products
+#1549	3100	E. Iris's Full Binary Tree
+#1550	3500	F. Dora's Paint
+#1551	900	A. Simple Palindrome
+#1552	1000	B1. The Strict Teacher (Easy Version)
+#1553	1200	B2. The Strict Teacher (Hard Version)
+#1554	1800	C. Lazy Narek
+#1555	2400	D. Alter the GCD
+#1556	2100	E1. Subtangle Game (Easy Version)
+#1557	2500	E2. Subtangle Game (Hard Version)
+#1558	800	A. Closest Point
+#1559	1000	B. Game with Doors
+#1560	1100	C. Splitting Items
+#1561	1600	D. Colored Portals
+#1562	2100	E. Not a Nim Problem
+#1563	2600	F. Make a Palindrome
+#1564	3200	G. Substring Compression
+#1565	800	A. Turtle and Good Strings
+#1566	800	B. Turtle and Piggy Are Playing a Game 2
+#1567	1200	C. Turtle and Good Pairs
+#1568	1500	D1. Turtle and a MEX Problem (Easy Version)
+#1569	2100	D2. Turtle and a MEX Problem (Hard Version)
+#1570	2600	E1. Turtle and Inversions (Easy Version)
+#1571	2700	E2. Turtle and Inversions (Hard Version)
+#1572	2800	F. Turtle and Three Sequences
+#1573	800	A. Distanced Coloring
+#1574	1000	B. Removals Game
+#1575	1200	C. Black Circles
+#1576	1900	D1. DFS Checker (Easy Version)
+#1577	2300	D2. DFS Checker (Hard Version)
+#1578	2300	E. Cosmic Rays
+#1579	2600	F1. Court Blue (Easy Version)
+#1580	2800	F2. Court Blue (Hard Version)
+#1581	3400	G. Lattice Optimizing
+#1582	3500	H. Counting 101
+#1583	800	A. Make All Equal
+#1584	800	B. Generate Permutation
+#1585	1500	C. Guess The Tree
+#1586	1900	D. Longest Max Min Subsequence
+#1587	2400	E1. Deterministic Heap (Easy Version)
+#1588	2900	E2. Deterministic Heap (Hard Version)
+#1589	800	A. Primary Task
+#1590	800	B. Seating in a Bus
+#1591	1000	C. Numeric String Template
+#1592	1200	D. Right Left Wrong
+#1593	1400	E. Photoshoot for Gorillas
+#1594	1900	F. Color Rows and Columns
+#1595	2100	G. Call During the Journey
+#1596	2200	H. Ksyusha and the Loaded Set

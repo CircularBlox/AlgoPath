@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { env } from "~/env";
-import { getStripe } from "~/lib/stripe";
+import { getStripe } from "~/lib/billing/stripe";
 import { createAdminClient } from "~/lib/supabase/admin";
 import { createClient, getUser } from "~/lib/supabase/server";
 

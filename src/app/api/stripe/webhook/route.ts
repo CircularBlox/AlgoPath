@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { env } from "~/env";
-import { getStripe, planFromPriceId } from "~/lib/stripe";
+import { getStripe, planFromPriceId } from "~/lib/billing/stripe";
 import { createAdminClient } from "~/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
