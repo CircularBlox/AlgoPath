@@ -8,41 +8,100 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) conventi
 ## [Unreleased]
 
 ### Added
-- **FAQ page** (`/faq`): Public, DB-backed FAQ rendered as native `<details>` accordions styled with the app's design tokens (no extra libraries). Reads from a new `faqs` table (public read via RLS). Linked from the navbar. Seeded with the first question, "Why can't I just use ChatGPT, Claude, or any other AI?". Admins manage entries at `/admin/faqs` (add / delete, with sort order) via `/api/admin/faqs` (`GET`/`POST`/`PATCH`/`DELETE`, service-role, admin-gated). (`supabase/migrations/20260606000000_add_faqs.sql`)
+- **FAQ page** (`/faq`): A public FAQ rendered as native `<details>` accordions styled with the app's design tokens — no extra libraries. Backed by a `faqs` table and linked from the navbar. (`supabase/migrations/20260606000000_add_faqs.sql`)
 - **Hideable problem tags**: Tags on the loaded-problem card can spoil the intended approach, so they now have a "Hide" toggle. Tags are visible by default; hiding replaces them with a quiet "Hidden to avoid spoilers" note and a "Show (N)" toggle. The preference is persisted in `localStorage` so it carries across problems and reloads. (`src/app/display-problem/problem-viewer.tsx`)
-- **Code editor auto-opens**: The side panel opens automatically to the Code Editor tab whenever a problem loads — no manual click needed.
-- **Sample test runner** (free): Code panel now has a "Run Tests (N)" button that runs your code against the problem's sample I/O using the Piston execution engine. Shows per-test pass/fail with expandable input/expected/got details. Supports C++, Python, Java, and JavaScript. (`POST /api/run-code`, `src/lib/extract-samples.ts`)
-- **Codeforces account linking**: Profile page has a new "Codeforces Account" section — enter your CF handle to verify it against the CF API and store your rating, max rating, and rank. (`POST /api/profiles/cf-link`, `supabase/migrations/20260603161021`)
-- **Contests page** (`/contests`): Shows upcoming Codeforces contests with name, start time, duration, and countdown. If you've linked your CF account, also shows your recent contest history with rank and rating delta.
-- **XP gain notification**: After marking a problem as done, a prominent card shows `+X XP`, current rank level in rank color, a progress bar to the next level, and a "Level Up!" badge when crossing a rank boundary. (`problem-viewer.tsx`, `solve/route.ts` now returns `old_level`)
-- **Monetization infrastructure**: `plan` column on profiles (free/pro/elite), `hint_sessions` table for per-user per-day dedup. Free tier enforced server-side. (`supabase/migrations/20260517000000`, `src/lib/plan.ts`)
-- **Hint gating (free tier)**: After 3 unique-problem hint sessions per day, hints 2 & 3 are blurred with a lock overlay and quiet "Resets tomorrow / Upgrade to Pro" CTA. No modal. (`GET /api/problems/[number]/hints`, `problem-viewer.tsx`)
-- **Notes daily cap (free tier)**: 4th+ note on free plan returns HTTP 429 with a clear message. (`POST /api/notes`)
-- **Pricing page** (`/pricing`): Static Free / Pro / Elite comparison with feature lists, yearly discount, and FAQ. Linked from navbar for all users.
-- **Public profiles** (`/profile/[username]`): Any user's profile is publicly viewable.
-- **Rank color system** (`lib/xp.ts`): `rankConfig()` and `RANK_CONFIGS` — 8 ranks each with color, gradient, and icon.
-- **USACO platform**: USACO problems are now a first-class category throughout the app — platform filter button in the Problems page, correct badge display everywhere (problem cards, loaded problem header, profile solved list, recommended problem), USACO option in the Add Problem form, and USACO weighted alongside Codeforces for the `comp_programming` focus bias in random problem selection.
 
 ### Fixed
-- **Sample I/O — multi-test cases collapsed onto one line**: Codeforces' newer sample format wraps each line of a sample in its own block element (`<div class="test-example-line ...">`) inside a single `<pre>` — visually separate boxes, but no `<br>`/newline in the HTML. The extractor stripped those tags with no separator, mashing all lines together (e.g. `351 2 3 4 529 8`). `stripTags` now treats the close of any line-level block (`div`/`p`/`li`/`tr`) as a line break, so multi-test inputs/outputs reconstruct correctly. The admin `fix-io` "no-newlines" scan now skips these block-wrapped blocks to avoid false positives. (`src/lib/extract-samples.ts`, `src/app/api/admin/fix-io/route.ts`)
-- **Bug report 500 errors**: `bug_reports` migration was not applied to the remote database; pushed `20260518160000` and `20260519000000`.
-- **Hint gating bypass**: Free-tier hints 2 & 3 were nulled on the frontend only (CSS blur); the raw API response still contained the full text. API now strips `hint_2`/`hint_3` from the response when `gated = true`; the blurred placeholder relies on `hint_1` as the existence check instead.
-- **Classify difficulty — empty anchors**: When "Re-classify all" was enabled, every non-LeetCode problem landed in the target set, leaving the calibration anchor list empty — the AI had no reference scale. Anchors now include all existing rated problems regardless of the target set, and are updated incrementally after each batch so later batches benefit from newly-assigned ratings.
+- **AI generation failed with "All models exhausted"**: The OpenRouter free-model fallback chain had been deprecated upstream (every model returned 404), so all hint / solution / review / chat generation failed. Replaced the model list with currently-live free models, prioritizing the free OpenAI `gpt-oss` models per project policy. (`src/lib/model-router.ts`)
 
-### Fixed
-- **Bug report 500 errors**: `bug_reports` migration was not applied to the remote database; pushed `20260518160000` and `20260519000000`.
-- **Hint gating bypass**: Free-tier hints 2 & 3 were nulled on the frontend only (CSS blur); the raw API response still contained the full text. API now strips `hint_2`/`hint_3` from the response when `gated = true`; the blurred placeholder relies on `hint_1` as the existence check instead.
+---
+
+## [2.0.0] - 2026-06-10
+
+The headline release: a complete visual rebrand of the app into a true-black, monospace-forward terminal/IDE aesthetic under one strict design system.
 
 ### Changed
-- **Side panel reduced to 2 tabs**: Notes tab removed from the tab bar; notes are now accessible via a collapsible accordion inside the Code Editor panel. Panel opens to Code Editor by default.
-- **Contests added to navbar**: New "Contests" link in the authenticated nav.
-- **Skill level resets rating**: Changing skill level on the profile page now also resets the user's rating (Beginner → 1,000 · Intermediate → 1,200 · Advanced → 1,600) and shows a confirmation step explaining the change before saving.
-- **Search merged into Problems**: `/search` page removed. The Problems page (`/display-problem`) already has full title search + platform/difficulty filter. Navbar "Search" link replaced by "Pricing". Page heading updated to "Problems" with a descriptive subtitle.
-- **Landing page rank section**: Redesigned with a horizontal scrollable progression chart showing each rank in order with XP thresholds and connecting arrows. Rank grid below also shows XP requirement per tier.
-- **Profile hero**: Rank badge and XP progress bar now use rank-specific color and gradient.
-- **Performance — display-problem**: Page streams the "Problems" heading immediately; Supabase work moved behind Suspense.
-- **Performance — profile page**: Heavy `solvedProblemDetails` query moved into a Suspense component; profile hero renders from a single fast query.
-- **Performance — loading.tsx**: Added skeletons for `/onboarding` and `/auth/setup-username`.
+- **Full terminal/IDE rebrand**: Rebuilt the landing page and restyled every page (profile, activity, insights, problems, notes, settings, auth, pricing) into a true-black (`#080808`), monospace-forward terminal/IDE theme. One dark surface for every panel and card — no white anywhere — with violet-tinted structural borders and a disciplined palette where each hue has one job: violet (brand/keywords/selected), cyan (numbers/ratings), green (success/solved), amber (in-progress/caution), rose (failure), teal (functions). Flat `border-l-2` rows and box-drawing headers replace bordered cards, radius is a uniform 4px, and a faint dotted grid plus CRT scanline give the page atmosphere. Geist Mono is wired globally for all data, code, and numbers.
+- **Dark-locked theme**: Removed `next-themes`, the theme toggle, and the theme provider entirely — the app is now hardcoded dark. This fixes the long-standing bug where new visitors briefly saw white cards on first paint because the default theme stripped the dark class on hydration.
+- **Landing-page motion**: A page-load boot-sequence cascade with a blinking cursor, plus scroll-triggered effects (stat count-ups, a rating sparkline draw-in, the streak heatmap filling, and a sample-runner demo). All motion is gated behind `prefers-reduced-motion`, and every section stays fully visible if JavaScript never loads.
+- **Emoji removed**: Replaced rank and streak emoji across the navbar, profile, activity, and insights with in-palette monospace markers.
+- **Surface elevation**: Lifted the panel surface ramp via fill (no shadows) so cards separate cleanly from the true-black background.
+- **Unified editor syntax highlighting**: Every code editor in the app now shares one Prism token palette (keywords violet, strings green, numbers cyan, functions teal, comments dim) instead of the previously divergent themes.
+
+### Fixed
+- **Landing streak heatmap looked stalled**: Low-intensity cells rendered permanently dim, as if the fill animation had hung. The heatmap is now binary — an active day is full amber, an empty day is dim. (`src/app/page.tsx`)
+
+---
+
+## [1.1.2] - 2026-06-03
+
+### Added
+- **Sample test runner** (free): The code panel now has a "Run Tests (N)" button that runs your code against the problem's sample I/O using the Piston execution engine, showing per-test pass/fail with expandable input / expected / got details. Supports C++, Python, Java, and JavaScript. (`POST /api/run-code`, `src/lib/extract-samples.ts`)
+- **Codeforces account linking**: The profile page has a new "Codeforces Account" section — enter your CF handle to verify it against the Codeforces API and store your rating, max rating, and rank. (`POST /api/profiles/cf-link`)
+- **Contests page** (`/contests`): Shows upcoming Codeforces contests with name, start time, duration, and countdown. If you've linked your CF account, it also shows your recent contest history with rank and rating delta.
+- **Code editor auto-opens**: The side panel opens automatically to the Code Editor tab whenever a problem loads.
+
+### Changed
+- **Side panel reduced to 2 tabs**: The Notes tab was removed from the tab bar; notes are now in a collapsible accordion inside the Code Editor panel, which opens by default.
+- **Contests added to the navbar.**
+
+### Fixed
+- **Sample I/O multi-test cases collapsed onto one line**: Codeforces' newer sample format wraps each line of a sample in its own block element with no newline in the HTML, so the extractor mashed every line together. `stripTags` now treats the close of any line-level block as a line break, so multi-test inputs and outputs reconstruct correctly. (`src/lib/extract-samples.ts`)
+
+---
+
+## [1.1.1] - 2026-05-19
+
+### Added
+- **XP gain notification**: After marking a problem done, a prominent card shows `+X XP`, your current rank level in its rank color, a progress bar to the next level, and a "Level Up!" badge when you cross a rank boundary. (`problem-viewer.tsx`)
+
+### Changed
+- **"Mark as Done" confirmation**: Marking a problem done now asks "How'd it go?" before recording, instead of recording immediately.
+
+### Fixed
+- Corrected canonical tag data so topic tags display consistently across the app.
+
+---
+
+## [1.1.0] - 2026-05-19
+
+### Added
+- **Solve activity heatmap**: A calendar heatmap of your daily solves on the profile page.
+- **Average hints needed**: A new stat showing how many hints you typically use per solve.
+- **Bug report button**: A floating button to submit a bug report from anywhere in the app. (`bug_reports` table)
+- **USACO platform**: USACO is now a first-class platform throughout — a filter button on the Problems page, correct badges everywhere (problem cards, loaded-problem header, profile solved list, recommendations), a USACO option in the Add Problem form, and USACO weighting alongside Codeforces in random problem selection.
+- **Public profiles** (`/profile/[username]`): Any user's profile is publicly viewable.
+- **Rank color system** (`lib/xp.ts`): Eight ranks, each with its own color, gradient, and icon.
+
+### Changed
+- **Skill level resets rating**: Changing your skill level on the profile now also resets your rating (Beginner → 1,000 · Intermediate → 1,200 · Advanced → 1,600), with a confirmation step that explains the change first.
+- **Search merged into Problems**: The separate `/search` page was removed — the Problems page already has full title search plus platform/difficulty filters. The navbar "Search" link was replaced by "Pricing".
+- **Landing-page rank section**: Redesigned as a horizontal scrollable progression chart showing each rank in order with its XP threshold.
+- **Profile hero**: The rank badge and XP progress bar now use rank-specific color and gradient.
+
+### Performance
+- **`/display-problem`** streams the heading immediately, with Supabase work moved behind Suspense.
+- **Profile page** renders its hero from a single fast query; the heavy solved-problem-details query moved behind Suspense.
+- Added loading skeletons for `/onboarding` and `/auth/setup-username`.
+
+### Fixed
+- **Bug report 500 errors**: The `bug_reports` migration had not been applied to the remote database.
+
+---
+
+## [1.0.8] - 2026-05-18
+
+Monetization — the Free / Pro / Elite tier system goes live.
+
+### Added
+- **Monetization infrastructure**: Stripe checkout, a webhook handler, and the billing portal, backed by a `plan` column on profiles (free / pro / elite) and a `hint_sessions` table for per-user, per-day dedup. The free tier is enforced server-side. (`src/lib/plan.ts`)
+- **Hint gating (free tier)**: After 3 unique-problem hint sessions per day, hints 2 & 3 are blurred behind a lock overlay with a quiet "Resets tomorrow / Upgrade to Pro" CTA — no modal.
+- **Notes daily cap (free tier)**: The 4th and later note created in a day returns HTTP 429 with a clear message.
+- **Plan gating**: AI solution review and unlimited notes are gated to paid plans.
+- **Pricing page** (`/pricing`): A Free / Pro / Elite comparison with feature lists, a yearly discount, and an FAQ, linked from the navbar.
+
+### Fixed
+- **Hint gating bypass**: Free-tier hints 2 & 3 were only blurred client-side while the raw API response still contained the full text. The API now strips `hint_2` / `hint_3` when the response is gated.
 
 ---
 

@@ -295,6 +295,12 @@ export async function POST(request: NextRequest) {
     .sort((a, b) => a.cf_rating - b.cf_rating);
 
   const apiKey = env.OPENROUTER_API_KEY;
+  if (!apiKey) {
+    return NextResponse.json(
+      { error: "OPENROUTER_API_KEY is not set." },
+      { status: 500 },
+    );
+  }
   const BATCH = 6;
   const results: {
     problem_number: number;

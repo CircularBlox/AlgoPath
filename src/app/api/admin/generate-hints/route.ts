@@ -1,6 +1,7 @@
 import * as Sentry from "@sentry/nextjs";
 import { type NextRequest, NextResponse } from "next/server";
 import { env } from "~/env";
+import { buildHintPrompt } from "~/lib/hint-prompt";
 import { isAdmin } from "~/lib/is-admin";
 import { routedCompletion } from "~/lib/model-router";
 import { createClient, getUser } from "~/lib/supabase/server";
@@ -40,43 +41,29 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Problem not found." }, { status: 404 });
   }
 
+  const useOllama = env.HINT_PROVIDER === "ollama";
   const apiKey = env.OPENROUTER_API_KEY as string | undefined;
-  if (!apiKey) {
+  if (!useOllama && !apiKey) {
     return NextResponse.json(
       { error: "OPENROUTER_API_KEY is not set." },
       { status: 500 },
     );
   }
 
-  const tags = (problem.tags as string[] | null) ?? [];
-  const contentSnippet = problem.content
-    ? `\n\nProblem statement (excerpt):\n${problem.content.replace(/<[^>]+>/g, " ").slice(0, 800)}`
-    : "";
-
-  const prompt = `You are writing three short, progressive hints for a competitive programming problem. The hints should feel like a Socratic mentor — each one is a question or a tiny observation that plants a seed, not a nudge toward the answer. The solver should finish reading each hint and think "hm, interesting…" rather than "oh I should do X".
-
-Problem: ${problem.title}
-Difficulty: ${problem.difficulty ?? "unknown"}
-Tags (your reference only — do NOT name or hint at them): ${tags.join(", ") || "none"}
-URL: ${problem.url}${contentSnippet}
-
-Respond with only this JSON object:
-{"hint_1": "...", "hint_2": "...", "hint_3": "..."}
-
-Rules:
-- Each hint is exactly 1–2 sentences. No exceptions.
-- Phrase each hint as a question, or a small observation that raises a question in the reader's mind.
-- Be specific to this problem — refer to its actual elements, constraints, or structure.
-- Use $term$ to highlight key terms from the problem (e.g. $target$, $index$).
-- Never name algorithms, data structures, or time complexities.
-- Never state what to do — only ask what the solver might notice or wonder about.
-- No labels, bullets, or headers inside the hint text.`;
+  const prompt = buildHintPrompt({
+    content: problem.content as string | null,
+    difficulty: problem.difficulty as string | null,
+    tags: problem.tags as string[] | null,
+  });
 
   const result = await routedCompletion({
     messages: [{ role: "user", content: prompt }],
     taskType: "balanced",
     apiKey,
-    timeoutMs: 45000,
+    provider: useOllama ? "ollama" : "openrouter",
+    ollamaBaseUrl: env.OLLAMA_BASE_URL,
+    ollamaModel: env.OLLAMA_MODEL,
+    timeoutMs: useOllama ? 120000 : 45000,
   });
 
   if (!result.ok) {

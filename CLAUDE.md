@@ -200,9 +200,9 @@ PostHog web vitals (90th percentile LCP) shows poor scores across key pages:
 - Should get them to sign up and start even with no experience with the topic
 - Do not use many external libraries - use mostly pure CSS
 - Make the website look modern and not vibecoded
+- MAKE SURE ITS NOT AI SLOP
 
 ## Notes
-- Keep frontend simple for MVP
 - Reuse Supabase client and API routes for future features
 - With languages, use Python and C++ instead of python and cpp
 - IMPORTANT - after the request is fully done (eg, cooked for 50s), tell me how many tokens were used by the request and how many I have left. Aim to minimize this.
