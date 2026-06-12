@@ -3,9 +3,9 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { AdminDropdown } from "~/components/admin-dropdown";
 import { isAdmin } from "~/lib/is-admin";
-import { streakStatus } from "~/lib/streak";
+import { streakStatus } from "~/lib/gamification/streak";
 import { createClient, getUser } from "~/lib/supabase/server";
-import { levelFromXp } from "~/lib/xp";
+import { levelFromXp } from "~/lib/gamification/xp";
 
 const navLinks = [
   { href: "/display-problem", label: "Problems" },

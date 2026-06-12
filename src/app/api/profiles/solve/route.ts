@@ -4,7 +4,7 @@ import { CSRF_HEADER, validateCsrfToken } from "~/lib/csrf";
 import { difficultyBuckets } from "~/lib/difficulty";
 import { getPostHogClient } from "~/lib/posthog-server";
 import { createClient } from "~/lib/supabase/server";
-import { calcXpGain, levelFromXp } from "~/lib/xp";
+import { calcXpGain, levelFromXp } from "~/lib/gamification/xp";
 
 /** K-factor: high at the start, decays toward 10 as the user accumulates solves. */
 function kFactor(solvedCount: number): number {

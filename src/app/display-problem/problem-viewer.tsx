@@ -21,7 +21,7 @@ import {
 import { processHtmlLatex } from "~/lib/latex";
 import { highlight, languages } from "~/lib/prism-setup";
 import { timeAgo } from "~/lib/time";
-import { levelTitle, xpProgress } from "~/lib/xp";
+import { levelTitle, xpProgress } from "~/lib/gamification/xp";
 import { FormattedText } from "./formatting";
 import { SidePanel, type TestResult } from "./side-panel";
 import type {

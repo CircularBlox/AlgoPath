@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { effectiveStreak, streakStatus } from "~/lib/streak";
+import { effectiveStreak, streakStatus } from "~/lib/gamification/streak";
 import { createAdminClient } from "~/lib/supabase/admin";
 import { displayTag } from "~/lib/tags";
-import { levelFromXp, levelTitle, xpProgress } from "~/lib/xp";
+import { levelFromXp, levelTitle, xpProgress } from "~/lib/gamification/xp";
 import { TopicRadar } from "../topic-radar";
 
 type PublicProfile = {
