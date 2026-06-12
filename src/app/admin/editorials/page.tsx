@@ -32,6 +32,10 @@ export default function AdminEditorialsPage() {
   const [fetching, setFetching] = useState<"single" | "random" | null>(null);
   const [result, setResult] = useState<FetchResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Paste-HTML fallback for when Codeforces blocks automated fetches.
+  const [pasteOpen, setPasteOpen] = useState(false);
+  const [blogHtml, setBlogHtml] = useState("");
+  const [editorialUrl, setEditorialUrl] = useState("");
 
   // Bulk state.
   const [bulkScope, setBulkScope] = useState<"missing" | "all">("missing");
@@ -61,12 +65,22 @@ export default function AdminEditorialsPage() {
         body: JSON.stringify(
           mode === "random"
             ? { random: true, missing_only: missingOnly, save }
-            : { problem_number: Number(problemNumber), save },
+            : {
+                problem_number: Number(problemNumber),
+                save,
+                // Paste fallback only applies to a chosen problem.
+                ...(blogHtml.trim() && { blog_html: blogHtml }),
+                ...(editorialUrl.trim() && { editorial_url: editorialUrl }),
+              },
         ),
       });
       const data = (await res.json()) as FetchResult & { error?: string };
       if (!res.ok) {
         setError(data.error ?? "Fetch failed.");
+        // Surface the paste fallback when CF blocks the automated fetch.
+        if (/anti-bot|blocking automated|HTTP 403/i.test(data.error ?? "")) {
+          setPasteOpen(true);
+        }
         return;
       }
       setResult(data);
@@ -211,6 +225,58 @@ export default function AdminEditorialsPage() {
             />
             Save editorial body to DB
           </label>
+        </div>
+
+        {/* Paste-HTML fallback — works when Codeforces blocks the auto-fetch. */}
+        <div className="rounded border border-border bg-muted/20">
+          <button
+            type="button"
+            onClick={() => setPasteOpen((o) => !o)}
+            className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-muted-foreground hover:text-foreground"
+          >
+            <span className="font-mono text-xs">{pasteOpen ? "▾" : "▸"}</span>
+            Paste editorial HTML (use when CF blocks the auto-fetch)
+          </button>
+          {pasteOpen && (
+            <div className="flex flex-col gap-2 border-t border-border px-4 py-3">
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Codeforces blocks automated requests with an anti-bot challenge.
+                Open the editorial blog in your browser, view page source
+                (Ctrl/Cmd+U), copy all, and paste it here — then click{" "}
+                <span className="font-mono">Fetch</span> for the chosen problem
+                number. Optionally paste the blog URL so the “Read editorial”
+                link is stored.
+              </p>
+              <Input
+                placeholder="Editorial blog URL (optional) — https://codeforces.com/blog/entry/…"
+                value={editorialUrl}
+                onChange={(e) => setEditorialUrl(e.target.value)}
+                className="font-mono text-xs"
+              />
+              <textarea
+                value={blogHtml}
+                onChange={(e) => setBlogHtml(e.target.value)}
+                placeholder="Paste the full editorial blog page HTML here…"
+                rows={6}
+                className="w-full rounded border border-input bg-input/30 px-3 py-2 font-mono text-xs leading-relaxed outline-none resize-y"
+              />
+              {blogHtml.trim() && (
+                <div className="flex items-center gap-3">
+                  <span className="font-mono text-xs text-green">
+                    {blogHtml.length.toLocaleString()} chars ready — Fetch will
+                    parse this instead of calling CF.
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setBlogHtml("")}
+                    className="font-mono text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    clear
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {error && <p className="font-mono text-sm text-destructive">{error}</p>}

@@ -243,31 +243,88 @@ const FETCH_HEADERS = {
   Referer: "https://codeforces.com/",
 };
 
+// Codeforces mirror hosts that don't sit behind the main site's Cloudflare
+// "Just a moment" challenge — tried as fallbacks when the main host is blocked.
+const CF_MIRRORS = ["m1.codeforces.com", "m3.codeforces.com"];
+
 /**
- * Fetches a Codeforces page with retries. Throws on non-Codeforces URLs (SSRF
- * guard) or after exhausting attempts.
+ * Detects an anti-bot interstitial rather than real content. Codeforces' main
+ * domain serves a Cloudflare "Just a moment" page; the mirrors serve an older
+ * "Your browser is being checked" RCPC challenge. Neither can be solved by a
+ * plain server fetch.
  */
-export async function fetchCfHtml(url: string, attempts = 3): Promise<string> {
+export function isChallengePage(html: string): boolean {
+  return (
+    /Just a moment|challenges\.cloudflare\.com|Your browser is being checked|Redirecting\.\.\./i.test(
+      html,
+    ) ||
+    // Real CF pages are large and carry these markers; a tiny page without them
+    // is almost always a block/redirect stub.
+    (html.length < 6000 && !/ttypography|problem-statement/i.test(html))
+  );
+}
+
+/** Rewrites a codeforces.com URL onto a mirror host. */
+function toMirror(url: string, host: string): string {
+  try {
+    const u = new URL(url);
+    u.hostname = host;
+    return u.toString();
+  } catch {
+    return url;
+  }
+}
+
+async function fetchOnce(url: string): Promise<string | number> {
+  const resp = await fetch(url, {
+    headers: FETCH_HEADERS,
+    signal: AbortSignal.timeout(12000),
+  });
+  if (!resp.ok) return resp.status;
+  const text = await resp.text();
+  if (text.length > 1000 && !isChallengePage(text)) return text;
+  return resp.status || 403;
+}
+
+/**
+ * Fetches a Codeforces page, retrying and falling back to mirror hosts when the
+ * main domain returns an anti-bot challenge. Throws on non-Codeforces URLs (SSRF
+ * guard) or after every host/attempt is exhausted — with a message that names
+ * the anti-bot block so callers can offer the paste-HTML fallback.
+ */
+export async function fetchCfHtml(url: string, attempts = 2): Promise<string> {
   if (!isCodeforcesUrl(url)) {
     throw new Error("Only Codeforces URLs are supported.");
   }
+
+  // Try the original host first, then each mirror.
+  const origHost = new URL(url).hostname;
+  const candidates = [
+    url,
+    ...CF_MIRRORS.filter((h) => h !== origHost).map((h) => toMirror(url, h)),
+  ];
+
   let lastStatus = 0;
-  for (let attempt = 0; attempt < attempts; attempt++) {
-    try {
-      const resp = await fetch(url, {
-        headers: FETCH_HEADERS,
-        signal: AbortSignal.timeout(12000),
-      });
-      if (!resp.ok) {
-        lastStatus = resp.status;
-        await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
-        continue;
+  let sawChallenge = false;
+
+  for (const candidate of candidates) {
+    for (let attempt = 0; attempt < attempts; attempt++) {
+      try {
+        const result = await fetchOnce(candidate);
+        if (typeof result === "string") return result;
+        lastStatus = result;
+        if (result === 403 || result === 503) sawChallenge = true;
+      } catch {
+        // network/timeout — fall through to retry/next host
       }
-      const text = await resp.text();
-      if (text.length > 1000) return text;
-    } catch {
-      await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
+      await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
     }
+  }
+
+  if (sawChallenge) {
+    throw new Error(
+      "Codeforces is blocking automated requests (anti-bot challenge). Open the editorial in your browser and paste its page HTML instead.",
+    );
   }
   throw new Error(
     lastStatus
@@ -295,17 +352,31 @@ export type ScrapeResult = {
 /** Hard cap on stored editorial markdown to keep rows/payloads bounded. */
 const MAX_CONTENT = 16000;
 
+export type ScrapeOptions = {
+  /** Force a specific editorial blog URL instead of resolving one. */
+  override?: string | null;
+  /**
+   * Pre-fetched editorial blog HTML (e.g. pasted from a browser that passed
+   * Codeforces' anti-bot challenge). When set, no network fetch happens.
+   */
+  blogHtml?: string | null;
+};
+
 /**
  * End-to-end editorial scrape for a single Codeforces problem: resolve the blog
  * URL (explicit override → stored editorial_url → the problem page's "Contest
  * materials" sidebar), fetch it, slice out this problem's section, and convert
- * to markdown. Shared by the single and bulk admin routes. Throws an Error with
- * a human-readable message on any failure.
+ * to markdown. Pass `blogHtml` to parse already-fetched HTML and skip the
+ * network entirely (the reliable path when Codeforces blocks automated fetches).
+ * Shared by the single and bulk admin routes. Throws an Error with a
+ * human-readable message on any failure.
  */
 export async function scrapeEditorial(
   problem: ScrapeInput,
-  override?: string | null,
+  opts: ScrapeOptions = {},
 ): Promise<ScrapeResult> {
+  const { override, blogHtml: pastedHtml } = opts;
+
   const ref = problem.url ? parseContestRef(problem.url) : null;
   if (!ref) {
     throw new Error(
@@ -313,25 +384,39 @@ export async function scrapeEditorial(
     );
   }
 
-  // 1. Resolve the editorial blog URL.
-  let blogUrl =
+  // Resolve the editorial blog URL (used for the response/backfill even when
+  // HTML is pasted, so the public "Read editorial" link still works).
+  const knownUrl =
     (override && isCodeforcesUrl(override) ? override : null) ??
     (problem.editorial_url && isCodeforcesUrl(problem.editorial_url)
       ? problem.editorial_url
       : null);
 
-  if (!blogUrl) {
-    const problemHtml = await fetchCfHtml(problem.url as string);
-    blogUrl = extractEditorialLink(problemHtml);
-  }
-  if (!blogUrl) {
-    throw new Error(
-      "No editorial link found in the problem's contest materials.",
-    );
+  let blogHtml: string;
+  let blogUrl: string;
+
+  if (pastedHtml?.trim()) {
+    if (isChallengePage(pastedHtml)) {
+      throw new Error(
+        "The pasted HTML is Codeforces' anti-bot page, not the editorial. Open the blog in a logged-in browser tab, view source, and paste that.",
+      );
+    }
+    blogHtml = pastedHtml;
+    blogUrl = knownUrl ?? "";
+  } else {
+    blogUrl = knownUrl ?? "";
+    if (!blogUrl) {
+      const problemHtml = await fetchCfHtml(problem.url as string);
+      blogUrl = extractEditorialLink(problemHtml) ?? "";
+    }
+    if (!blogUrl) {
+      throw new Error(
+        "No editorial link found in the problem's contest materials.",
+      );
+    }
+    blogHtml = await fetchCfHtml(blogUrl);
   }
 
-  // 2. Fetch + parse the editorial blog.
-  const blogHtml = await fetchCfHtml(blogUrl);
   const typography = extractTypography(blogHtml);
   const { html, sliced } = sliceProblemSection(
     typography,
@@ -340,7 +425,9 @@ export async function scrapeEditorial(
   );
   const content = htmlToMarkdown(html).slice(0, MAX_CONTENT);
   if (!content.trim()) {
-    throw new Error("Fetched the editorial but extracted no readable content.");
+    throw new Error(
+      "Parsed the editorial but extracted no readable content for this problem.",
+    );
   }
 
   return { editorial_url: blogUrl, sliced, content };

@@ -42,6 +42,7 @@ export async function POST(request: NextRequest) {
     random?: unknown;
     missing_only?: unknown;
     editorial_url?: unknown;
+    blog_html?: unknown;
     save?: unknown;
   };
   try {
@@ -56,6 +57,10 @@ export async function POST(request: NextRequest) {
   const override =
     typeof body.editorial_url === "string" && body.editorial_url.trim()
       ? body.editorial_url.trim()
+      : null;
+  const blogHtml =
+    typeof body.blog_html === "string" && body.blog_html.trim()
+      ? body.blog_html
       : null;
 
   const supabase = createAdminClient();
@@ -114,17 +119,18 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { editorial_url, sliced, content } = await scrapeEditorial(
-      problem,
+    const { editorial_url, sliced, content } = await scrapeEditorial(problem, {
       override,
-    );
+      blogHtml,
+    });
 
-    // Always backfill editorial_url; persist content only when asked.
-    const update: { editorial_url: string; editorial_content?: string } = {
-      editorial_url,
-    };
+    // Backfill editorial_url when we have one; persist content only when asked.
+    const update: { editorial_url?: string; editorial_content?: string } = {};
+    if (editorial_url && problem.editorial_url !== editorial_url) {
+      update.editorial_url = editorial_url;
+    }
     if (save) update.editorial_content = content;
-    if (problem.editorial_url !== editorial_url || save) {
+    if (Object.keys(update).length > 0) {
       await supabase
         .from("problems")
         .update(update)
