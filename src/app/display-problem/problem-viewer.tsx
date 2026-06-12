@@ -77,6 +77,9 @@ export function ProblemViewer({
   const [selectedLanguage, setSelectedLanguage] = useState<string>("C++");
   const [codeVisible, setCodeVisible] = useState(true);
   const [codeCopied, setCodeCopied] = useState(false);
+  // Tags can spoil the intended approach, so let users hide them. Visible by
+  // default; the preference is persisted so it sticks across problems.
+  const [hideTags, setHideTags] = useState(false);
   const hintsPanelRef = useRef<HTMLDivElement>(null);
   const solutionPanelRef = useRef<HTMLDivElement>(null);
   const [focusBanner, setFocusBanner] = useState(showFocusPrompt);
@@ -90,6 +93,24 @@ export function ProblemViewer({
       });
     }
   }, [hintsState.status]);
+
+  // Hydrate the hide-tags preference from localStorage on mount.
+  useEffect(() => {
+    try {
+      setHideTags(localStorage.getItem("algopath:hideTags") === "1");
+    } catch {
+      // localStorage may be unavailable (private mode); fall back to default.
+    }
+  }, []);
+
+  // Persist the hide-tags preference whenever it changes.
+  useEffect(() => {
+    try {
+      localStorage.setItem("algopath:hideTags", hideTags ? "1" : "0");
+    } catch {
+      // Ignore write failures.
+    }
+  }, [hideTags]);
 
   useEffect(() => {
     if (solutionState.status === "open") {
@@ -1767,21 +1788,34 @@ export function ProblemViewer({
                       <span className="text-sm text-muted-foreground">
                         Tags
                       </span>
-                      {problem.tags.map((tag) => (
-                        <button
-                          key={tag}
-                          type="button"
-                          onClick={() => void handleTagClick(tag)}
-                          className="focus:outline-none focus:ring-2 focus:ring-ring rounded-full"
-                        >
-                          <Badge
-                            variant="secondary"
-                            className="pointer-events-none cursor-pointer hover:bg-primary/20 hover:text-primary transition-colors"
+                      {!hideTags &&
+                        problem.tags.map((tag) => (
+                          <button
+                            key={tag}
+                            type="button"
+                            onClick={() => void handleTagClick(tag)}
+                            className="focus:outline-none focus:ring-2 focus:ring-ring rounded-full"
                           >
-                            {tag}
-                          </Badge>
-                        </button>
-                      ))}
+                            <Badge
+                              variant="secondary"
+                              className="pointer-events-none cursor-pointer hover:bg-primary/20 hover:text-primary transition-colors"
+                            >
+                              {tag}
+                            </Badge>
+                          </button>
+                        ))}
+                      {hideTags && (
+                        <span className="text-sm text-muted-foreground italic">
+                          Hidden to avoid spoilers
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setHideTags((v) => !v)}
+                        className="text-xs text-muted-foreground hover:text-primary transition-colors"
+                      >
+                        {hideTags ? `Show (${problem.tags.length})` : "Hide"}
+                      </button>
                     </div>
                   )}
                   <div className="rounded-md border border-border bg-muted/40 px-4 py-3 text-sm break-all text-muted-foreground">
