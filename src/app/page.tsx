@@ -39,9 +39,9 @@ const heat = [
 ].map((active, i) => ({ id: `cell-${i}`, active: active === 1 }));
 
 const stats = [
+  { v: "1500", label: "problems (and counting)" },
   { v: "3", label: "progressive hints" },
   { v: "4", label: "runner languages" },
-  { v: "3", label: "judges supported" },
   { v: "∞", label: "free practice" },
 ];
 

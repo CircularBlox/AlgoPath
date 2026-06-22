@@ -2491,7 +2491,8 @@ export function ProblemViewer({
                       </div>
                       {allNull ? (
                         <p className="text-sm text-muted-foreground">
-                          No hints available yet.
+                          No hints for this problem yet. We're adding hints to
+                          our 1500+ problems every day — check back soon.
                         </p>
                       ) : (
                         <>
@@ -2734,6 +2735,10 @@ export function ProblemViewer({
                                 </div>
                               </div>
                             )}
+                          <p className="border-t border-border pt-3 text-xs text-muted-foreground">
+                            Hints are a work in progress — we're adding and
+                            refining them across our 1500+ problems every day.
+                          </p>
                         </>
                       )}
                     </div>
@@ -2854,7 +2859,8 @@ export function ProblemViewer({
                             </div>
                           ) : (
                             <p className="text-sm text-muted-foreground">
-                              No solutions available yet.
+                              No editorial for this problem yet. We're adding
+                              editorials every day — check back soon.
                             </p>
                           )}
                         </div>
@@ -2887,6 +2893,10 @@ export function ProblemViewer({
                           </Link>
                         </div>
                       )}
+                      <p className="border-t border-border px-5 py-3 text-xs text-muted-foreground">
+                        Editorials are a work in progress — we're adding them
+                        across our 1500+ problems every day.
+                      </p>
                     </div>
                   );
                 })()}

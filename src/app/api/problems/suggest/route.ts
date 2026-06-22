@@ -1,6 +1,7 @@
 import * as Sentry from "@sentry/nextjs";
 import { type NextRequest, NextResponse } from "next/server";
 import { env } from "~/env";
+import { routedCompletion } from "~/lib/model-router";
 import { createClient } from "~/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -95,59 +96,25 @@ export async function GET(request: NextRequest) {
 
   const prompt = `You are a competitive programming assistant specialising in contest problems (Codeforces, USACO, ICPC, etc.). A user is looking for a problem matching this description:\n"${query}"\n\nFrom the following list of problems, pick the 1 to 3 that best match. Consider title, difficulty, tags, and platform. Prefer Codeforces problems when they fit equally well, since this platform targets competitive programmers.\n\nProblems:\n${problemList}\n\nRespond with a JSON object containing exactly these two keys:\n- "problem_numbers": array of matched problem numbers\n- "reasoning": a short conversational message (2-3 sentences) addressed to the user explaining what you found. Mention why it matches their description (e.g. difficulty, topic area, platform) but do NOT reveal any algorithmic approaches, data structures, or hints about how to solve the problem.\n\nExample: {"problem_numbers": [42], "reasoning": "This Codeforces problem is a great match — it's rated around 1400 and squarely in the topic you mentioned."}\n\nDo not include any text outside the JSON object.`;
 
-  let aiRes: Response;
-  try {
-    aiRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://localhost:3000",
-        "X-Title": "CompetitiveProgrammingApp",
-      },
-      body: JSON.stringify({
-        model: "openrouter/free",
-        messages: [{ role: "user", content: prompt }],
-      }),
-      signal: AbortSignal.timeout(15000),
-    });
-  } catch (err) {
-    Sentry.captureException(err, {
-      tags: { route: "suggest", step: "openrouter_fetch" },
-    });
-    return NextResponse.json(
-      { error: "Failed to reach OpenRouter." },
-      { status: 502 },
-    );
-  }
+  const completion = await routedCompletion({
+    messages: [{ role: "user", content: prompt }],
+    taskType: "balanced",
+    apiKey,
+    timeoutMs: 15000,
+  });
 
-  const rawText = await aiRes.text();
-
-  if (!aiRes.ok) {
-    Sentry.captureMessage(`OpenRouter error in suggest: ${aiRes.status}`, {
+  if (!completion.ok) {
+    Sentry.captureMessage(`Problem suggestion failed: ${completion.error}`, {
       level: "error",
-      extra: { body: rawText.slice(0, 500) },
+      extra: { routing: completion.routing },
     });
     return NextResponse.json(
-      { error: `OpenRouter responded with ${aiRes.status}: ${rawText}` },
+      { error: "Search is busy right now. Please try again." },
       { status: 502 },
     );
   }
 
-  let aiBody: { choices: { message: { content: string } }[] };
-  try {
-    aiBody = JSON.parse(rawText) as typeof aiBody;
-  } catch (err) {
-    Sentry.captureException(err, {
-      tags: { route: "suggest", step: "parse_response" },
-    });
-    return NextResponse.json(
-      { error: `OpenRouter returned non-JSON: ${rawText.slice(0, 200)}` },
-      { status: 502 },
-    );
-  }
-
-  const aiText = aiBody.choices?.[0]?.message?.content ?? "";
+  const aiText = completion.content;
 
   const trimmed = aiText.slice(
     aiText.indexOf("{"),

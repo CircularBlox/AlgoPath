@@ -10,9 +10,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) conventi
 ### Added
 - **FAQ page** (`/faq`): A public FAQ rendered as native `<details>` accordions styled with the app's design tokens — no extra libraries. Backed by a `faqs` table and linked from the navbar. (`supabase/migrations/20260606000000_add_faqs.sql`)
 - **Hideable problem tags**: Tags on the loaded-problem card can spoil the intended approach, so they now have a "Hide" toggle. Tags are visible by default; hiding replaces them with a quiet "Hidden to avoid spoilers" note and a "Show (N)" toggle. The preference is persisted in `localStorage` so it carries across problems and reloads. (`src/app/display-problem/problem-viewer.tsx`)
+- **"Work in progress" messaging for hints & editorials**: The library has 1500+ problems, but hints and editorials are still being filled in. The empty states now say so — "No hints for this problem yet. We're adding hints to our 1500+ problems every day — check back soon." and the editorial equivalent — instead of a flat "not available", so users know coverage is actively growing. The landing-page stats strip now leads with a "1500 problems (and counting)" counter. (`src/app/display-problem/problem-viewer.tsx`, `src/app/page.tsx`)
 
 ### Fixed
 - **AI generation failed with "All models exhausted"**: The OpenRouter free-model fallback chain had been deprecated upstream (every model returned 404), so all hint / solution / review / chat generation failed. Replaced the model list with currently-live free models, prioritizing the free OpenAI `gpt-oss` models per project policy. (`src/lib/model-router.ts`)
+- **AI code reviewer (and follow-up chat & problem search) still returned "All models exhausted"**: The `/review`, `/chat`, and `/suggest` routes bypassed the model router and hit the dead `openrouter/free` endpoint directly, so they failed even after the router was fixed. All three now go through `routedCompletion()` (task type `balanced`), so they use the same verified-live free-model fallback chain as the rest of the app and surface a friendly "busy right now, try again" message on failure. Per-user daily limits and cooldowns are unchanged. (`src/app/api/problems/[number]/review/route.ts`, `src/app/api/problems/[number]/chat/route.ts`, `src/app/api/problems/suggest/route.ts`)
 
 ---
 

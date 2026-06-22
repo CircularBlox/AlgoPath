@@ -6,6 +6,7 @@ import {
   REVIEW_COOLDOWN_MS,
   REVIEW_DAILY_LIMIT,
 } from "~/lib/constants";
+import { routedCompletion } from "~/lib/model-router";
 import { CSRF_HEADER, validateCsrfToken } from "~/lib/security/csrf";
 import { getAuthContext } from "~/lib/security/is-admin";
 import { isSameOrigin } from "~/lib/security/security";
@@ -182,59 +183,28 @@ Feedback rules — follow these strictly:
 - Be encouraging and direct
 - Close with one open question that nudges their thinking`;
 
-  let aiRes: Response;
-  try {
-    aiRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://localhost:3000",
-        "X-Title": "CompetitiveProgrammingApp",
+  const completion = await routedCompletion({
+    messages: [{ role: "user", content: prompt }],
+    taskType: "balanced",
+    apiKey,
+    timeoutMs: 30000,
+  });
+
+  if (!completion.ok) {
+    Sentry.captureMessage(
+      `Code review generation failed: ${completion.error}`,
+      {
+        level: "error",
+        extra: { routing: completion.routing },
       },
-      body: JSON.stringify({
-        model: "openrouter/free",
-        messages: [{ role: "user", content: prompt }],
-      }),
-      signal: AbortSignal.timeout(30000),
-    });
-  } catch (err) {
-    Sentry.captureException(err, {
-      tags: { route: "review", step: "openrouter_fetch" },
-    });
+    );
     return NextResponse.json(
-      { error: "Failed to reach OpenRouter." },
+      { error: "The AI reviewer is busy right now. Please try again." },
       { status: 502 },
     );
   }
 
-  const rawText = await aiRes.text();
-
-  if (!aiRes.ok) {
-    Sentry.captureMessage(`OpenRouter error in review: ${aiRes.status}`, {
-      level: "error",
-      extra: { body: rawText.slice(0, 500) },
-    });
-    return NextResponse.json(
-      { error: `OpenRouter responded with ${aiRes.status}.` },
-      { status: 502 },
-    );
-  }
-
-  let aiBody: { choices: { message: { content: string } }[] };
-  try {
-    aiBody = JSON.parse(rawText) as typeof aiBody;
-  } catch (err) {
-    Sentry.captureException(err, {
-      tags: { route: "review", step: "parse_response" },
-    });
-    return NextResponse.json(
-      { error: "Failed to parse AI response." },
-      { status: 502 },
-    );
-  }
-
-  const feedback = aiBody.choices?.[0]?.message?.content?.trim() ?? "";
+  const feedback = completion.content.trim();
   if (!feedback) {
     Sentry.captureMessage("AI returned empty feedback in review", {
       level: "warning",
